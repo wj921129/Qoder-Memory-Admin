@@ -133,7 +133,7 @@ window.QM.cards = (function() {
     const filtered = getFilteredMemories();
 
     const statInfoEl = document.getElementById('stat-info');
-    if (statInfoEl) statInfoEl.innerText = `${currentDirName} · ${memories.length} 记忆切片`;
+    if (statInfoEl) statInfoEl.innerText = `${memories.length} 记忆切片`;
 
     const viewStatsEl = document.getElementById('view-stats');
     if (viewStatsEl) viewStatsEl.innerText = `显示 ${filtered.length} / ${memories.length} 条记忆`;

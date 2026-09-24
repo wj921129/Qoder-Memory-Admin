@@ -15,7 +15,7 @@
         ⚡ <span class="brand-title-full">Qoder 工业级记忆拓扑管理台</span><span class="brand-title-short">Qoder Memory</span>
       </h1>
       <div class="project-selector-wrap">
-        <label>记忆目标工程：</label>
+        <label class="project-label">工程：</label>
         <select id="project-select" class="project-select" title="选择当前要查看或直接维护的 Qoder 记忆文档库">
           <option value="fmmpay-busi" selected>正在载入项目库...</option>
         </select>
@@ -23,15 +23,15 @@
         <button class="btn-icon-mini" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
       </div>
       <div class="badge-scope project" id="scope-badge" title="当前记忆库的作用范围 (Scope)">
-        <span id="scope-badge-text">📁 工程 Scope</span>
+        <span id="scope-badge-text">📁 工程</span>
       </div>
-      <div class="badge">
+      <div class="badge" id="stat-badge">
         <span class="dot" id="dirty-dot"></span>
         <span id="stat-info">正在连接记忆拓扑...</span>
       </div>
       <div class="badge" id="server-badge" style="display:none;" title="Node 本地服务已激活 · 支持本地自愈直读直写与 MEMORY.md 索引同步">
         <span class="dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span>
-        <span id="server-status-text" style="color:#6ee7b7; font-weight:500;">Qoder 本地直连</span>
+        <span id="server-status-text" style="color:#6ee7b7; font-weight:500;">本地直连</span>
       </div>
     </div>
 

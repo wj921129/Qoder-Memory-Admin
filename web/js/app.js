@@ -70,7 +70,7 @@ window.QM.app = (function() {
 
     if (scopeBadge && scopeText) {
       scopeBadge.className = isGlobal ? 'badge-scope global' : 'badge-scope project';
-      scopeText.innerText = isGlobal ? '🌐 全局 Scope' : `📁 工程 Scope (${projId})`;
+      scopeText.innerText = isGlobal ? '🌐 全局' : '📁 工程';
       scopeBadge.title = isGlobal
         ? '全局作用范围 (Global Scope)：开发者个人习惯与跨工程通用规约 (~/.qoder-cn/memory)'
         : `工程作用范围 (Project Scope)：当前工程专属规约与避坑经验 (${(meta && (meta.workspacePath || meta.realPath)) || ''})`;

@@ -9,16 +9,20 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 16px;
   z-index: 40;
   flex-shrink: 0;
   white-space: nowrap;
+  overflow: hidden;
+  gap: 10px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .brand h1 {
@@ -28,19 +32,21 @@ header {
   letter-spacing: 0.3px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 /* 意图锚点项目切换器 */
 .project-selector-wrap {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   background: #0f172a;
   border: 1px solid #334155;
-  padding: 3px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
-  margin-left: 8px;
+  margin-left: 4px;
+  flex-shrink: 0;
 }
 .project-selector-wrap label {
   font-size: 11px;
@@ -55,7 +61,11 @@ header {
   font-weight: 600;
   outline: none;
   cursor: pointer;
-  max-width: 360px;
+  max-width: 170px;
+  min-width: 80px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .project-select optgroup {
   background: #1e293b;
@@ -68,6 +78,20 @@ header {
   background: #0f172a;
   color: #f8fafc;
   padding: 4px 8px;
+}
+
+/* 徽章收敛与文本防挤压 */
+#stat-badge {
+  flex-shrink: 1;
+  min-width: 0;
+}
+#stat-info {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#server-badge {
+  flex-shrink: 0;
 }
 
 /* 运行模式单一胶囊切换开关 */
@@ -85,6 +109,7 @@ header {
   gap: 6px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .mode-toggle-btn:hover {
   border-color: #475569;
@@ -138,6 +163,7 @@ header {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .btn-effects-toggle {
@@ -181,12 +207,14 @@ body.view-cards .btn-effects-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .toolbar .search-input {
-  flex: 1 1 auto;
-  max-width: 220px;
-  min-width: 120px;
+  flex: 0 1 180px;
+  max-width: 180px;
+  min-width: 90px;
 }
 
 /* 只读模式下操作按钮弱化 */
@@ -220,23 +248,64 @@ body.is-readonly #save-all-btn {
   display: none;
 }
 
-@media (max-width: 1280px) {
+/* 1440px 及以下：收敛标题、缩小工程下拉框宽度、隐藏标签文本 */
+@media (max-width: 1440px) {
   .brand-title-full {
     display: none;
   }
   .brand-title-short {
     display: inline;
   }
+  .project-label {
+    display: none;
+  }
   .project-select {
-    max-width: 220px;
+    max-width: 150px;
+  }
+  .toolbar .search-input {
+    max-width: 160px;
   }
 }
 
-@media (max-width: 1040px) {
-  #server-badge, #scope-badge {
+/* 1240px 及以下：隐藏统计 Badge（侧边栏已有完整数据）、进一步收窄搜索与下拉 */
+@media (max-width: 1240px) {
+  #stat-badge {
     display: none !important;
+  }
+  .project-select {
+    max-width: 130px;
   }
   .toolbar .search-input {
     max-width: 140px;
+  }
+}
+
+/* 1060px 及以下：隐藏作用域 Badge，本地直连精简为仅小圆点 */
+@media (max-width: 1060px) {
+  #scope-badge {
+    display: none !important;
+  }
+  #server-status-text {
+    display: none !important;
+  }
+  #server-badge {
+    padding: 3px 6px;
+  }
+  .project-select {
+    max-width: 110px;
+  }
+  .toolbar .search-input {
+    max-width: 120px;
+  }
+}
+
+/* 900px 及以下：彻底隐藏辅助直连 Badge，极限压缩 */
+@media (max-width: 900px) {
+  #server-badge {
+    display: none !important;
+  }
+  .toolbar .search-input {
+    max-width: 100px;
+    font-size: 11px;
   }
 }
