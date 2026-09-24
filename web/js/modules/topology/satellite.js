@@ -127,18 +127,19 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 绘制记忆切片卫星本体及完整标题标签 (高性能 LOD 优化版)
+   * 绘制记忆切片卫星本体及标题标签 (工业级自适应 LOD 与运镜轻量化优化版)
    */
-  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false) {
+  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, isTransitioning = false, currentScale = 1.0) {
     const r = node.screenRadius;
     const isHighlightedTag = Boolean(activeTag && isTagHit);
     const isImportant = isFocus || isHover || isRelated || isHighlightedTag;
+    const effectivePixelRadius = r * currentScale;
 
-    // 1. 远景微缩快速路径 (LOD Level 0)
-    // 当全景缩放且非重点聚焦对象时，极速绘制纯色圆点，跳过昂贵的渐变与文字排版
-    if (!isImportant && r < 5.5) {
+    // 1. 远景微缩极速路径 (LOD Level 0)
+    // 当镜头拉远、在屏幕上物理尺寸极其微小且非重点关注对象时，以纯色圆点秒级光栅化
+    if (!isImportant && effectivePixelRadius < 4.8) {
       ctx.beginPath();
-      ctx.arc(0, 0, Math.max(1.8, r), 0, Math.PI * 2);
+      ctx.arc(0, 0, Math.max(1.6, r), 0, Math.PI * 2);
       ctx.fillStyle = isDimmed ? 'rgba(148, 163, 184, 0.4)' : (node.parentColor || '#94a3b8');
       ctx.fill();
       return;
@@ -153,8 +154,9 @@ window.QM.satellite = (function() {
       ctx.stroke();
     }
 
-    // 3. 3D 球体受光渲染
-    if (isImportant || r >= 8) {
+    // 3. 3D 球体拟真光照 / 运镜快速着色
+    // 在运镜/高频缩放过渡期对次要星体启用轻量单色填充，避免数百次 createRadialGradient 阻塞 GPU
+    if (!isTransitioning && (isImportant || effectivePixelRadius >= 8.5)) {
       const distToCore = Math.hypot(node.screenX, node.screenY) || 1;
       const lx = -node.screenX / distToCore;
       const ly = -node.screenY / distToCore;
@@ -174,17 +176,23 @@ window.QM.satellite = (function() {
     } else {
       ctx.beginPath();
       ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = isDimmed ? '#475569' : (node.parentColor || '#64748b');
       ctx.fill();
     }
 
-    ctx.strokeStyle = isFocus ? '#ffffff' : (node.parentColor ? node.parentColor + '88' : 'rgba(148, 163, 184, 0.45)');
-    ctx.lineWidth = isFocus ? 2 : 1;
-    ctx.stroke();
+    if (isFocus || effectivePixelRadius >= 6.0) {
+      ctx.strokeStyle = isFocus ? '#ffffff' : (node.parentColor ? node.parentColor + '88' : 'rgba(148, 163, 184, 0.45)');
+      ctx.lineWidth = isFocus ? 2 : 1;
+      ctx.stroke();
+    }
 
-    // 4. 文字标题标签渲染 (废除 CPU 卷积 shadowBlur，改用清晰描边 + LOD 过滤)
-    // 只有在放大到可读尺寸或处于重点关注状态时才渲染文本
-    if (isImportant || r >= 9) {
+    // 4. 文字标题标签渲染 (自适应 LOD 与过渡期抑制)
+    // 规则：
+    // ① 运镜或高频滚轮缩放期间（isTransitioning），仅重点对象显示文字，普通卫星跳过耗时的文本排版与描边；
+    // ② 远景时（effectivePixelRadius < 9.5），文字挤成一团不可读，坚决跳过渲染；
+    // ③ 只有处于舒适阅读尺寸或重点聚焦状态时才进行高质量抗锯齿排版。
+    const shouldRenderText = isImportant || (!isTransitioning && effectivePixelRadius >= 9.5);
+    if (shouldRenderText) {
       const title = node.name || '';
       if (!title) return;
 
@@ -209,7 +217,7 @@ window.QM.satellite = (function() {
 
       ctx.font = font;
 
-      // 使用轻量无模糊描边增强对比度，彻底替代耗费 CPU 的 shadowBlur
+      // 使用轻量描边增强对比度
       ctx.strokeStyle = '#090d16';
       ctx.lineWidth = 2.5;
       ctx.strokeText(displayText, 0, textY);

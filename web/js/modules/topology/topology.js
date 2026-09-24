@@ -38,6 +38,27 @@ window.QM.topology = (function() {
   let isDragging = false;
   let dragStart = { x: 0, y: 0 };
   let clickOrigin = { x: 0, y: 0 };
+  let isWheelInteracting = false;
+  let wheelDebounceTimer = null;
+
+  /**
+   * 计算机体世界坐标视口可视范围包围盒 (Viewport Frustum Culling)
+   */
+  function getViewportBounds(padding = 80) {
+    if (!container) return null;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    const s = transform.scale || 1.0;
+    return {
+      minX: -transform.x / s - padding,
+      maxX: (w - transform.x) / s + padding,
+      minY: -transform.y / s - padding,
+      maxY: (h - transform.y) / s + padding,
+      w,
+      h,
+      scale: s
+    };
+  }
 
   // 空间背景微尘系统
   const cognitiveSpaceDust = [];
@@ -457,21 +478,35 @@ window.QM.topology = (function() {
       else if (focusTarget.type === 'unit' && focusTarget.parentId) activeDomainId = focusTarget.parentId;
     }
 
+    // 检查是否有认知域正在进行扩散动画过渡
+    let hasDomainExpanding = false;
     nodes.forEach(n => {
       if (n.type !== 'domain') return;
-      const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
-      planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
+      const targetExp = (n.id === activeDomainId) ? 1.0 : 0.0;
+      if (Math.abs(targetExp - (n.expansionProgress || 0)) > 0.01) {
+        hasDomainExpanding = true;
+      }
     });
 
-    nodes.forEach(n => {
-      if (n.type !== 'unit') return;
-      const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
-      const parentDomain = nodeMap.get(n.parentId) || core;
-      satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
-    });
+    // 性能保护：在静态节能模式下，若无拖拽且天体扩散已收敛，运镜期间跳过全量天体的多余动力学与开普勒反解
+    const shouldSimulateDynamics = enableEffects || Boolean(draggedNode) || hasDomainExpanding;
+    if (shouldSimulateDynamics) {
+      nodes.forEach(n => {
+        if (n.type !== 'domain') return;
+        const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
+        planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
+      });
+
+      nodes.forEach(n => {
+        if (n.type !== 'unit') return;
+        const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
+        const parentDomain = nodeMap.get(n.parentId) || core;
+        satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
+      });
+    }
 
     if (isAutoCameraActive && container) {
-      const panLerp = 0.08;
+      const panLerp = 0.12; // 优化运镜插值阻尼，过渡更加利落敏捷，缩减总过渡帧数
       if (cameraTargetNode) {
         const drawerEl = document.getElementById('editor-drawer');
         const isDrawerOpen = drawerEl && drawerEl.classList.contains('open');
@@ -536,28 +571,38 @@ window.QM.topology = (function() {
     const h = container.clientHeight;
     ctx.clearRect(0, 0, w, h);
 
+    const bounds = getViewportBounds(80);
+    const isTransitioning = isAutoCameraActive || isWheelInteracting || isDragging || Boolean(draggedNode);
+
+    // 预计算节点置灰映射缓存，彻底消除边关系渲染中成千上万次重复函数评估
+    const nodeDimmedMap = new Map();
+    nodes.forEach(n => {
+      nodeDimmedMap.set(n.id, isNodeDimmed(n));
+    });
+
     ctx.save();
     ctx.translate(transform.x, transform.y);
     ctx.scale(transform.scale, transform.scale);
 
     const core = nodeMap.get("core-root");
-    drawDeepSpaceAndLighting(core);
-    drawOrbits();
-    drawEdges();
-    drawCelestialBodies();
+    drawDeepSpaceAndLighting(core, bounds);
+    drawOrbits(bounds, nodeDimmedMap);
+    drawEdges(bounds, nodeDimmedMap);
+    drawCelestialBodies(bounds, nodeDimmedMap, isTransitioning);
 
     ctx.restore();
 
     drawNodeInfoOverlay();
   }
 
-  function drawDeepSpaceAndLighting(core) {
+  function drawDeepSpaceAndLighting(core, bounds) {
     if (!core) return;
     ctx.save();
 
-    // 1. 合批极速绘制 160 个星尘粒子 (从 160 次 Draw Call 缩减至 1 次)
+    // 1. 合批极速绘制星尘粒子 (视口内裁剪)
     ctx.beginPath();
     cognitiveSpaceDust.forEach(d => {
+      if (bounds && (d.x < bounds.minX || d.x > bounds.maxX || d.y < bounds.minY || d.y > bounds.maxY)) return;
       ctx.moveTo(d.x + d.size, d.y);
       ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
     });
@@ -565,37 +610,47 @@ window.QM.topology = (function() {
     ctx.fillStyle = `rgba(148, 163, 184, ${dustAlpha.toFixed(2)})`;
     ctx.fill();
 
+    // 2. 恒星引力光晕 (若远离视口则跳过大径向渐变计算)
     const haloR = 480;
-    const coreHalo = ctx.createRadialGradient(0, 0, 20, 0, 0, haloR);
-    coreHalo.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
-    coreHalo.addColorStop(0.35, 'rgba(56, 189, 248, 0.05)');
-    coreHalo.addColorStop(1, 'rgba(15, 23, 42, 0)');
-    ctx.beginPath();
-    ctx.arc(0, 0, haloR, 0, Math.PI * 2);
-    ctx.fillStyle = coreHalo;
-    ctx.fill();
+    const isHaloInView = !bounds || (bounds.minX <= haloR && bounds.maxX >= -haloR && bounds.minY <= haloR && bounds.maxY >= -haloR);
+    if (isHaloInView) {
+      const coreHalo = ctx.createRadialGradient(0, 0, 20, 0, 0, haloR);
+      coreHalo.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
+      coreHalo.addColorStop(0.35, 'rgba(56, 189, 248, 0.05)');
+      coreHalo.addColorStop(1, 'rgba(15, 23, 42, 0)');
+      ctx.beginPath();
+      ctx.arc(0, 0, haloR, 0, Math.PI * 2);
+      ctx.fillStyle = coreHalo;
+      ctx.fill();
 
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 115, 115 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.16)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([2, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 115, 115 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.16)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
 
     ctx.restore();
   }
 
-  function drawOrbits() {
+  function drawOrbits(bounds, nodeDimmedMap) {
     nodes.forEach(n => {
-      if (n.type !== 'domain') return;
+      if (n.type !== 'domain' || !n.celestial) return;
+      const c = n.celestial;
+      const r = c.semiMajor;
+      // 快速视口剔除：如果整个椭圆轨道都在视口外，直接跳过
+      if (bounds) {
+        if (bounds.minX > r || bounds.maxX < -r || bounds.minY > r || bounds.maxY < -r) return;
+      }
       const isRelated = focusRelatedIds.has(n.id) || (focusTarget && focusTarget.id === n.id);
-      const isDimmed = isNodeDimmed(n);
+      const isDimmed = nodeDimmedMap ? Boolean(nodeDimmedMap.get(n.id)) : isNodeDimmed(n);
       window.QM.planet?.drawPlanetOrbit(ctx, n, isRelated, SYSTEM_TILT_X, isDimmed);
     });
   }
 
-  function drawEdges() {
+  function drawEdges(bounds, nodeDimmedMap) {
     ctx.save();
     const { activeTag, searchQuery, activeCategory } = window.QM.state.state;
     const isTagFilterActive = Boolean(activeTag);
@@ -612,8 +667,23 @@ window.QM.topology = (function() {
       const toNode = nodeMap.get(e.to);
       if (!fromNode || !toNode) return;
 
-      const fromDimmed = isNodeDimmed(fromNode);
-      const toDimmed = isNodeDimmed(toNode);
+      const fx = fromNode.screenX;
+      const fy = fromNode.screenY;
+      const tx = toNode.screenX;
+      const ty = toNode.screenY;
+
+      // 视口快速 AABB 裁剪：如果连线两端点都在视口同一外侧，整条线必不可见，直接跳过
+      if (bounds) {
+        if ((fx < bounds.minX && tx < bounds.minX) ||
+            (fx > bounds.maxX && tx > bounds.maxX) ||
+            (fy < bounds.minY && ty < bounds.minY) ||
+            (fy > bounds.maxY && ty > bounds.maxY)) {
+          return;
+        }
+      }
+
+      const fromDimmed = nodeDimmedMap ? Boolean(nodeDimmedMap.get(fromNode.id)) : isNodeDimmed(fromNode);
+      const toDimmed = nodeDimmedMap ? Boolean(nodeDimmedMap.get(toNode.id)) : isNodeDimmed(toNode);
 
       if (isTagFilterActive && (fromDimmed || toDimmed)) return;
       if (isSearchFilterActive && (fromDimmed || toDimmed)) return;
@@ -641,16 +711,16 @@ window.QM.topology = (function() {
         chainEdgesList.push({ fromNode, toNode, isFocusLink });
       } else if (e.type === 'shared_keywords') {
         if (isFocusLink) {
-          kwFocusPath.moveTo(fromNode.screenX, fromNode.screenY);
-          kwFocusPath.lineTo(toNode.screenX, toNode.screenY);
+          kwFocusPath.moveTo(fx, fy);
+          kwFocusPath.lineTo(tx, ty);
         }
       } else {
         if (isFocusLink) {
-          focusPath.moveTo(fromNode.screenX, fromNode.screenY);
-          focusPath.lineTo(toNode.screenX, toNode.screenY);
+          focusPath.moveTo(fx, fy);
+          focusPath.lineTo(tx, ty);
         } else {
-          normalPath.moveTo(fromNode.screenX, fromNode.screenY);
-          normalPath.lineTo(toNode.screenX, toNode.screenY);
+          normalPath.moveTo(fx, fy);
+          normalPath.lineTo(tx, ty);
         }
       }
     });
@@ -693,22 +763,37 @@ window.QM.topology = (function() {
     ctx.restore();
   }
 
-  function drawCelestialBodies() {
+  function drawCelestialBodies(bounds, nodeDimmedMap, isTransitioning) {
     const { activeTag, memories } = window.QM.state.state;
-    const sorted = [...nodes].sort((a, b) => (a.z || 0) - (b.z || 0));
+    const currentScale = transform.scale || 1.0;
+
+    // 视口几何裁剪：快速筛选屏幕视野内可见节点，大幅减少全量深度排序与绘图调用
+    const visibleNodes = nodes.filter(n => {
+      if (!bounds) return true;
+      const extraMargin = n.type === 'core' ? 140 : (n.type === 'domain' ? 50 : 25);
+      const r = (n.screenRadius || n.radius || 15) + extraMargin;
+      return (
+        n.screenX + r >= bounds.minX &&
+        n.screenX - r <= bounds.maxX &&
+        n.screenY + r >= bounds.minY &&
+        n.screenY - r <= bounds.maxY
+      );
+    });
+
+    visibleNodes.sort((a, b) => (a.z || 0) - (b.z || 0));
 
     const star = window.QM.star;
     const planet = window.QM.planet;
     const satellite = window.QM.satellite;
 
-    sorted.forEach(n => {
+    visibleNodes.forEach(n => {
       const isCore = n.type === 'core';
       const isDomain = n.type === 'domain';
       const isUnit = n.type === 'unit';
       const isFocus = focusTarget && focusTarget.id === n.id;
       const isHover = hoveredNode && hoveredNode.id === n.id;
       const isRelated = focusRelatedIds.has(n.id);
-      const isDimmed = isNodeDimmed(n);
+      const isDimmed = nodeDimmedMap ? Boolean(nodeDimmedMap.get(n.id)) : isNodeDimmed(n);
 
       let isTagHit = false;
       if (activeTag) {
@@ -728,7 +813,7 @@ window.QM.topology = (function() {
       } else if (isDomain) {
         planet?.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
       } else if (isUnit) {
-        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
+        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed, isTransitioning, currentScale);
       }
 
       ctx.restore();
@@ -1304,6 +1389,15 @@ window.QM.topology = (function() {
       e.preventDefault();
       isAutoCameraActive = false;
       cameraTargetNode = null;
+
+      // 激活高频缩放过渡态 (自动激活极速草稿渲染管线)
+      isWheelInteracting = true;
+      if (wheelDebounceTimer) clearTimeout(wheelDebounceTimer);
+      wheelDebounceTimer = setTimeout(() => {
+        isWheelInteracting = false;
+        requestRender(); // 滚轮停顿后立即对齐完整细腻高清视效
+      }, 140);
+
       const rect = canvas.getBoundingClientRect();
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
