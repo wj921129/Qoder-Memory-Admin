@@ -97,7 +97,7 @@ window.QM.satellite = (function() {
   /**
    * 卫星每帧动力学模拟（受父行星扩散因子动态平滑舒展）
    */
-  function simulateSatellite(node, parentNode, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE) {
+  function simulateSatellite(node, parentNode, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true) {
     if (!node || node.type !== 'unit' || !node.celestial) return;
     if (isBeingDragged) return;
 
@@ -106,7 +106,9 @@ window.QM.satellite = (function() {
     const expansion = parent.expansionProgress || 0;
     const expansionMult = 1.0 + expansion * 0.48;
 
-    c.theta = (c.theta + c.omega) % (Math.PI * 2);
+    if (enableEffects) {
+      c.theta = (c.theta + c.omega) % (Math.PI * 2);
+    }
     const curMajor = c.semiMajor * expansionMult;
     const curMinor = c.semiMinor * expansionMult;
     const mLocalX = curMajor * Math.cos(c.theta);

@@ -39,7 +39,7 @@ window.QM.star = (function() {
   /**
    * 恒星微粒动力学每帧更新
    */
-  function simulateStar(coreNode) {
+  function simulateStar(coreNode, enableEffects = true) {
     if (!coreNode) return;
     coreNode.x = 0;
     coreNode.y = 0;
@@ -48,6 +48,8 @@ window.QM.star = (function() {
     coreNode.screenY = 0;
     coreNode.scale = 1;
     coreNode.screenRadius = coreNode.radius;
+
+    if (!enableEffects) return;
 
     semanticCoreParticles.forEach(p => {
       p.angle = (p.angle + p.speed) % (Math.PI * 2);

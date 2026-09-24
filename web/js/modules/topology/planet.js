@@ -78,7 +78,7 @@ window.QM.planet = (function() {
   /**
    * 行星动力学模拟更新（每帧）
    */
-  function simulatePlanet(node, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE) {
+  function simulatePlanet(node, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true) {
     if (!node || node.type !== 'domain' || !node.celestial) return;
 
     // 动态平滑扩散系数过渡 (未选中 0.0，选中 1.0)
@@ -89,7 +89,9 @@ window.QM.planet = (function() {
     if (isBeingDragged) return;
 
     const c = node.celestial;
-    c.theta = (c.theta + c.omega) % (Math.PI * 2);
+    if (enableEffects) {
+      c.theta = (c.theta + c.omega) % (Math.PI * 2);
+    }
     const localX = c.semiMajor * Math.cos(c.theta);
     const localY = c.semiMinor * Math.sin(c.theta);
     const totalTilt = SYSTEM_TILT_X + (c.inclination || 0);

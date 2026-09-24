@@ -339,6 +339,7 @@ window.QM.topology = (function() {
     });
 
     updateFocusRelatedSet();
+    simulateCelestialSystem();
     requestRender();
   }
 
@@ -438,14 +439,17 @@ window.QM.topology = (function() {
   }
 
   function simulateCelestialSystem() {
-    animationTime += 1;
+    const { enableEffects } = window.QM.state.state;
+    if (enableEffects) {
+      animationTime += 1;
+    }
 
     const star = window.QM.star;
     const planet = window.QM.planet;
     const satellite = window.QM.satellite;
 
     const core = nodeMap.get("core-root");
-    star.simulateStar(core);
+    star?.simulateStar(core, enableEffects);
 
     let activeDomainId = null;
     if (focusTarget) {
@@ -456,14 +460,14 @@ window.QM.topology = (function() {
     nodes.forEach(n => {
       if (n.type !== 'domain') return;
       const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
-      planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE);
+      planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
     });
 
     nodes.forEach(n => {
       if (n.type !== 'unit') return;
       const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
       const parentDomain = nodeMap.get(n.parentId) || core;
-      satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE);
+      satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
     });
 
     if (isAutoCameraActive && container) {
@@ -482,6 +486,15 @@ window.QM.topology = (function() {
 
         transform.x += (desiredTransformX - transform.x) * panLerp;
         transform.y += (desiredTransformY - transform.y) * panLerp;
+
+        if (Math.abs(transform.scale - cameraTargetScale) < 0.003 &&
+            Math.abs(transform.x - desiredTransformX) < 0.8 &&
+            Math.abs(transform.y - desiredTransformY) < 0.8) {
+          transform.scale = cameraTargetScale;
+          transform.x = desiredTransformX;
+          transform.y = desiredTransformY;
+          isAutoCameraActive = false;
+        }
       } else {
         const targetCenterX = container.clientWidth / 2;
         const targetCenterY = container.clientHeight / 2;
@@ -497,6 +510,22 @@ window.QM.topology = (function() {
           transform.y = targetCenterY;
           isAutoCameraActive = false;
         }
+      }
+
+      // 若在静止节能模式下运镜结束，对齐扩散过渡值并完成最终帧对齐
+      if (!enableEffects && !isAutoCameraActive) {
+        nodes.forEach(n => {
+          if (n.type === 'domain') {
+            n.expansionProgress = (n.id === activeDomainId) ? 1.0 : 0.0;
+            planet.simulatePlanet(n, false, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, false);
+          }
+        });
+        nodes.forEach(n => {
+          if (n.type === 'unit') {
+            const parentDomain = nodeMap.get(n.parentId) || core;
+            satellite.simulateSatellite(n, parentDomain, false, SYSTEM_TILT_X, CAMERA_DISTANCE, false);
+          }
+        });
       }
     }
   }
@@ -1274,6 +1303,7 @@ window.QM.topology = (function() {
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
       isAutoCameraActive = false;
+      cameraTargetNode = null;
       const rect = canvas.getBoundingClientRect();
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
