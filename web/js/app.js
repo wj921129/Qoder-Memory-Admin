@@ -16,10 +16,15 @@ window.QM.app = (function() {
       window.QM.state.setEditMode(false);
     }
 
-    // 3. 绑定 UI 事件
+    // 3. 初始化特效模式设置 (从持久化缓存静默生效)
+    if (window.QM.state?.setEffectsMode) {
+      window.QM.state.setEffectsMode(window.QM.state.state.enableEffects, true);
+    }
+
+    // 4. 绑定 UI 事件
     bindUIEvents();
 
-    // 4. 连接 Node 本地服务
+    // 5. 连接 Node 本地服务
     await connectServer();
   }
 
@@ -210,6 +215,23 @@ window.QM.app = (function() {
     }
     if (btnModeCards) {
       btnModeCards.addEventListener('click', () => stateCenter.setViewMode('cards'));
+    }
+
+    // 2.1 动态特效与静止节能切换 (Header 按钮 + 下拉菜单双通道)
+    const btnEffects = document.getElementById('btn-effects-toggle');
+    if (btnEffects) {
+      btnEffects.addEventListener('click', () => {
+        stateCenter.setEffectsMode(!stateCenter.state.enableEffects);
+      });
+    }
+
+    const menuToggleEffects = document.getElementById('menu-toggle-effects');
+    if (menuToggleEffects) {
+      menuToggleEffects.addEventListener('click', () => {
+        const moreMenu = document.getElementById('more-menu');
+        if (moreMenu) moreMenu.classList.remove('show');
+        stateCenter.setEffectsMode(!stateCenter.state.enableEffects);
+      });
     }
 
     // 3. 项目选择器与刷新/定位

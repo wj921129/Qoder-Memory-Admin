@@ -58,10 +58,38 @@ window.QM.topology = (function() {
     ctx = canvas.getContext('2d');
     container = document.getElementById('galaxy-container');
 
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      requestRender();
+    });
     resizeCanvas();
     bindEvents();
-    requestAnimationFrame(galaxyLoop);
+
+    window.QM.state.on('effects-changed', (enabled) => {
+      if (enabled) {
+        startGalaxyLoop();
+      } else {
+        stopGalaxyLoop();
+      }
+    });
+
+    window.QM.state.on('view-changed', (mode) => {
+      if (mode === 'galaxy') {
+        if (window.QM.state.state.enableEffects) {
+          startGalaxyLoop();
+        } else {
+          requestRender();
+        }
+      } else {
+        stopGalaxyLoop();
+      }
+    });
+
+    if (window.QM.state.state.enableEffects) {
+      startGalaxyLoop();
+    } else {
+      requestRender();
+    }
   }
 
   function resizeCanvas() {
@@ -110,6 +138,7 @@ window.QM.topology = (function() {
     initialScale = transform.scale;
     transform.x = w / 2;
     transform.y = h / 2;
+    requestRender();
   }
 
   function buildGalaxyGraph() {
@@ -310,6 +339,7 @@ window.QM.topology = (function() {
     });
 
     updateFocusRelatedSet();
+    requestRender();
   }
 
   function updateFocusRelatedSet() {
@@ -676,12 +706,47 @@ window.QM.topology = (function() {
     });
   }
 
-  function galaxyLoop() {
-    if (window.QM.state.state.viewMode === 'galaxy') {
-      simulateCelestialSystem();
-      drawGalaxy();
+  let animLoopId = null;
+  let isRenderPending = false;
+
+  function requestRender() {
+    if (animLoopId) return; // 若正在跑 60fps 连续动画，无需重复按需排队
+    if (!isRenderPending) {
+      isRenderPending = true;
+      requestAnimationFrame(() => {
+        isRenderPending = false;
+        if (window.QM.state.state.viewMode === 'galaxy') {
+          drawGalaxy();
+        }
+      });
     }
-    requestAnimationFrame(galaxyLoop);
+  }
+
+  function startGalaxyLoop() {
+    if (animLoopId) return;
+    function loop() {
+      const { viewMode, enableEffects } = window.QM.state.state;
+      // 满足特效开启条件，或运镜过渡期间自动维持平滑帧
+      if (viewMode === 'galaxy' && (enableEffects || isAutoCameraActive)) {
+        simulateCelestialSystem();
+        drawGalaxy();
+        animLoopId = requestAnimationFrame(loop);
+      } else {
+        animLoopId = null;
+        if (viewMode === 'galaxy') {
+          drawGalaxy();
+        }
+      }
+    }
+    animLoopId = requestAnimationFrame(loop);
+  }
+
+  function stopGalaxyLoop() {
+    if (animLoopId) {
+      cancelAnimationFrame(animLoopId);
+      animLoopId = null;
+    }
+    requestRender();
   }
 
   function screenToWorld(sx, sy) {
@@ -854,6 +919,7 @@ window.QM.topology = (function() {
     cameraTargetNode = null;
     cameraTargetScale = initialScale || 0.85;
     isAutoCameraActive = true;
+    startGalaxyLoop();
     updateFocusRelatedSet();
 
     window.QM.drawer?.closeDrawer();
@@ -867,6 +933,7 @@ window.QM.topology = (function() {
     if (shouldSyncSidebar) {
       window.QM.sidebar?.highlightCategory('all', true);
     }
+    requestRender();
   }
 
   function focusOnCategory(catKey) {
@@ -887,6 +954,7 @@ window.QM.topology = (function() {
     cameraTargetNode = domainNode;
     cameraTargetScale = getDomainCameraScale(domainNode.cardCount);
     isAutoCameraActive = true;
+    startGalaxyLoop();
 
     showCelestialCard(domainNode);
 
@@ -894,6 +962,7 @@ window.QM.topology = (function() {
     if (drawerEl && drawerEl.classList.contains('open')) {
       window.QM.drawer?.openDomainDrawer(domainNode);
     }
+    requestRender();
   }
 
   function bindEvents() {
@@ -940,8 +1009,11 @@ window.QM.topology = (function() {
 
       if (!draggedNode && !isDragging) {
         const hit = getNodeAtScreen(sx, sy);
-        hoveredNode = hit;
-        canvas.style.cursor = hit ? "pointer" : "grab";
+        if (hit !== hoveredNode) {
+          hoveredNode = hit;
+          canvas.style.cursor = hit ? "pointer" : "grab";
+          requestRender();
+        }
       }
 
       if (draggedNode) {
@@ -1008,10 +1080,12 @@ window.QM.topology = (function() {
             draggedNode.screenRadius = draggedNode.radius * solved.depthScale;
           }
         }
+        requestRender();
       } else if (isDragging) {
         isAutoCameraActive = false;
         transform.x = e.clientX - dragStart.x;
         transform.y = e.clientY - dragStart.y;
+        requestRender();
       }
     });
 
@@ -1048,6 +1122,7 @@ window.QM.topology = (function() {
               cameraTargetNode = clicked;
               cameraTargetScale = getDomainCameraScale(clicked.cardCount);
               isAutoCameraActive = true;
+              startGalaxyLoop();
               if (drawer) drawer.openDomainDrawer(clicked);
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
                 sidebar.highlightCategory(clicked.categoryKey, true);
@@ -1056,6 +1131,7 @@ window.QM.topology = (function() {
               cameraTargetNode = clicked;
               cameraTargetScale = 0.75;
               isAutoCameraActive = true;
+              startGalaxyLoop();
               if (drawer) drawer.openCoreDrawer(clicked);
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
                 sidebar.highlightCategory('all', true);
@@ -1098,6 +1174,7 @@ window.QM.topology = (function() {
         draggedNode = null;
         dragSnapshotMap.clear();
         isDragging = false;
+        requestRender();
       }
     });
 
@@ -1140,6 +1217,7 @@ window.QM.topology = (function() {
           if (currentCardNode.type !== 'unit') {
             cameraTargetNode = currentCardNode;
             isAutoCameraActive = true;
+            startGalaxyLoop();
             if (currentCardNode.type === 'domain') {
               cameraTargetScale = getDomainCameraScale(currentCardNode.cardCount);
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
@@ -1157,6 +1235,7 @@ window.QM.topology = (function() {
               sidebar.highlightCategory(cat, true);
             }
           }
+          requestRender();
         }
       });
     }
@@ -1187,6 +1266,7 @@ window.QM.topology = (function() {
         transform.x = sx - (sx - transform.x) * (newScale / transform.scale);
         transform.y = sy - (sy - transform.y) * (newScale / transform.scale);
         transform.scale = newScale;
+        requestRender();
       }
     }, { passive: false });
   }
@@ -1198,6 +1278,7 @@ window.QM.topology = (function() {
     cameraTargetNode = null;
     isAutoCameraActive = false;
     hideCelestialCard();
+    requestRender();
   }
 
   return {
@@ -1210,7 +1291,10 @@ window.QM.topology = (function() {
     showCelestialCard,
     hideCelestialCard,
     deselectFocus,
-    focusOnCategory
+    focusOnCategory,
+    requestRender,
+    startGalaxyLoop,
+    stopGalaxyLoop
   };
 })();
 

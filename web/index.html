@@ -11,7 +11,9 @@
   <!-- 顶部导航栏 -->
   <header>
     <div class="brand">
-      <h1>⚡ Qoder 工业级记忆拓扑管理台</h1>
+      <h1>
+        ⚡ <span class="brand-title-full">Qoder 工业级记忆拓扑管理台</span><span class="brand-title-short">Qoder Memory</span>
+      </h1>
       <div class="project-selector-wrap">
         <label>记忆目标工程：</label>
         <select id="project-select" class="project-select" title="选择当前要查看或直接维护的 Qoder 记忆文档库">
@@ -38,13 +40,18 @@
       <span>🔒 只读模式</span>
     </button>
 
-    <!-- 视图切换模式：紧凑双分段 -->
-    <div class="view-switcher">
-      <button class="view-switcher-btn active" id="btn-mode-galaxy" title="切换至语义引力拓扑视界">
-        <span>🧠 拓扑</span>
-      </button>
-      <button class="view-switcher-btn" id="btn-mode-cards" title="切换至知识卡片流列表">
-        <span>🗂️ 卡片</span>
+    <!-- 视图切换与渲染特效紧凑控件组 -->
+    <div class="view-control-group">
+      <div class="view-switcher">
+        <button class="view-switcher-btn active" id="btn-mode-galaxy" title="切换至语义引力拓扑视界">
+          <span>🧠 拓扑</span>
+        </button>
+        <button class="view-switcher-btn" id="btn-mode-cards" title="切换至知识卡片流列表">
+          <span>🗂️ 卡片</span>
+        </button>
+      </div>
+      <button class="btn-effects-toggle active" id="btn-effects-toggle" title="动态渲染特效：开启 60fps 轨道物理 / 点击切换至静止节能模式">
+        <span id="effects-icon">✨</span>
       </button>
     </div>
 
@@ -58,6 +65,7 @@
       <div class="dropdown" id="more-dropdown">
         <button class="btn btn-subtle btn-icon" id="more-menu-btn" title="更多辅助工具">⋯</button>
         <div class="dropdown-menu" id="more-menu">
+          <button class="dropdown-item" id="menu-toggle-effects">✨ 动态特效切换 (开/关)</button>
           <button class="dropdown-item" id="view-index-btn">📋 查看 MEMORY.md 索引</button>
         </div>
       </div>

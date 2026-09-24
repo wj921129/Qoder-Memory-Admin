@@ -19,7 +19,8 @@ window.QM.state = (function() {
     activeTag: null,
     searchQuery: '',
     sortBy: 'name',
-    viewMode: 'galaxy'
+    viewMode: 'galaxy',
+    enableEffects: localStorage.getItem('qm_enable_effects') !== 'false'
   };
 
   const listeners = new Map();
@@ -93,6 +94,8 @@ window.QM.state = (function() {
 
   function setViewMode(mode) {
     state.viewMode = mode;
+    document.body.classList.toggle('view-cards', mode === 'cards');
+
     const btnGalaxy = document.getElementById('btn-mode-galaxy');
     const btnCards = document.getElementById('btn-mode-cards');
     const galBox = document.getElementById('galaxy-container');
@@ -104,6 +107,38 @@ window.QM.state = (function() {
     if (cardBox) cardBox.classList.toggle('hidden', mode !== 'cards');
 
     emit('view-changed', mode);
+  }
+
+  function setEffectsMode(toEnable, silent = false) {
+    state.enableEffects = !!toEnable;
+    localStorage.setItem('qm_enable_effects', state.enableEffects ? 'true' : 'false');
+
+    const btnEffects = document.getElementById('btn-effects-toggle');
+    const iconEl = document.getElementById('effects-icon');
+    const menuToggle = document.getElementById('menu-toggle-effects');
+    const toastFn = window.QM?.utils?.showToast;
+
+    if (btnEffects) {
+      btnEffects.classList.toggle('active', state.enableEffects);
+      btnEffects.classList.toggle('eco', !state.enableEffects);
+      btnEffects.title = state.enableEffects 
+        ? "动态渲染特效：开启 60fps 轨道物理 / 点击切换至静止节能模式" 
+        : "静止节能模式：已停止连续渲染 (0% 连续开销) / 点击开启动态特效";
+    }
+    if (iconEl) {
+      iconEl.innerText = state.enableEffects ? "✨" : "🍃";
+    }
+    if (menuToggle) {
+      menuToggle.innerText = state.enableEffects ? "✨ 动态特效：开启" : "🍃 静态节能：开启";
+    }
+
+    if (!silent && toastFn) {
+      toastFn(state.enableEffects 
+        ? "✨ 已开启动态引力星空 (60fps 物理公转)" 
+        : "🍃 已切换至静止节能模式 (0% 连续重绘，按需响应)");
+    }
+
+    emit('effects-changed', state.enableEffects);
   }
 
   function generateMemoryIndex(memories) {
@@ -122,6 +157,7 @@ window.QM.state = (function() {
     setDirty,
     setEditMode,
     setViewMode,
+    setEffectsMode,
     generateMemoryIndex
   };
 })();
