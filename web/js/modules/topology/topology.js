@@ -1,8 +1,10 @@
 /**
- * Qoder Memory Visualizer - 3D 认知引力场与星系拓扑引擎 (Galaxy Engine)
- * 职责：星系总控协调器、透视投影坐标系统、摄像机运镜控制、交互事件总线与子系统调度
+ * Qoder Memory Visualizer - 3D 认知引力场拓扑主引擎 (Topology Engine)
+ * 职责：星系总控协调器、透视投影坐标系统、摄像机运镜控制、交互事件总线与天体子系统调度
  */
-window.QM_GALAXY = (function() {
+window.QM = window.QM || {};
+
+window.QM.topology = (function() {
   const SYSTEM_TILT_X = 0.44;     // 主俯仰倾角 (立体纵深感)
   const CAMERA_DISTANCE = 1100;    // 投影焦距
 
@@ -50,6 +52,16 @@ window.QM_GALAXY = (function() {
     });
   }
 
+  function getStarModule() { return window.QM?.star || window.QM_STAR; }
+  function getPlanetModule() { return window.QM?.planet || window.QM_PLANET; }
+  function getSatelliteModule() { return window.QM?.satellite || window.QM_SATELLITE; }
+  function getDrawerModule() { return window.QM?.drawer || window.QM_DRAWER; }
+  function getSidebarModule() { return window.QM?.sidebar || window.QM_SIDEBAR; }
+  function getCardsModule() { return window.QM?.cards || window.QM_CARDS; }
+  function getState() { return (window.QM?.state?.state) || window.QM_STATE.state; }
+  function getConstants() { return window.QM?.constants || window.QM_CONSTANTS; }
+  function getUtils() { return window.QM?.utils || window.QM_CONSTANTS; }
+
   function init() {
     canvas = document.getElementById('galaxy-canvas');
     if (!canvas) return;
@@ -81,14 +93,12 @@ window.QM_GALAXY = (function() {
     const w = container.clientWidth || 1200;
     const h = container.clientHeight || 800;
 
-    // 分别统计星系在 X 轴与 Y 轴上的有效辐射半径 (计入俯仰角投影压缩)
     let maxDistX = 260;
     let maxDistY = 220;
-    const cosTilt = Math.cos(SYSTEM_TILT_X); // 约 0.905
+    const cosTilt = Math.cos(SYSTEM_TILT_X);
 
     nodes.forEach(n => {
       if (n.type === 'domain' && n.celestial && n.celestial.semiMajor) {
-        // 行星主轨半长轴 + 卫星星团安全可视区
         const satSafeMargin = 95;
         const dX = n.celestial.semiMajor + satSafeMargin;
         const dY = (n.celestial.semiMinor || (n.celestial.semiMajor * 0.98)) * cosTilt + satSafeMargin * cosTilt;
@@ -106,7 +116,6 @@ window.QM_GALAXY = (function() {
     const scaleY = h / fitSpanY;
     const idealScale = Math.min(scaleX, scaleY) * 0.96;
 
-    // 严控初始视野比例：即使星体极多，缩放也不低于 0.50，保证初始画面饱满、星体和文字清晰可读，绝不拉远
     transform.scale = Math.max(0.50, Math.min(1.05, idealScale));
     initialScale = transform.scale;
     transform.x = w / 2;
@@ -118,15 +127,20 @@ window.QM_GALAXY = (function() {
     edges = [];
     nodeMap.clear();
 
-    const { memories, currentDirName } = QM_STATE.state;
-    const { CATEGORY_MAP } = QM_CONSTANTS;
+    const state = getState();
+    const constants = getConstants();
+    const star = getStarModule();
+    const planet = getPlanetModule();
+    const satellite = getSatelliteModule();
+    const { memories, currentDirName } = state;
+    const { CATEGORY_MAP } = constants;
 
-    // 1. 全局意图核心恒星 (委托 QM_STAR 模块构建)
-    const coreNode = QM_STAR.createStarNode(currentDirName);
+    // 1. 全局意图核心恒星
+    const coreNode = star.createStarNode(currentDirName);
     nodes.push(coreNode);
     nodeMap.set(coreNode.id, coreNode);
 
-    // 2. 主题认知域行星统计与构建 (委托 QM_PLANET 模块构建)
+    // 2. 主题认知域行星统计与构建
     const categoriesFound = new Set();
     const catCountMap = new Map();
     memories.forEach(m => {
@@ -142,7 +156,6 @@ window.QM_GALAXY = (function() {
     const numDomains = catList.length;
     const domainNodeMap = new Map();
 
-    // 智能天体多能级容量与紧凑型轨道约束
     const tierCapacities = [6, 12, 18, 24, 30, 36, 42];
     let maxSatTier = 0;
     if (maxCatCards > 0) {
@@ -153,21 +166,14 @@ window.QM_GALAXY = (function() {
         maxSatTier = t + 1;
       }
     }
-    const maxSatRadius = 40 + Math.min(maxSatTier, 5) * 26;
 
-    // 核心内径：既为太阳耀斑保留安全视觉空隙，又具备舒适呼吸空间
     const R_MIN = 240;
-
-    // 轨道能级分布（根据域数量动态分级：1~2个域单环；3~6个域双环；7~11个域3环；12个以上4环）
     const domainTiers = numDomains > 11 ? 4 : (numDomains > 6 ? 3 : (numDomains > 2 ? 2 : 1));
-
-    // 外轨半径平滑对数缓动：保证大项目有充裕的层距空间 (80~100px)，杜绝星体间紧凑拥挤
     const domainSpread = Math.min(180, Math.log2(Math.max(1, numDomains)) * 55);
     const cardSpread = Math.min(140, Math.sqrt(Math.max(0, totalCards)) * 10);
     const R_MAX = Math.min(680, Math.max(R_MIN + 220, R_MIN + domainSpread * 1.3 + cardSpread * 1.1));
     const tierBandWidth = (R_MAX - R_MIN) / Math.max(domainTiers, 1);
 
-    // 核心修复：按能级将各主题域分组，确保同心环上 360 度四向对称均衡展开，杜绝同向聚集
     const tierBuckets = Array.from({ length: domainTiers }, () => []);
     catList.forEach((cat, idx) => {
       const dTier = idx % domainTiers;
@@ -183,11 +189,11 @@ window.QM_GALAXY = (function() {
 
         let pStore = celestialStore.get("domain-" + cat);
         if (!pStore) {
-          pStore = QM_PLANET.initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN);
+          pStore = planet.initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN);
           celestialStore.set("domain-" + cat, pStore);
         }
 
-        const domainNode = QM_PLANET.createPlanetNode(cat, catCfg, cardCount, pStore);
+        const domainNode = planet.createPlanetNode(cat, catCfg, cardCount, pStore);
         nodes.push(domainNode);
         nodeMap.set(domainNode.id, domainNode);
         domainNodeMap.set(cat, domainNode);
@@ -200,7 +206,7 @@ window.QM_GALAXY = (function() {
       });
     });
 
-    // 3. 记忆切片知识卫星构建 (委托 QM_SATELLITE 模块构建)
+    // 3. 记忆切片知识卫星构建
     const domainUnitsMap = new Map();
     memories.forEach(m => {
       const cat = m.category || 'other';
@@ -216,11 +222,11 @@ window.QM_GALAXY = (function() {
       mList.forEach((m, mIdx) => {
         let mStore = celestialStore.get(m.id);
         if (!mStore) {
-          mStore = QM_SATELLITE.initSatelliteCelestial(m, mIdx, unitCount, parentOmega, tierCapacities);
+          mStore = satellite.initSatelliteCelestial(m, mIdx, unitCount, parentOmega, tierCapacities);
           celestialStore.set(m.id, mStore);
         }
 
-        const unitNode = QM_SATELLITE.createSatelliteNode(m, parentDomain, mStore);
+        const unitNode = satellite.createSatelliteNode(m, parentDomain, mStore);
         nodes.push(unitNode);
         nodeMap.set(unitNode.id, unitNode);
 
@@ -329,7 +335,6 @@ window.QM_GALAXY = (function() {
       if (hudText) hudText.innerText = `🎯 聚焦全局意图枢纽 · 激活全域认知引力场`;
     } else if (focusTarget.type === 'domain') {
       focusRelatedIds.add("core-root");
-      // 满足要求 1：行星选中时，下属卫星均为激活成员
       nodes.forEach(n => { if (n.parentId === focusTarget.id) focusRelatedIds.add(n.id); });
       if (hudText) hudText.innerText = `📂 聚焦主题认知域：${focusTarget.name} · 激活星系拓扑`;
     } else {
@@ -343,22 +348,11 @@ window.QM_GALAXY = (function() {
     }
   }
 
-  /**
-   * 统一精准判定星体是否处于“淡化状态”
-   * 严格遵循规则：
-   * 1. 鼠标悬停天体：永远不淡化 (交互即时反馈)
-   * 2. 标签/搜索/分类过滤下：未命中即淡化
-   * 3. 天体选中状态下：
-   *    - ★★★ 核心要求 1：行星选中时，卫星不做淡化处理！★★★
-   *    - ★★★ 核心要求 1：只有卫星选中时，才对无关联卫星做淡化处理！★★★
-   * 4. 全局未选中且无过滤：不淡化
-   */
   function isNodeDimmed(node) {
     if (!node) return false;
-    // 鼠标悬停的天体永远保持高亮激活
     if (hoveredNode && hoveredNode.id === node.id) return false;
 
-    const { activeTag, searchQuery, activeCategory, memories } = QM_STATE.state;
+    const { activeTag, searchQuery, activeCategory, memories } = getState();
 
     // 1. 标签过滤模式
     if (activeTag) {
@@ -383,28 +377,17 @@ window.QM_GALAXY = (function() {
       if (!(matchName || matchBody || matchDesc || matchKw)) return true;
     }
 
-    // 3. 画布天体选中聚焦状态 (焦点驱动：优先级高于分类过滤，确保关联卫星与跨分类链条能正常显色)
+    // 3. 画布天体选中聚焦状态
     if (focusTarget) {
-      // 自身被选中，绝对高亮
       if (node.id === focusTarget.id) return false;
 
-      // ★★★ 核心要求 1：行星选中时，下属卫星均不做淡化处理！★★★
       if (focusTarget.type === 'domain') {
-        // 同星系下属的所有卫星，不做淡化处理！
-        if (node.type === 'unit' && node.parentId === focusTarget.id) {
-          return false;
-        }
-        // 核心恒星作为全局母星保持显示
+        if (node.type === 'unit' && node.parentId === focusTarget.id) return false;
         if (node.id === 'core-root') return false;
-        // 其他外星系淡化
         return true;
       } else if (focusTarget.type === 'unit') {
-        // ★★★ 核心要求 1：只有卫星选中时，才对无关联卫星做淡化处理！★★★
-        // 所属母行星保持可见基准
         if (node.id === focusTarget.parentId) return false;
-        // 显式链式关系的关联切片保持高亮 (含跨分类关联)
         if (focusRelatedIds.has(node.id)) return false;
-        // 同星系中无关联的卫星、以及外星系天体：淡化！
         return true;
       } else if (focusTarget.type === 'core') {
         if (node.type === 'domain') return false;
@@ -412,14 +395,13 @@ window.QM_GALAXY = (function() {
       }
     }
 
-    // 4. 分类过滤模式（未聚焦特定天体时的分类筛选）
+    // 4. 分类过滤模式
     if (activeCategory && activeCategory !== 'all') {
-      if (node.type === 'core') return false; // 恒星核心作为坐标原点常驻显示
+      if (node.type === 'core') return false;
       if (node.type === 'domain' && node.categoryKey !== activeCategory) return true;
       if (node.type === 'unit' && node.rawItem && node.rawItem.category !== activeCategory) return true;
     }
 
-    // 全局漫游模式：默认不淡化
     return false;
   }
 
@@ -428,33 +410,32 @@ window.QM_GALAXY = (function() {
     const targetProgress = focusTarget ? 1 : 0;
     focusProgress += (targetProgress - focusProgress) * 0.12;
 
-    // 1. 恒星动力学更新 (委托 QM_STAR 模块)
-    const core = nodeMap.get("core-root");
-    QM_STAR.simulateStar(core);
+    const star = getStarModule();
+    const planet = getPlanetModule();
+    const satellite = getSatelliteModule();
 
-    // 2. 识别当前聚焦的行星认知域，驱动卫星平滑舒展扩散
+    const core = nodeMap.get("core-root");
+    star.simulateStar(core);
+
     let activeDomainId = null;
     if (focusTarget) {
       if (focusTarget.type === 'domain') activeDomainId = focusTarget.id;
       else if (focusTarget.type === 'unit' && focusTarget.parentId) activeDomainId = focusTarget.parentId;
     }
 
-    // 3. 行星动力学模拟更新 (委托 QM_PLANET 模块)
     nodes.forEach(n => {
       if (n.type !== 'domain') return;
       const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
-      QM_PLANET.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE);
+      planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE);
     });
 
-    // 4. 卫星动力学模拟更新 (委托 QM_SATELLITE 模块)
     nodes.forEach(n => {
       if (n.type !== 'unit') return;
       const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
       const parentDomain = nodeMap.get(n.parentId) || core;
-      QM_SATELLITE.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE);
+      satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE);
     });
 
-    // 5. 阻尼涟漪
     for (let i = rippleDampingList.length - 1; i >= 0; i--) {
       const item = rippleDampingList[i];
       item.offsetX *= 0.85;
@@ -464,7 +445,6 @@ window.QM_GALAXY = (function() {
       if (Math.hypot(item.offsetX, item.offsetY) < 0.2) rippleDampingList.splice(i, 1);
     }
 
-    // 6. 摄像机平滑运镜中枢 (仅恒星、行星可触发自动聚焦运镜；取消选中时平滑复位)
     if (isAutoCameraActive && container) {
       const panLerp = 0.08;
       if (cameraTargetNode) {
@@ -542,7 +522,6 @@ window.QM_GALAXY = (function() {
     ctx.fillStyle = coreHalo;
     ctx.fill();
 
-    // 太阳内圈引力边界光环 (Inner Gravitational Horizon)
     ctx.beginPath();
     ctx.ellipse(0, 0, 115, 115 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(245, 158, 11, 0.16)';
@@ -555,24 +534,19 @@ window.QM_GALAXY = (function() {
   }
 
   function drawOrbits() {
+    const planet = getPlanetModule();
     nodes.forEach(n => {
       if (n.type !== 'domain') return;
       const isRelated = focusRelatedIds.has(n.id) || (focusTarget && focusTarget.id === n.id);
       const isDimmed = isNodeDimmed(n);
-      QM_PLANET.drawPlanetOrbit(ctx, n, isRelated, SYSTEM_TILT_X, isDimmed);
+      planet.drawPlanetOrbit(ctx, n, isRelated, SYSTEM_TILT_X, isDimmed);
     });
   }
 
-  /**
-   * 绘制连接纽带
-   * 严格实现：
-   * 1. 选中左侧标签后：颜色淡化的星体对应的连接关系一律不显示！
-   * 2. 卫星被选中时：无关联卫星对应的连接关系一律不显示！
-   * 3. 行星被选中时：该行星与其全体卫星的连接纽带完整呈现！
-   */
   function drawEdges() {
     ctx.save();
-    const { activeTag, searchQuery, activeCategory } = QM_STATE.state;
+    const state = getState();
+    const { activeTag, searchQuery, activeCategory } = state;
     const isTagFilterActive = Boolean(activeTag);
     const isSearchFilterActive = Boolean(searchQuery) || activeCategory !== 'all';
     const isFocusActive = Boolean(focusTarget);
@@ -585,44 +559,22 @@ window.QM_GALAXY = (function() {
       const fromDimmed = isNodeDimmed(fromNode);
       const toDimmed = isNodeDimmed(toNode);
 
-      // ★★★ 核心要求：选中左侧标签后，颜色淡化的星体对应的连接关系不显示 ★★★
-      if (isTagFilterActive) {
-        if (fromDimmed || toDimmed) {
-          return; // 只要有任一端是淡化星体，该连接关系绝对不显示！
-        }
-      }
+      if (isTagFilterActive && (fromDimmed || toDimmed)) return;
+      if (isSearchFilterActive && (fromDimmed || toDimmed)) return;
 
-      // 搜索与分类过滤下：只要任一端是淡化星体，连接关系不显示
-      if (isSearchFilterActive) {
-        if (fromDimmed || toDimmed) {
-          return;
-        }
-      }
-
-      // ★★★ 核心要求：天体选中聚焦状态下连线过滤 ★★★
       if (isFocusActive) {
         const isFromActive = !fromDimmed || (hoveredNode && hoveredNode.id === fromNode.id);
         const isToActive = !toDimmed || (hoveredNode && hoveredNode.id === toNode.id);
+        if (!isFromActive || !isToActive) return;
 
-        if (!isFromActive || !isToActive) {
-          // 任一端连接的是非选中的淡化星体，连接关系绝不显示！
-          return;
-        }
-
-        // 行星选中时：属于该行星星系的连接线全部显示！
         if (focusTarget.type === 'domain') {
           const isBelongsToCurrentDomain = (e.from === focusTarget.id || e.to === focusTarget.id);
           const connectsToHover = hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id);
-          if (!isBelongsToCurrentDomain && !connectsToHover) {
-            return;
-          }
+          if (!isBelongsToCurrentDomain && !connectsToHover) return;
         } else if (focusTarget.type === 'unit') {
-          // 卫星选中时：仅显示与该选中切片直接相连的母星纽带或链式脉冲线！
           const connectsToFocus = (e.from === focusTarget.id || e.to === focusTarget.id);
           const connectsToHover = hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id);
-          if (!connectsToFocus && !connectsToHover) {
-            return;
-          }
+          if (!connectsToFocus && !connectsToHover) return;
         }
       }
 
@@ -664,8 +616,13 @@ window.QM_GALAXY = (function() {
   }
 
   function drawCelestialBodies() {
-    const { activeTag } = QM_STATE.state;
+    const state = getState();
+    const { activeTag } = state;
     const sorted = [...nodes].sort((a, b) => (a.z || 0) - (b.z || 0));
+
+    const star = getStarModule();
+    const planet = getPlanetModule();
+    const satellite = getSatelliteModule();
 
     sorted.forEach(n => {
       const isCore = n.type === 'core';
@@ -679,11 +636,10 @@ window.QM_GALAXY = (function() {
       let isTagHit = false;
       if (activeTag) {
         if (isUnit) isTagHit = n.rawItem ? (n.rawItem.keywords || []).includes(activeTag) : false;
-        else if (isDomain) isTagHit = QM_STATE.state.memories.some(m => m.category === n.categoryKey && (m.keywords || []).includes(activeTag));
+        else if (isDomain) isTagHit = state.memories.some(m => m.category === n.categoryKey && (m.keywords || []).includes(activeTag));
         else if (isCore) isTagHit = true;
       }
 
-      // ★★★ 核心要求 2：调低透明度，不要过于透明，不透明度设为 0.55，清晰饱满且主次分明 ★★★
       let nodeAlpha = isDimmed ? 0.55 : 1.0;
 
       ctx.save();
@@ -691,11 +647,11 @@ window.QM_GALAXY = (function() {
       ctx.globalAlpha = nodeAlpha;
 
       if (isCore) {
-        QM_STAR.drawStar(ctx, n, animationTime, isDimmed);
+        star.drawStar(ctx, n, animationTime, isDimmed);
       } else if (isDomain) {
-        QM_PLANET.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
+        planet.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
       } else if (isUnit) {
-        QM_SATELLITE.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
+        satellite.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
       }
 
       ctx.restore();
@@ -703,7 +659,8 @@ window.QM_GALAXY = (function() {
   }
 
   function galaxyLoop() {
-    if (QM_STATE.state.viewMode === 'galaxy') {
+    const state = getState();
+    if (state.viewMode === 'galaxy') {
       simulateCelestialSystem();
       drawGalaxy();
     }
@@ -729,7 +686,6 @@ window.QM_GALAXY = (function() {
     let bestNode = null;
     let minScore = Infinity;
 
-    // 1. 物理屏幕圆形热区判定
     for (const n of nodes) {
       const sp = getNodeScreenPos(n);
       const dist = Math.hypot(sx - sp.x, sy - sp.y);
@@ -745,7 +701,6 @@ window.QM_GALAXY = (function() {
     }
     if (bestNode) return bestNode;
 
-    // 2. 文字标签屏幕矩形热区判定
     for (const n of nodes) {
       const sp = getNodeScreenPos(n);
       const dx = sx - sp.x;
@@ -779,6 +734,11 @@ window.QM_GALAXY = (function() {
 
     if (!cardEl) return;
 
+    const state = getState();
+    const constants = getConstants();
+    const utils = getUtils();
+    const { escapeHtml } = utils;
+
     if (node.type === 'core') {
       if (typeEl) typeEl.innerText = "全局意图枢纽";
       if (badgeDot) {
@@ -789,9 +749,8 @@ window.QM_GALAXY = (function() {
       if (subEl) subEl.innerText = "MEMORY.md · 核心认知引力源";
       if (descEl) descEl.innerText = "承载项目核心意图架构与全域认知引力中心，全域规约与知识切片均受其牵引。";
       if (tagsEl) {
-        const { memories } = QM_STATE.state;
-        const allKeywords = Array.from(new Set(memories.flatMap(m => m.keywords || []))).slice(0, 8);
-        tagsEl.innerHTML = allKeywords.map(k => `<span class="c-card-tag">${QM_CONSTANTS.escapeHtml(k)}</span>`).join('');
+        const allKeywords = Array.from(new Set(state.memories.flatMap(m => m.keywords || []))).slice(0, 8);
+        tagsEl.innerHTML = allKeywords.map(k => `<span class="c-card-tag">${escapeHtml(k)}</span>`).join('');
       }
       if (openBtn) openBtn.innerText = "📋 查看索引";
     } else if (node.type === 'domain') {
@@ -803,12 +762,11 @@ window.QM_GALAXY = (function() {
       }
       if (titleEl) titleEl.innerText = `📂 ${node.name}`;
       if (subEl) subEl.innerText = `${node.categoryKey} · ${node.cardCount || 0} 篇切片`;
-      const { memories } = QM_STATE.state;
-      const catMemories = memories.filter(m => m.category === node.categoryKey);
+      const catMemories = state.memories.filter(m => m.category === node.categoryKey);
       const catKeywords = Array.from(new Set(catMemories.flatMap(m => m.keywords || []))).slice(0, 8);
       if (descEl) descEl.innerText = `该主题汇聚 ${catMemories.length} 篇知识切片。点击「详细规约」可在侧边抽屉查阅包含的切片清单与场景。`;
       if (tagsEl) {
-        tagsEl.innerHTML = catKeywords.map(k => `<span class="c-card-tag">${QM_CONSTANTS.escapeHtml(k)}</span>`).join('');
+        tagsEl.innerHTML = catKeywords.map(k => `<span class="c-card-tag">${escapeHtml(k)}</span>`).join('');
       }
       if (openBtn) openBtn.innerText = "📂 认知域详情";
     } else if (node.rawItem) {
@@ -820,15 +778,15 @@ window.QM_GALAXY = (function() {
         badgeDot.style.boxShadow = `0 0 8px ${color}`;
       }
       if (titleEl) titleEl.innerText = `💡 ${item.name}`;
-      const catCfg = QM_CONSTANTS.CATEGORY_MAP[item.category];
+      const catCfg = constants.CATEGORY_MAP[item.category];
       const catName = catCfg ? catCfg.name : (item.category || '知识切片');
       if (subEl) subEl.innerText = `${catName} · ${item.filename}`;
       if (descEl) descEl.innerText = item.description || "暂无特定触发场景描述，点击「查阅规约」查看 Markdown 详细内容。";
       if (tagsEl) {
         const kws = (item.keywords || []).slice(0, 8);
-        tagsEl.innerHTML = kws.map(k => `<span class="c-card-tag">${QM_CONSTANTS.escapeHtml(k)}</span>`).join('');
+        tagsEl.innerHTML = kws.map(k => `<span class="c-card-tag">${escapeHtml(k)}</span>`).join('');
       }
-      if (openBtn) openBtn.innerText = QM_STATE.state.isEditMode ? "✏️ 编辑切片" : "📖 查阅规约";
+      if (openBtn) openBtn.innerText = state.isEditMode ? "✏️ 编辑切片" : "📖 查阅规约";
     }
 
     cardEl.style.display = 'flex';
@@ -882,21 +840,25 @@ window.QM_GALAXY = (function() {
     isAutoCameraActive = true;
     updateFocusRelatedSet();
 
-    QM_DRAWER.closeDrawer();
+    const drawer = getDrawerModule();
+    if (drawer && typeof drawer.closeDrawer === 'function') {
+      drawer.closeDrawer();
+    }
     hideCelestialCard();
+
     const moreMenu = document.getElementById('more-menu');
     if (moreMenu) moreMenu.classList.remove('show');
     const indexModal = document.getElementById('index-modal');
     if (indexModal) indexModal.classList.add('hidden');
 
-    if (shouldSyncSidebar && window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
-      window.QM_CARDS.highlightCategory('all', true);
+    if (shouldSyncSidebar) {
+      const sidebar = getSidebarModule();
+      if (sidebar && typeof sidebar.highlightCategory === 'function') {
+        sidebar.highlightCategory('all', true);
+      }
     }
   }
 
-  /**
-   * 从外部（如左侧认知分类体系列表）触发天体选中聚焦与联动
-   */
   function focusOnCategory(catKey) {
     if (!catKey || catKey === 'all') {
       deselectFocus(false);
@@ -922,7 +884,10 @@ window.QM_GALAXY = (function() {
     const drawerEl = document.getElementById('editor-drawer');
     const isDrawerOpen = drawerEl && drawerEl.classList.contains('open');
     if (isDrawerOpen) {
-      QM_DRAWER.openDomainDrawer(domainNode);
+      const drawer = getDrawerModule();
+      if (drawer && typeof drawer.openDomainDrawer === 'function') {
+        drawer.openDomainDrawer(domainNode);
+      }
     }
   }
 
@@ -985,9 +950,12 @@ window.QM_GALAXY = (function() {
         const targetScreenX = worldPos.x - grabOffsetX;
         const targetScreenY = worldPos.y - grabOffsetY;
 
+        const planet = getPlanetModule();
+        const satellite = getSatelliteModule();
+
         if (draggedNode.id !== "core-root") {
           if (draggedNode.type === 'domain') {
-            const solved = QM_PLANET.solvePlanetCoordsFromScreen(
+            const solved = planet.solvePlanetCoordsFromScreen(
               targetScreenX, targetScreenY,
               draggedNode.celestial ? draggedNode.celestial.inclination : 0,
               SYSTEM_TILT_X, CAMERA_DISTANCE
@@ -1020,7 +988,7 @@ window.QM_GALAXY = (function() {
             const parent = draggedNode.parentId ? (nodeMap.get(draggedNode.parentId) || core) : core;
             const deltaWx = targetScreenX - parent.screenX;
             const deltaWy = targetScreenY - parent.screenY;
-            const solved = QM_SATELLITE.solveSatelliteCoordsFromScreen(
+            const solved = satellite.solveSatelliteCoordsFromScreen(
               deltaWx, deltaWy,
               draggedNode.celestial ? draggedNode.celestial.inclination : 0,
               parent.z, SYSTEM_TILT_X, CAMERA_DISTANCE
@@ -1049,39 +1017,43 @@ window.QM_GALAXY = (function() {
       const worldPos = screenToWorld(sx, sy);
       const screenMoved = Math.hypot(e.clientX - clickOrigin.x, e.clientY - clickOrigin.y);
 
+      const drawer = getDrawerModule();
+      const sidebar = getSidebarModule();
+      const planet = getPlanetModule();
+      const satellite = getSatelliteModule();
+
       if (draggedNode) {
         if (screenMoved < 6) {
           const clicked = draggedNode;
           focusTarget = clicked;
           updateFocusRelatedSet();
 
-          // 核心要求：镜头拉近效果只让恒星、行星触发，卫星不触发！
           if (clicked.type === 'unit') {
             isAutoCameraActive = false;
             cameraTargetNode = null;
-            if (clicked.rawItem) {
-              QM_DRAWER.openDrawer(clicked.rawItem.id);
+            if (clicked.rawItem && drawer) {
+              drawer.openDrawer(clicked.rawItem.id);
             }
-            if (window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
+            if (sidebar && typeof sidebar.highlightCategory === 'function') {
               const cat = (clicked.rawItem && clicked.rawItem.category) || 'all';
-              window.QM_CARDS.highlightCategory(cat, true);
+              sidebar.highlightCategory(cat, true);
             }
           } else if (clicked.type === 'domain') {
             cameraTargetNode = clicked;
             const unitCount = clicked.cardCount || 10;
             cameraTargetScale = unitCount > 25 ? 0.95 : (unitCount > 12 ? 1.05 : 1.15);
             isAutoCameraActive = true;
-            QM_DRAWER.openDomainDrawer(clicked);
-            if (window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
-              window.QM_CARDS.highlightCategory(clicked.categoryKey, true);
+            if (drawer) drawer.openDomainDrawer(clicked);
+            if (sidebar && typeof sidebar.highlightCategory === 'function') {
+              sidebar.highlightCategory(clicked.categoryKey, true);
             }
           } else if (clicked.type === 'core') {
             cameraTargetNode = clicked;
             cameraTargetScale = 0.75;
             isAutoCameraActive = true;
-            QM_DRAWER.openCoreDrawer(clicked);
-            if (window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
-              window.QM_CARDS.highlightCategory('all', true);
+            if (drawer) drawer.openCoreDrawer(clicked);
+            if (sidebar && typeof sidebar.highlightCategory === 'function') {
+              sidebar.highlightCategory('all', true);
             }
           }
 
@@ -1095,14 +1067,14 @@ window.QM_GALAXY = (function() {
             if (draggedNode.type === 'domain') {
               const childSats = nodes.filter(n => n.type === 'unit' && n.parentId === draggedNode.id);
               const core = nodeMap.get("core-root");
-              QM_PLANET.recalculatePlanetOrbit(
+              planet.recalculatePlanetOrbit(
                 draggedNode, finalDropPos.x, finalDropPos.y,
                 core ? core.radius : 34, SYSTEM_TILT_X, CAMERA_DISTANCE, childSats
               );
             } else if (draggedNode.type === 'unit') {
               const core = nodeMap.get("core-root");
               const parent = draggedNode.parentId ? (nodeMap.get(draggedNode.parentId) || core) : core;
-              QM_SATELLITE.recalculateSatelliteOrbit(
+              satellite.recalculateSatelliteOrbit(
                 draggedNode, parent, finalDropPos.x, finalDropPos.y,
                 SYSTEM_TILT_X, CAMERA_DISTANCE
               );
@@ -1138,10 +1110,11 @@ window.QM_GALAXY = (function() {
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       const hit = getNodeAtScreen(sx, sy);
-      if (hit) {
-        if (hit.type === 'core') QM_DRAWER.openCoreDrawer(hit);
-        else if (hit.type === 'domain') QM_DRAWER.openDomainDrawer(hit);
-        else if (hit.rawItem) QM_DRAWER.openDrawer(hit.rawItem.id);
+      const drawer = getDrawerModule();
+      if (hit && drawer) {
+        if (hit.type === 'core') drawer.openCoreDrawer(hit);
+        else if (hit.type === 'domain') drawer.openDomainDrawer(hit);
+        else if (hit.rawItem) drawer.openDrawer(hit.rawItem.id);
       }
     });
 
@@ -1154,25 +1127,26 @@ window.QM_GALAXY = (function() {
         if (currentCardNode) {
           focusTarget = currentCardNode;
           updateFocusRelatedSet();
+          const sidebar = getSidebarModule();
           if (currentCardNode.type !== 'unit') {
             cameraTargetNode = currentCardNode;
             isAutoCameraActive = true;
             if (currentCardNode.type === 'domain') {
               const unitCount = currentCardNode.cardCount || 10;
               cameraTargetScale = unitCount > 25 ? 0.95 : (unitCount > 12 ? 1.05 : 1.15);
-              if (window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
-                window.QM_CARDS.highlightCategory(currentCardNode.categoryKey, true);
+              if (sidebar && typeof sidebar.highlightCategory === 'function') {
+                sidebar.highlightCategory(currentCardNode.categoryKey, true);
               }
             } else if (currentCardNode.type === 'core') {
               cameraTargetScale = 0.75;
-              if (window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
-                window.QM_CARDS.highlightCategory('all', true);
+              if (sidebar && typeof sidebar.highlightCategory === 'function') {
+                sidebar.highlightCategory('all', true);
               }
             }
           } else {
-            if (window.QM_CARDS && typeof window.QM_CARDS.highlightCategory === 'function') {
+            if (sidebar && typeof sidebar.highlightCategory === 'function') {
               const cat = (currentCardNode.rawItem && currentCardNode.rawItem.category) || 'all';
-              window.QM_CARDS.highlightCategory(cat, true);
+              sidebar.highlightCategory(cat, true);
             }
           }
         }
@@ -1183,14 +1157,16 @@ window.QM_GALAXY = (function() {
     if (cardOpenBtn) {
       cardOpenBtn.addEventListener('click', () => {
         if (currentCardNode) {
-          if (currentCardNode.type === 'core') QM_DRAWER.openCoreDrawer(currentCardNode);
-          else if (currentCardNode.type === 'domain') QM_DRAWER.openDomainDrawer(currentCardNode);
-          else if (currentCardNode.rawItem) QM_DRAWER.openDrawer(currentCardNode.rawItem.id);
+          const drawer = getDrawerModule();
+          if (drawer) {
+            if (currentCardNode.type === 'core') drawer.openCoreDrawer(currentCardNode);
+            else if (currentCardNode.type === 'domain') drawer.openDomainDrawer(currentCardNode);
+            else if (currentCardNode.rawItem) drawer.openDrawer(currentCardNode.rawItem.id);
+          }
         }
       });
     }
 
-    // 滚轮缩放：以鼠标所在点为中心
     canvas.addEventListener('wheel', e => {
       e.preventDefault();
       isAutoCameraActive = false;
@@ -1230,3 +1206,6 @@ window.QM_GALAXY = (function() {
     focusOnCategory
   };
 })();
+
+// 向下兼容旧调用
+window.QM_GALAXY = window.QM.topology;

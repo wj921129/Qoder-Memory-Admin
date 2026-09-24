@@ -1,0 +1,138 @@
+/* ========================================================
+   Qoder Memory Visualizer - 天体基本信息常驻介绍卡片 (Celestial Info Card)
+   ======================================================== */
+
+.celestial-card {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  width: 320px;
+  background: rgba(10, 16, 30, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.15);
+  padding: 14px 16px;
+  color: #e2e8f0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: celestialCardFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: text;
+  pointer-events: auto;
+}
+
+@keyframes celestialCardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.celestial-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.celestial-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.c-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.c-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s ease;
+}
+.c-close-btn:hover {
+  color: #f8fafc;
+}
+
+.celestial-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #f8fafc;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.c-card-sub {
+  font-size: 11px;
+  color: #38bdf8;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.c-card-desc {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+  background: rgba(15, 23, 42, 0.6);
+  border-left: 2px solid #38bdf8;
+  padding: 6px 9px;
+  border-radius: 0 4px 4px 0;
+  max-height: 110px;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+.c-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.c-card-tag {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 4px;
+  color: #cbd5e1;
+}
+
+.celestial-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}

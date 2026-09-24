@@ -2,30 +2,28 @@
  * Qoder Memory Visualizer - 行星模块 (Domain Planet System)
  * 职责：业务主题认知域天体的开普勒椭圆轨道动力学、大气层光晕、3D球体渲染、标签及拖拽重算
  */
-window.QM_PLANET = (function() {
+window.QM = window.QM || {};
+
+window.QM.planet = (function() {
 
   /**
    * 初始化或生成主题认知域行星的开普勒轨道初始参数
    */
   function initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN) {
-    // 基础轨道半径：严格锁定在当前所属能级环，保留错落有机微调，绝不跨层溢出
     const tierBaseR = R_MIN + dTier * tierBandWidth;
     let semiMajor;
     if (isStrongAffinity && dTier === 0) {
       semiMajor = tierBaseR + (Math.random() * 0.2) * tierBandWidth;
     } else {
-      // 组内轻微交替微错层，避免同一能级的星体完全重叠
       const intraTierOffset = (idxInTier % 2 === 0 ? 1 : -1) * (tierBandWidth * 0.12);
       semiMajor = tierBaseR + tierBandWidth * 0.40 + intraTierOffset + (Math.random() * 4 - 2);
     }
 
     const eccentricity = 0.015 + Math.random() * 0.015;
     const semiMinor = semiMajor * Math.sqrt(1 - eccentricity * eccentricity);
-    // 开普勒角速度：平滑优雅，内圈稍快外圈稍慢
     const baseOmega = (2.0 / Math.sqrt(Math.pow(semiMajor, 3))) * (0.95 + Math.random() * 0.1);
     const inclination = (Math.random() - 0.5) * 0.08;
 
-    // 核心修复：全圆 360 度完全均分分配角度，各层级间通过黄金比例错角，杜绝单一朝向聚集！
     const tierPhaseOffset = dTier * (Math.PI * 0.61803398875);
     const initialTheta = ((idxInTier / Math.max(tierCount, 1)) * Math.PI * 2) + tierPhaseOffset;
 
@@ -120,7 +118,6 @@ window.QM_PLANET = (function() {
     ctx.ellipse(0, 0, c.semiMajor, c.semiMinor, 0, 0, Math.PI * 2);
 
     if (isRelated) {
-      // 关联高亮轨道：外层柔光扩散 + 内层青蓝脉冲虚线
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
       ctx.lineWidth = 3.6;
       ctx.stroke();
@@ -132,12 +129,10 @@ window.QM_PLANET = (function() {
       ctx.setLineDash([5, 4]);
       ctx.stroke();
     } else if (isDimmed) {
-      // 淡化非激活轨道
       ctx.strokeStyle = 'rgba(51, 65, 85, 0.12)';
       ctx.lineWidth = 0.6;
       ctx.stroke();
     } else {
-      // 常态轨道：高科技微光细刻度虚线轨，融合行星专属主题色，轻盈通透
       const planetColor = node.color || '#38bdf8';
       ctx.strokeStyle = planetColor + '22';
       ctx.lineWidth = 1.0;
@@ -149,7 +144,7 @@ window.QM_PLANET = (function() {
   }
 
   /**
-   * 绘制行星天体本体、大气散射层与文字信息 (保留原汁原味真实主题色)
+   * 绘制行星天体本体、大气散射层与文字信息 (保留真实主题色)
    */
   function drawPlanet(ctx, node, isFocus, isHover, isRelated, isDimmed = false) {
     const r = node.screenRadius;
@@ -198,7 +193,7 @@ window.QM_PLANET = (function() {
     ctx.lineWidth = isFocus ? 2 : 1;
     ctx.stroke();
 
-    // 行星名称与包含切片计数文字 (带文字阴影增强可读性)
+    // 行星名称与包含切片计数文字
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
     ctx.shadowBlur = 4;
@@ -276,3 +271,6 @@ window.QM_PLANET = (function() {
     recalculatePlanetOrbit
   };
 })();
+
+// 向下兼容旧调用
+window.QM_PLANET = window.QM.planet;

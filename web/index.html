@@ -4,11 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Qoder Memory 工业级记忆拓扑管理台 - 认知引力场</title>
-  <!-- 模块化样式表 -->
-  <link rel="stylesheet" href="./css/variables.css">
-  <link rel="stylesheet" href="./css/layout.css">
-  <link rel="stylesheet" href="./css/cards.css">
-  <link rel="stylesheet" href="./css/galaxy.css">
+  <!-- 结构化样式总入口 (分层汇聚公共变量/组件、布局骨架与各业务模块) -->
+  <link rel="stylesheet" href="./css/index.css">
 </head>
 <body>
   <!-- 顶部导航栏 -->
@@ -256,7 +253,7 @@
       <p style="font-size:12px; color:#94a3b8;">该文件为 Qoder 记忆根索引，保存时会自动根据当前全部记忆条目与链式关系同步更新。</p>
       <textarea id="index-content-preview" class="form-control" rows="14" style="font-family:monospace; font-size:12px;" readonly></textarea>
       <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn btn-subtle" onclick="navigator.clipboard.writeText(document.getElementById('index-content-preview').value); QM_CONSTANTS.showToast('已复制 MEMORY.md 内容');">复制到剪贴板</button>
+        <button class="btn btn-subtle" onclick="navigator.clipboard.writeText(document.getElementById('index-content-preview').value); (window.QM?.utils?.showToast || QM_CONSTANTS.showToast)('已复制 MEMORY.md 内容');">复制到剪贴板</button>
         <button class="btn" onclick="document.getElementById('index-modal').classList.add('hidden')">关闭</button>
       </div>
     </div>
@@ -264,16 +261,22 @@
 
   <div id="toast"></div>
 
-  <!-- 工业化模块化 JavaScript 驱动 -->
-  <script src="./js/constants.js"></script>
-  <script src="./js/api.js"></script>
-  <script src="./js/state.js"></script>
-  <script src="./js/cards.js"></script>
-  <script src="./js/celestial-star.js"></script>
-  <script src="./js/celestial-planet.js"></script>
-  <script src="./js/celestial-satellite.js"></script>
-  <script src="./js/galaxy.js"></script>
-  <script src="./js/drawer.js"></script>
+  <!-- 1. 公共基础设施层 (Common Infrastructure) -->
+  <script src="./js/common/constants.js"></script>
+  <script src="./js/common/utils.js"></script>
+  <script src="./js/common/api.js"></script>
+  <script src="./js/common/state.js"></script>
+
+  <!-- 2. 独立业务模块层 (Feature Modules) -->
+  <script src="./js/modules/sidebar/sidebar.js"></script>
+  <script src="./js/modules/cards/cards.js"></script>
+  <script src="./js/modules/topology/star.js"></script>
+  <script src="./js/modules/topology/planet.js"></script>
+  <script src="./js/modules/topology/satellite.js"></script>
+  <script src="./js/modules/topology/topology.js"></script>
+  <script src="./js/modules/drawer/drawer.js"></script>
+
+  <!-- 3. 应用主入口与事件中枢 (Application Bootstrap) -->
   <script src="./js/app.js"></script>
 </body>
 </html>

@@ -1,7 +1,9 @@
 /**
  * Qoder Memory Visualizer - 全局状态管理中心 (SSOT Store)
  */
-window.QM_STATE = (function() {
+window.QM = window.QM || {};
+
+window.QM.state = (function() {
   const state = {
     currentProject: 'fmmpay-busi',
     currentProjectScope: 'project',
@@ -31,7 +33,11 @@ window.QM_STATE = (function() {
   function emit(event, payload) {
     if (listeners.has(event)) {
       listeners.get(event).forEach(cb => {
-        try { cb(payload, state); } catch(e) { console.error(`[State Listener Error: ${event}]`, e); }
+        try {
+          cb(payload, state);
+        } catch(e) {
+          console.error(`[State Listener Error: ${event}]`, e);
+        }
       });
     }
   }
@@ -50,6 +56,7 @@ window.QM_STATE = (function() {
     const btnAppMode = document.getElementById('btn-app-mode');
     const hudModePill = document.getElementById('hud-mode-pill');
     const legendTip = document.querySelector('.legend-tip');
+    const toastFn = (window.QM && window.QM.utils && window.QM.utils.showToast) || (window.QM_CONSTANTS && window.QM_CONSTANTS.showToast);
 
     if (btnAppMode) {
       btnAppMode.classList.toggle('is-edit', state.isEditMode);
@@ -67,7 +74,7 @@ window.QM_STATE = (function() {
       if (legendTip) {
         legendTip.innerHTML = "💡 [编辑模式] 拖拽天体可重塑引力轨道并牵引关联 · 点击卡片可修改内容 · 允许新建/删除与落盘";
       }
-      QM_CONSTANTS.showToast("已切换至【编辑模式】：已解锁记忆内容编辑与落盘同步");
+      if (toastFn) toastFn("已切换至【编辑模式】：已解锁记忆内容编辑与落盘同步");
     } else {
       document.body.classList.remove('is-edit-mode');
       document.body.classList.add('is-readonly');
@@ -78,7 +85,7 @@ window.QM_STATE = (function() {
       if (legendTip) {
         legendTip.innerHTML = "💡 [只读模式] 恒星之外的所有天体均可自由拖拽探索 · 知识卡片处于只读保护状态";
       }
-      QM_CONSTANTS.showToast("已切换至【只读模式】：知识库内容已锁定保护");
+      if (toastFn) toastFn("已切换至【只读模式】：知识库内容已锁定保护");
     }
 
     emit('mode-changed', state.isEditMode);
@@ -226,3 +233,6 @@ ${item.body || ''}
     generateMemoryIndex
   };
 })();
+
+// 向下兼容旧调用
+window.QM_STATE = window.QM.state;

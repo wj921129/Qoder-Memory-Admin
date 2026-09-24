@@ -1,25 +1,10 @@
 /* ========================================================
-   Qoder Memory Visualizer - 全局设计变量与基础重置样式
+   Qoder Memory Visualizer - 基础重置样式与滚动条美化
    ======================================================== */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-}
-
-:root {
-  --bg-main: #060913;
-  --bg-panel: rgba(15, 23, 42, 0.94);
-  --bg-card: rgba(15, 23, 42, 0.78);
-  --border-color: #1e293b;
-  --border-focus: #38bdf8;
-  --text-main: #e2e8f0;
-  --text-muted: #94a3b8;
-  --primary: #0284c7;
-  --primary-hover: #38bdf8;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --success: #10b981;
 }
 
 body {

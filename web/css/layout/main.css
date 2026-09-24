@@ -1,0 +1,19 @@
+/* ========================================================
+   Qoder Memory Visualizer - 主体工作区容器骨架
+   ======================================================== */
+
+main {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 58px);
+  overflow: hidden;
+  position: relative;
+}
+
+#content-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

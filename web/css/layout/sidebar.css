@@ -1,0 +1,84 @@
+/* ========================================================
+   Qoder Memory Visualizer - 左侧分类与标签侧边栏布局
+   ======================================================== */
+
+#sidebar-filter {
+  width: 260px;
+  background: rgba(15, 23, 42, 0.9);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  user-select: text;
+  z-index: 20;
+}
+
+.sidebar-section {
+  padding: 14px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 9px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #cbd5e1;
+  cursor: pointer;
+  margin-bottom: 2px;
+  transition: all 0.12s;
+}
+.cat-item:hover {
+  background: rgba(30, 41, 59, 0.7);
+  color: #fff;
+}
+.cat-item.active {
+  background: rgba(2, 132, 199, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  font-weight: 600;
+}
+.cat-count {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #1e293b;
+  border-radius: 10px;
+  color: var(--text-muted);
+}
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.tag-pill {
+  font-size: 11px;
+  padding: 3px 7px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.tag-pill.active {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  border-color: #c084fc;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.45);
+  transform: translateY(-1px);
+}

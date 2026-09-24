@@ -2,7 +2,9 @@
  * Qoder Memory Visualizer - 恒星模块 (Core Star System)
  * 职责：项目全局意图枢纽的几何属性、日冕耀斑、呼吸光晕与活跃微粒动力学模拟及渲染
  */
-window.QM_STAR = (function() {
+window.QM = window.QM || {};
+
+window.QM.star = (function() {
   // 活跃微粒系统
   const semanticCoreParticles = [];
   for (let i = 0; i < 32; i++) {
@@ -124,3 +126,6 @@ window.QM_STAR = (function() {
     drawStar
   };
 })();
+
+// 向下兼容旧调用
+window.QM_STAR = window.QM.star;

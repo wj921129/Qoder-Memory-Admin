@@ -1,7 +1,10 @@
 /**
- * Qoder Memory Visualizer - 基础字典、分类配色与通用工具
+ * Qoder Memory Visualizer - 基础业务常量与元数据字典 (Constants)
  */
-window.QM_CONSTANTS = (function() {
+window.QM = window.QM || {};
+
+window.QM.constants = (function() {
+  // 认知分类色彩与层级映射字典
   const CATEGORY_MAP = {
     common_pitfalls_experience: { name: "常见工程避坑", color: "#f43f5e", border: "#e11d48", core: "#fda4af" },
     important_decision_experience: { name: "重大决策经验", color: "#f97316", border: "#ea580c", core: "#fdba74" },
@@ -29,6 +32,7 @@ window.QM_CONSTANTS = (function() {
     reference: { name: "外部规范与参考 (reference)", color: "#8b5cf6", icon: "📖", badgeClass: "type-reference" }
   };
 
+  // 项目元信息字典
   const PROJECT_META = {
     global: { name: "🌐 全局研发智库 (Qoder CN 通用规范)", icon: "🌐", shortName: "global" },
     "fmmpay-busi": { name: "⚡ fmmpay-busi (国际卡收单核心服务)", icon: "⚡", shortName: "fmmpay-busi" },
@@ -41,35 +45,12 @@ window.QM_CONSTANTS = (function() {
     "gpay-busi": { name: "💳 gpay-busi (全渠道支付核心业务服务)", icon: "💳", shortName: "gpay-busi" }
   };
 
-  function escapeHtml(str) {
-    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  function renderMarkdown(md) {
-    if (!md) return '';
-    let html = escapeHtml(md);
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\`([^`]+)\`/g, '<code>$1</code>');
-    html = html.replace(/\[\[([^\]]+)\]\]/g, '<span style="color:#34d399; font-weight:600;">🔗 [[$1]]</span>');
-    html = html.replace(/\n/g, '<br>');
-    return html;
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.innerText = msg;
-    t.style.display = 'block';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => { t.style.display = 'none'; }, 2200);
-  }
-
   return {
     CATEGORY_MAP,
     TYPE_MAP,
-    PROJECT_META,
-    escapeHtml,
-    renderMarkdown,
-    showToast
+    PROJECT_META
   };
 })();
+
+// 向下兼容旧调用
+window.QM_CONSTANTS = window.QM_CONSTANTS || window.QM.constants;

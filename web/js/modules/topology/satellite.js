@@ -2,7 +2,9 @@
  * Qoder Memory Visualizer - 卫星模块 (Unit Satellite System)
  * 职责：记忆切片卫星天体的开普勒层级分布、平滑扩散、3D透视闭式反解、全量标题渲染及0像素瞬移重算
  */
-window.QM_SATELLITE = (function() {
+window.QM = window.QM || {};
+
+window.QM.satellite = (function() {
 
   /**
    * 初始化卫星多级黄金分割层级开普勒轨道参数
@@ -28,7 +30,6 @@ window.QM_SATELLITE = (function() {
       }
     }
 
-    // 卫星轨道紧凑且具呼吸感：基础半径 52px 避开母星球体(26px)，层距 34px
     const baseR = 52 + Math.min(10, unitCount * 0.15);
     const tierStep = 34;
     const semiMajor = baseR + myTier * tierStep + (Math.random() * 3 - 1.5);
@@ -38,7 +39,6 @@ window.QM_SATELLITE = (function() {
     const omega = (parentOmega || 0.0006) * speedMultiplier;
     const inclination = (Math.random() - 0.5) * 0.08;
 
-    // 核心修复：卫星在同心圆周上均匀 360 度展开，层与层之间错开黄金角，杜绝同向重叠！
     const goldenOffset = myTier * (0.61803398875 * Math.PI * 2);
     const initialTheta = ((myIndexInTier / Math.max(myTierCount, 1)) * Math.PI * 2) + goldenOffset;
 
@@ -79,7 +79,6 @@ window.QM_SATELLITE = (function() {
 
   /**
    * 精确从相对于父行星的投影屏幕差量 (deltaWx, deltaWy) 反解卫星三维相对坐标
-   * 计入父行星的深度 parentZ 补偿，消除透视缩放比偏差
    */
   function solveSatelliteCoordsFromScreen(deltaWx, deltaWy, inclination, parentZ, SYSTEM_TILT_X, CAMERA_DISTANCE) {
     const tilt = SYSTEM_TILT_X + (inclination || 0);
@@ -128,8 +127,6 @@ window.QM_SATELLITE = (function() {
 
   /**
    * 绘制记忆切片卫星本体及完整标题标签
-   * 恢复原本真实球体质感与母星边框，绝不涂黑！
-   * 严格保障：标题无字数限制、不截断、不省略
    */
   function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false) {
     const r = node.screenRadius;
@@ -150,7 +147,6 @@ window.QM_SATELLITE = (function() {
     const hx = lx * r * 0.38;
     const hy = ly * r * 0.38;
 
-    // 恢复卫星原汁原味的拟真 3D 球体材质渐变
     const sphereGrad = ctx.createRadialGradient(hx, hy, 1.5, 0, 0, r);
     sphereGrad.addColorStop(0, '#ffffff');
     sphereGrad.addColorStop(0.22, '#f1f5f9');
@@ -167,7 +163,7 @@ window.QM_SATELLITE = (function() {
     ctx.lineWidth = isFocus ? 2 : 1;
     ctx.stroke();
 
-    // 卫星完整标题文字绘制（无字数限制，带文字阴影提升暗场高保真度）
+    // 卫星完整标题文字绘制
     const isHighlightedTag = activeTag && isTagHit;
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
@@ -253,3 +249,6 @@ window.QM_SATELLITE = (function() {
     recalculateSatelliteOrbit
   };
 })();
+
+// 向下兼容旧调用
+window.QM_SATELLITE = window.QM.satellite;

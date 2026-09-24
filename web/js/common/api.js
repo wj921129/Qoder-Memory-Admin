@@ -1,7 +1,9 @@
 /**
- * Qoder Memory Visualizer - REST API 通信适配层
+ * Qoder Memory Visualizer - REST API 通信适配层 (API Adapter)
  */
-window.QM_API = (function() {
+window.QM = window.QM || {};
+
+window.QM.api = (function() {
   async function checkStatus() {
     try {
       const res = await fetch('/api/status', { cache: 'no-store' });
@@ -107,3 +109,6 @@ window.QM_API = (function() {
     openFolder
   };
 })();
+
+// 向下兼容旧调用
+window.QM_API = window.QM.api;
