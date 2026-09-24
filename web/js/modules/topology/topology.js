@@ -699,10 +699,9 @@ window.QM.topology = (function() {
 
     if (!cardEl) return;
 
-    const state = getState();
-    const constants = getConstants();
-    const utils = getUtils();
-    const { escapeHtml } = utils;
+    const state = window.QM.state.state;
+    const constants = window.QM.constants;
+    const { escapeHtml } = window.QM.utils;
 
     if (node.type === 'core') {
       if (typeEl) typeEl.innerText = "全局意图枢纽";
@@ -894,6 +893,12 @@ window.QM.topology = (function() {
       }
 
       if (draggedNode) {
+        if ((e.buttons & 1) !== 1) {
+          draggedNode = null;
+          dragSnapshotMap.clear();
+          return;
+        }
+
         canvas.style.cursor = "grabbing";
         const targetScreenX = worldPos.x - grabOffsetX;
         const targetScreenY = worldPos.y - grabOffsetY;
@@ -959,84 +964,89 @@ window.QM.topology = (function() {
     });
 
     window.addEventListener('mouseup', e => {
-      const rect = canvas.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
-      const worldPos = screenToWorld(sx, sy);
-      const screenMoved = Math.hypot(e.clientX - clickOrigin.x, e.clientY - clickOrigin.y);
+      try {
+        const rect = canvas.getBoundingClientRect();
+        const sx = e.clientX - rect.left;
+        const sy = e.clientY - rect.top;
+        const worldPos = screenToWorld(sx, sy);
+        const screenMoved = Math.hypot(e.clientX - clickOrigin.x, e.clientY - clickOrigin.y);
 
-      const drawer = window.QM.drawer;
-      const sidebar = window.QM.sidebar;
-      const planet = window.QM.planet;
-      const satellite = window.QM.satellite;
+        const drawer = window.QM.drawer;
+        const sidebar = window.QM.sidebar;
+        const planet = window.QM.planet;
+        const satellite = window.QM.satellite;
 
-      if (draggedNode) {
-        if (screenMoved < 6) {
-          const clicked = draggedNode;
-          focusTarget = clicked;
-          updateFocusRelatedSet();
+        if (draggedNode) {
+          if (screenMoved < 6) {
+            const clicked = draggedNode;
+            focusTarget = clicked;
+            updateFocusRelatedSet();
 
-          if (clicked.type === 'unit') {
-            isAutoCameraActive = false;
-            cameraTargetNode = null;
-            if (clicked.rawItem && drawer) {
-              drawer.openDrawer(clicked.rawItem.id);
+            if (clicked.type === 'unit') {
+              isAutoCameraActive = false;
+              cameraTargetNode = null;
+              if (clicked.rawItem && drawer) {
+                drawer.openDrawer(clicked.rawItem.id);
+              }
+              if (sidebar && typeof sidebar.highlightCategory === 'function') {
+                const cat = (clicked.rawItem && clicked.rawItem.category) || 'all';
+                sidebar.highlightCategory(cat, true);
+              }
+            } else if (clicked.type === 'domain') {
+              cameraTargetNode = clicked;
+              cameraTargetScale = getDomainCameraScale(clicked.cardCount);
+              isAutoCameraActive = true;
+              if (drawer) drawer.openDomainDrawer(clicked);
+              if (sidebar && typeof sidebar.highlightCategory === 'function') {
+                sidebar.highlightCategory(clicked.categoryKey, true);
+              }
+            } else if (clicked.type === 'core') {
+              cameraTargetNode = clicked;
+              cameraTargetScale = 0.75;
+              isAutoCameraActive = true;
+              if (drawer) drawer.openCoreDrawer(clicked);
+              if (sidebar && typeof sidebar.highlightCategory === 'function') {
+                sidebar.highlightCategory('all', true);
+              }
             }
-            if (sidebar && typeof sidebar.highlightCategory === 'function') {
-              const cat = (clicked.rawItem && clicked.rawItem.category) || 'all';
-              sidebar.highlightCategory(cat, true);
-            }
-          } else if (clicked.type === 'domain') {
-            cameraTargetNode = clicked;
-            cameraTargetScale = getDomainCameraScale(clicked.cardCount);
-            isAutoCameraActive = true;
-            if (drawer) drawer.openDomainDrawer(clicked);
-            if (sidebar && typeof sidebar.highlightCategory === 'function') {
-              sidebar.highlightCategory(clicked.categoryKey, true);
-            }
-          } else if (clicked.type === 'core') {
-            cameraTargetNode = clicked;
-            cameraTargetScale = 0.75;
-            isAutoCameraActive = true;
-            if (drawer) drawer.openCoreDrawer(clicked);
-            if (sidebar && typeof sidebar.highlightCategory === 'function') {
-              sidebar.highlightCategory('all', true);
+
+            showCelestialCard(clicked);
+          } else {
+            const finalDropPos = {
+              x: worldPos.x - grabOffsetX,
+              y: worldPos.y - grabOffsetY
+            };
+            if (draggedNode.id !== "core-root") {
+              if (draggedNode.type === 'domain') {
+                const childSats = nodes.filter(n => n.type === 'unit' && n.parentId === draggedNode.id);
+                const core = nodeMap.get("core-root");
+                planet.recalculatePlanetOrbit(
+                  draggedNode, finalDropPos.x, finalDropPos.y,
+                  core ? core.radius : 34, SYSTEM_TILT_X, CAMERA_DISTANCE, childSats
+                );
+              } else if (draggedNode.type === 'unit') {
+                const core = nodeMap.get("core-root");
+                const parent = draggedNode.parentId ? (nodeMap.get(draggedNode.parentId) || core) : core;
+                satellite.recalculateSatelliteOrbit(
+                  draggedNode, parent, finalDropPos.x, finalDropPos.y,
+                  SYSTEM_TILT_X, CAMERA_DISTANCE
+                );
+              }
             }
           }
-
-          showCelestialCard(clicked);
         } else {
-          const finalDropPos = {
-            x: worldPos.x - grabOffsetX,
-            y: worldPos.y - grabOffsetY
-          };
-          if (draggedNode.id !== "core-root") {
-            if (draggedNode.type === 'domain') {
-              const childSats = nodes.filter(n => n.type === 'unit' && n.parentId === draggedNode.id);
-              const core = nodeMap.get("core-root");
-              planet.recalculatePlanetOrbit(
-                draggedNode, finalDropPos.x, finalDropPos.y,
-                core ? core.radius : 34, SYSTEM_TILT_X, CAMERA_DISTANCE, childSats
-              );
-            } else if (draggedNode.type === 'unit') {
-              const core = nodeMap.get("core-root");
-              const parent = draggedNode.parentId ? (nodeMap.get(draggedNode.parentId) || core) : core;
-              satellite.recalculateSatelliteOrbit(
-                draggedNode, parent, finalDropPos.x, finalDropPos.y,
-                SYSTEM_TILT_X, CAMERA_DISTANCE
-              );
-            }
+          const hit = getNodeAtScreen(sx, sy);
+          if (!hit && screenMoved < 6) {
+            deselectFocus();
           }
         }
+      } catch (err) {
+        console.error('mouseup 处理异常:', err);
+      } finally {
         draggedNode = null;
         dragSnapshotMap.clear();
-      } else {
-        const hit = getNodeAtScreen(sx, sy);
-        if (!hit && screenMoved < 6) {
-          deselectFocus();
-        }
+        isDragging = false;
       }
-      isDragging = false;
     });
 
     canvas.addEventListener('click', e => {
