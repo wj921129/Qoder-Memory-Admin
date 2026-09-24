@@ -236,21 +236,43 @@ window.QM.topology = (function() {
       });
     });
 
-    // 5. 隐式关键词共振网络
-    for (let i = 0; i < memories.length; i++) {
-      for (let j = i + 1; j < memories.length; j++) {
-        const a = memories[i];
-        const b = memories[j];
-        const shared = (a.keywords || []).filter(k => (b.keywords || []).includes(k));
-        if (shared.length >= 2) {
-          edges.push({
-            from: a.id, to: b.id,
-            type: "shared_keywords",
-            isChain: false
-          });
+    // 5. 隐式关键词共振网络 (构建倒排索引并设置上限，防止 N^2 边暴涨)
+    const kwInvertedIndex = new Map();
+    memories.forEach(m => {
+      (m.keywords || []).forEach(k => {
+        if (!k || k.length < 2) return;
+        if (!kwInvertedIndex.has(k)) kwInvertedIndex.set(k, []);
+        kwInvertedIndex.get(k).push(m.id);
+      });
+    });
+
+    const candidatePairs = new Map();
+    kwInvertedIndex.forEach(idList => {
+      if (idList.length > 1 && idList.length <= 30) {
+        for (let i = 0; i < idList.length; i++) {
+          for (let j = i + 1; j < idList.length; j++) {
+            const pairKey = idList[i] < idList[j] ? `${idList[i]}___${idList[j]}` : `${idList[j]}___${idList[i]}`;
+            candidatePairs.set(pairKey, (candidatePairs.get(pairKey) || 0) + 1);
+          }
         }
       }
-    }
+    });
+
+    const validPairs = [];
+    candidatePairs.forEach((count, key) => {
+      if (count >= 2) {
+        const [from, to] = key.split('___');
+        validPairs.push({ from, to, count });
+      }
+    });
+    validPairs.sort((a, b) => b.count - a.count);
+    validPairs.slice(0, 120).forEach(p => {
+      edges.push({
+        from: p.from, to: p.to,
+        type: "shared_keywords",
+        isChain: false
+      });
+    });
 
     // 6. 度中心度自适应尺寸
     const degreeMap = new Map();
@@ -473,13 +495,16 @@ window.QM.topology = (function() {
   function drawDeepSpaceAndLighting(core) {
     if (!core) return;
     ctx.save();
+
+    // 1. 合批极速绘制 160 个星尘粒子 (从 160 次 Draw Call 缩减至 1 次)
+    ctx.beginPath();
     cognitiveSpaceDust.forEach(d => {
-      const alpha = d.baseAlpha + Math.sin(animationTime * d.twinkleSpeed + d.twinklePhase) * 0.12;
-      ctx.beginPath();
+      ctx.moveTo(d.x + d.size, d.y);
       ctx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(148, 163, 184, ${Math.max(0.04, alpha)})`;
-      ctx.fill();
     });
+    const dustAlpha = 0.12 + Math.sin(animationTime * 0.02) * 0.05;
+    ctx.fillStyle = `rgba(148, 163, 184, ${dustAlpha.toFixed(2)})`;
+    ctx.fill();
 
     const haloR = 480;
     const coreHalo = ctx.createRadialGradient(0, 0, 20, 0, 0, haloR);
@@ -518,6 +543,11 @@ window.QM.topology = (function() {
     const isSearchFilterActive = Boolean(searchQuery) || activeCategory !== 'all';
     const isFocusActive = Boolean(focusTarget);
 
+    const normalPath = new Path2D();
+    const focusPath = new Path2D();
+    const kwFocusPath = new Path2D();
+    const chainEdgesList = [];
+
     edges.forEach(e => {
       const fromNode = nodeMap.get(e.from);
       const toNode = nodeMap.get(e.to);
@@ -545,40 +575,62 @@ window.QM.topology = (function() {
         }
       }
 
-      const isChain = e.isChain;
       const isFocusLink = (focusTarget && (e.from === focusTarget.id || e.to === focusTarget.id)) ||
                           (hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id));
 
+      if (e.isChain) {
+        chainEdgesList.push({ fromNode, toNode, isFocusLink });
+      } else if (e.type === 'shared_keywords') {
+        if (isFocusLink) {
+          kwFocusPath.moveTo(fromNode.screenX, fromNode.screenY);
+          kwFocusPath.lineTo(toNode.screenX, toNode.screenY);
+        }
+      } else {
+        if (isFocusLink) {
+          focusPath.moveTo(fromNode.screenX, fromNode.screenY);
+          focusPath.lineTo(toNode.screenX, toNode.screenY);
+        } else {
+          normalPath.moveTo(fromNode.screenX, fromNode.screenY);
+          normalPath.lineTo(toNode.screenX, toNode.screenY);
+        }
+      }
+    });
+
+    // 1. 合批绘制普通层级连线 (一次性 Draw Call)
+    ctx.strokeStyle = 'rgba(51, 65, 85, 0.22)';
+    ctx.lineWidth = 0.7;
+    ctx.stroke(normalPath);
+
+    // 2. 合批绘制高亮聚焦连线
+    ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke(focusPath);
+
+    // 3. 合批绘制关键词虚线共振连线
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([3, 4]);
+    ctx.stroke(kwFocusPath);
+    ctx.setLineDash([]);
+
+    // 4. 绘制显式知识链连线 (带能量粒子流动)
+    chainEdgesList.forEach(({ fromNode, toNode, isFocusLink }) => {
       ctx.beginPath();
       ctx.moveTo(fromNode.screenX, fromNode.screenY);
       ctx.lineTo(toNode.screenX, toNode.screenY);
+      ctx.strokeStyle = isFocusLink ? '#34d399' : 'rgba(16, 185, 129, 0.4)';
+      ctx.lineWidth = isFocusLink ? 2.4 : 1.2;
+      ctx.stroke();
 
-      if (isChain) {
-        ctx.strokeStyle = isFocusLink ? '#34d399' : 'rgba(16, 185, 129, 0.4)';
-        ctx.lineWidth = isFocusLink ? 2.4 : 1.2;
-        ctx.stroke();
-
-        const pulseRatio = ((animationTime * 0.015) % 1);
-        const px = fromNode.screenX + (toNode.screenX - fromNode.screenX) * pulseRatio;
-        const py = fromNode.screenY + (toNode.screenY - fromNode.screenY) * pulseRatio;
-        ctx.beginPath();
-        ctx.arc(px, py, isFocusLink ? 3.5 : 2, 0, Math.PI * 2);
-        ctx.fillStyle = '#34d399';
-        ctx.fill();
-      } else if (e.type === 'shared_keywords') {
-        if (isFocusLink) {
-          ctx.strokeStyle = '#c084fc';
-          ctx.lineWidth = 1.4;
-          ctx.setLineDash([3, 4]);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      } else {
-        ctx.strokeStyle = isFocusLink ? 'rgba(56, 189, 248, 0.7)' : 'rgba(51, 65, 85, 0.22)';
-        ctx.lineWidth = isFocusLink ? 1.5 : 0.7;
-        ctx.stroke();
-      }
+      const pulseRatio = ((animationTime * 0.015) % 1);
+      const px = fromNode.screenX + (toNode.screenX - fromNode.screenX) * pulseRatio;
+      const py = fromNode.screenY + (toNode.screenY - fromNode.screenY) * pulseRatio;
+      ctx.beginPath();
+      ctx.arc(px, py, isFocusLink ? 3.5 : 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#34d399';
+      ctx.fill();
     });
+
     ctx.restore();
   }
 

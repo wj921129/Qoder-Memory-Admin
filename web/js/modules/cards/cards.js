@@ -32,6 +32,23 @@ window.QM.cards = (function() {
     return filtered;
   }
 
+  const PAGE_SIZE = 36;
+  let currentVisibleLimit = PAGE_SIZE;
+
+  function resetVisibleLimit() {
+    currentVisibleLimit = PAGE_SIZE;
+  }
+
+  function loadMore() {
+    currentVisibleLimit += PAGE_SIZE;
+    renderCardsGrid(getFilteredMemories());
+  }
+
+  function loadAll() {
+    currentVisibleLimit = Infinity;
+    renderCardsGrid(getFilteredMemories());
+  }
+
   function renderCardsGrid(filtered) {
     const { isEditMode } = window.QM.state.state;
     const { CATEGORY_MAP, TYPE_MAP } = window.QM.constants;
@@ -50,7 +67,10 @@ window.QM.cards = (function() {
       return;
     }
 
-    gridEl.innerHTML = filtered.map(m => {
+    const renderList = filtered.slice(0, currentVisibleLimit);
+    const hasMore = filtered.length > renderList.length;
+
+    let html = renderList.map(m => {
       const catLabel = (CATEGORY_MAP[m.category] && CATEGORY_MAP[m.category].name) || m.category;
       const kwHtml = (m.keywords || []).map(k => `<span class="keyword-pill">${escapeHtml(k)}</span>`).join('');
       const chainHtml = (m.chains && m.chains.length > 0)
@@ -93,6 +113,19 @@ window.QM.cards = (function() {
         </div>
       `;
     }).join('');
+
+    if (hasMore) {
+      const remainCount = filtered.length - renderList.length;
+      html += `
+        <div style="grid-column: 1/-1; display:flex; justify-content:center; align-items:center; gap:14px; padding: 24px 0; background:rgba(15,23,42,0.6); border:1px dashed #334155; border-radius:8px;">
+          <span style="color:#94a3b8; font-size:13px;">已呈现前 ${renderList.length} 篇 · 还有 ${remainCount} 篇记忆</span>
+          <button class="btn btn-subtle btn-sm" onclick="window.QM.cards.loadMore()">⬇️ 继续载入 ${Math.min(PAGE_SIZE, remainCount)} 篇</button>
+          <button class="btn btn-subtle btn-sm" onclick="window.QM.cards.loadAll()">⚡ 全部展开 (${filtered.length} 篇)</button>
+        </div>
+      `;
+    }
+
+    gridEl.innerHTML = html;
   }
 
   function renderUI() {
@@ -119,6 +152,7 @@ window.QM.cards = (function() {
   // 监听视图切换事件，若切换到卡片模式则按需渲染卡片，若切换到拓扑模式则联动聚焦
   window.QM.state.on('view-changed', (mode) => {
     if (mode === 'cards') {
+      resetVisibleLimit();
       renderCardsGrid(getFilteredMemories());
     } else if (mode === 'galaxy') {
       window.QM.topology?.focusOnCategory(window.QM.state.state.activeCategory);
@@ -128,7 +162,10 @@ window.QM.cards = (function() {
   return {
     renderUI,
     getFilteredMemories,
-    renderCardsGrid
+    renderCardsGrid,
+    resetVisibleLimit,
+    loadMore,
+    loadAll
   };
 })();
 

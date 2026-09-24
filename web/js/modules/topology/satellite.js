@@ -125,71 +125,96 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 绘制记忆切片卫星本体及完整标题标签
+   * 绘制记忆切片卫星本体及完整标题标签 (高性能 LOD 优化版)
    */
   function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false) {
     const r = node.screenRadius;
+    const isHighlightedTag = Boolean(activeTag && isTagHit);
+    const isImportant = isFocus || isHover || isRelated || isHighlightedTag;
 
-    // 焦点与悬停高亮光环
+    // 1. 远景微缩快速路径 (LOD Level 0)
+    // 当全景缩放且非重点聚焦对象时，极速绘制纯色圆点，跳过昂贵的渐变与文字排版
+    if (!isImportant && r < 5.5) {
+      ctx.beginPath();
+      ctx.arc(0, 0, Math.max(1.8, r), 0, Math.PI * 2);
+      ctx.fillStyle = isDimmed ? 'rgba(148, 163, 184, 0.4)' : (node.parentColor || '#94a3b8');
+      ctx.fill();
+      return;
+    }
+
+    // 2. 焦点与悬停高亮光环
     if (isFocus || isHover) {
       ctx.beginPath();
-      ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
+      ctx.arc(0, 0, r + 5, 0, Math.PI * 2);
       ctx.strokeStyle = isFocus ? '#ffffff' : '#38bdf8';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    // 恒星入射光 3D 球体明暗着色
-    const distToCore = Math.hypot(node.screenX, node.screenY) || 1;
-    const lx = -node.screenX / distToCore;
-    const ly = -node.screenY / distToCore;
-    const hx = lx * r * 0.38;
-    const hy = ly * r * 0.38;
+    // 3. 3D 球体受光渲染
+    if (isImportant || r >= 8) {
+      const distToCore = Math.hypot(node.screenX, node.screenY) || 1;
+      const lx = -node.screenX / distToCore;
+      const ly = -node.screenY / distToCore;
+      const hx = lx * r * 0.38;
+      const hy = ly * r * 0.38;
 
-    const sphereGrad = ctx.createRadialGradient(hx, hy, 1.5, 0, 0, r);
-    sphereGrad.addColorStop(0, '#ffffff');
-    sphereGrad.addColorStop(0.22, '#f1f5f9');
-    sphereGrad.addColorStop(0.6, '#94a3b8');
-    sphereGrad.addColorStop(0.88, '#475569');
-    sphereGrad.addColorStop(1, '#0f172a');
+      const sphereGrad = ctx.createRadialGradient(hx, hy, 1, 0, 0, r);
+      sphereGrad.addColorStop(0, '#ffffff');
+      sphereGrad.addColorStop(0.3, '#cbd5e1');
+      sphereGrad.addColorStop(0.7, '#64748b');
+      sphereGrad.addColorStop(1, '#0f172a');
 
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = sphereGrad;
-    ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = sphereGrad;
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#64748b';
+      ctx.fill();
+    }
 
-    ctx.strokeStyle = isFocus ? '#ffffff' : (node.parentColor ? node.parentColor + '77' : 'rgba(148, 163, 184, 0.45)');
+    ctx.strokeStyle = isFocus ? '#ffffff' : (node.parentColor ? node.parentColor + '88' : 'rgba(148, 163, 184, 0.45)');
     ctx.lineWidth = isFocus ? 2 : 1;
     ctx.stroke();
 
-    // 卫星完整标题文字绘制
-    const isHighlightedTag = activeTag && isTagHit;
-    ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 1;
-    ctx.textAlign = 'center';
-    const title = node.name || '';
+    // 4. 文字标题标签渲染 (废除 CPU 卷积 shadowBlur，改用清晰描边 + LOD 过滤)
+    // 只有在放大到可读尺寸或处于重点关注状态时才渲染文本
+    if (isImportant || r >= 9) {
+      const title = node.name || '';
+      if (!title) return;
 
-    if (isHover || isFocus) {
-      ctx.font = 'bold 11.5px sans-serif';
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillText(title, 0, r + 15);
-    } else if (isHighlightedTag) {
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillStyle = '#e879f9';
-      ctx.fillText(`⚡ ${title}`, 0, r + 15);
-    } else if (isRelated) {
-      ctx.font = '10.5px sans-serif';
-      ctx.fillStyle = '#f8fafc';
-      ctx.fillText(title, 0, r + 14);
-    } else {
-      ctx.font = '10px sans-serif';
-      ctx.fillStyle = isDimmed ? '#94a3b8' : '#cbd5e1';
-      ctx.fillText(title, 0, r + 14);
+      ctx.textAlign = 'center';
+      const textY = r + 13;
+
+      let font = '10px sans-serif';
+      let fillStyle = isDimmed ? '#94a3b8' : '#cbd5e1';
+      let displayText = title;
+
+      if (isHover || isFocus) {
+        font = 'bold 12px sans-serif';
+        fillStyle = '#38bdf8';
+      } else if (isHighlightedTag) {
+        font = 'bold 11px sans-serif';
+        fillStyle = '#e879f9';
+        displayText = `⚡ ${title}`;
+      } else if (isRelated) {
+        font = '10.5px sans-serif';
+        fillStyle = '#f8fafc';
+      }
+
+      ctx.font = font;
+
+      // 使用轻量无模糊描边增强对比度，彻底替代耗费 CPU 的 shadowBlur
+      ctx.strokeStyle = '#090d16';
+      ctx.lineWidth = 2.5;
+      ctx.strokeText(displayText, 0, textY);
+
+      ctx.fillStyle = fillStyle;
+      ctx.fillText(displayText, 0, textY);
     }
-    ctx.restore();
   }
 
   /**
