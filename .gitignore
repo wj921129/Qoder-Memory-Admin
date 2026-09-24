@@ -21,6 +21,7 @@ Desktop.ini
 scratch/
 temp/
 tmp/
+.codegraph/
 
 # Logs
 *.log
