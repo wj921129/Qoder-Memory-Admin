@@ -135,6 +135,7 @@
           </div>
           <div class="celestial-card-footer">
             <button class="btn btn-subtle btn-sm" id="c-card-center-btn" title="将镜头重新平滑运镜对齐至该天体">🎯 视角居中</button>
+            <button class="btn btn-danger btn-sm" id="c-card-delete-btn" style="display:none;" title="彻底删除此记忆切片">🗑️ 删除</button>
             <button class="btn btn-sm" id="c-card-open-btn" style="background:#0284c7;" title="在侧边栏查阅完整 Markdown 正文或编辑">📖 详细规约</button>
           </div>
         </div>
@@ -162,90 +163,120 @@
     <!-- 右侧编辑抽屉面板 -->
     <aside id="editor-drawer">
       <div class="drawer-header">
-        <div>
-          <h2 id="drawer-title" style="margin-bottom:2px;">查阅记忆切片 [只读]</h2>
+        <div class="drawer-header-left">
+          <h2 id="drawer-title" style="margin-bottom:2px;">查阅记忆切片</h2>
           <span id="drawer-scope-sub" style="font-size:11px; color:#38bdf8; font-weight:500;">Scope: 智能识别中</span>
         </div>
-        <button class="close-btn" id="close-drawer">&times;</button>
+        <button class="close-btn" id="close-drawer" title="关闭抽屉">&times;</button>
       </div>
       <div class="drawer-body">
         <div id="drawer-readonly-notice" class="drawer-notice-banner" style="display:none;">
           <span>🔒 <strong>只读查阅模式</strong>：当前处于安全保护状态。如需编辑此记忆切片，请先在顶部导航栏开启「✏️ 编辑模式」。</span>
         </div>
         <input type="hidden" id="edit-id">
-        <div class="form-group">
-          <label>记忆标题 (Name / Title)</label>
-          <input type="text" id="edit-name" class="form-control" placeholder="例如：Maven Surefire 硬编码 skipTests 避坑">
-        </div>
-        <div class="form-group">
-          <label>文件名 (File Name)</label>
-          <input type="text" id="edit-filename" class="form-control" placeholder="例如：maven-surefire-skiptests-true.md">
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-          <div class="form-group">
-            <label>官方类型 (Type)</label>
-            <select id="edit-type" class="form-control" title="Qoder / 灵码官方规范四大核心分类">
-              <option value="project">project (工程架构规约)</option>
-              <option value="feedback">feedback (踩坑反馈修正)</option>
-              <option value="user">user (用户习惯偏好)</option>
-              <option value="reference">reference (外部规范参考)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>认知分类 (Category)</label>
-            <select id="edit-category-select" class="form-control" onchange="if(this.value==='custom') { document.getElementById('edit-category-custom').style.display='block'; } else { document.getElementById('edit-category-custom').style.display='none'; }">
-              <option value="common_pitfalls_experience">常见工程避坑 (common_pitfalls)</option>
-              <option value="important_decision_experience">重大决策经验 (important_decision)</option>
-              <option value="development_code_specification">开发与代码规约 (development_code)</option>
-              <option value="development_practice_specification">工程实践规约 (development_practice)</option>
-              <option value="development_comment_specification">代码与注释规约 (development_comment)</option>
-              <option value="project_architecture">系统与模块架构 (project_architecture)</option>
-              <option value="project_tech_stack">项目技术栈 (project_tech_stack)</option>
-              <option value="project_introduction">系统与业务概述 (project_introduction)</option>
-              <option value="project_build_configuration">编译与构建配置 (project_build)</option>
-              <option value="project_dependency_configuration">依赖管理配置 (project_dependency)</option>
-              <option value="learned_skill_experience">工作流与技能经验 (learned_skill)</option>
-              <option value="task_summary_experience">任务交付复盘 (task_summary)</option>
-              <option value="tool_experience">工具与环境经验 (tool_experience)</option>
-              <option value="user_behavior">用户沟通与偏好 (user_behavior)</option>
-              <option value="common">通用工程规约 (common)</option>
-              <option value="custom">+ 自定义分类...</option>
-            </select>
-            <input type="text" id="edit-category-custom" class="form-control" style="display:none; margin-top:4px;" placeholder="输入自定义分类名称">
-          </div>
-          <div class="form-group">
-            <label>来源机制 (Source)</label>
-            <select id="edit-source" class="form-control">
-              <option value="auto">auto (自动归纳/沉淀)</option>
-              <option value="init">init (初始脚手架)</option>
-              <option value="feedback">feedback (用户明确反馈)</option>
-              <option value="manual">manual (人工维护)</option>
-            </select>
-          </div>
+
+        <!-- 核心内容 1: 记忆标题 -->
+        <div class="form-group form-group-core">
+          <label for="edit-name">📌 记忆标题 (Title / Name)</label>
+          <input type="text" id="edit-name" class="form-control form-control-title" placeholder="例如：Maven Surefire 硬编码 skipTests 避坑">
         </div>
 
-        <div class="form-group">
-          <label>🔗 显式链式关联 (关联前置/衍生记忆卡片)</label>
-          <select id="edit-chain-target" class="form-control">
-            <option value="">-- 选择要建立链式关联的目标记忆 --</option>
-          </select>
+        <!-- 核心内容 2: 适用场景与触发条件 -->
+        <div class="form-group form-group-core">
+          <label for="edit-description">💡 适用场景与触发条件 (Trigger Condition / Description)</label>
+          <textarea id="edit-description" class="form-control form-control-desc" rows="3" placeholder="简述大模型在何时应精准召回该条记忆..."></textarea>
         </div>
 
-        <div class="form-group">
-          <label>触发场景 / 描述 (Description / Usage Scenario)</label>
-          <textarea id="edit-description" class="form-control" rows="3" placeholder="简述大模型在何时应召回该条记忆..."></textarea>
+        <!-- 核心内容 3: 核心规约与正文内容 -->
+        <div class="form-group form-group-core drawer-body-content-group">
+          <div class="form-label-row">
+            <label for="edit-body">📖 核心规约与正文内容 (Markdown Content)</label>
+            <button type="button" class="btn-copy-code" id="btn-copy-drawer-content" title="一键复制正文 Markdown">📋 复制正文</button>
+          </div>
+          <!-- 只读展示态: 精美排版预览区 -->
+          <div id="drawer-body-preview" class="drawer-markdown-preview"></div>
+          <!-- 编辑态: 纯文本输入区 -->
+          <textarea id="edit-body" class="form-control form-control-body" rows="12" placeholder="支持标准 Markdown 语法，详细阐述规约或根因..."></textarea>
         </div>
-        <div class="form-group">
-          <label>关键词 (Keywords，以英文逗号分隔)</label>
-          <input type="text" id="edit-keywords" class="form-control" placeholder="例如：Maven, Surefire, skipTests, 单测跳过">
-        </div>
-        <div class="form-group" style="flex:1;">
-          <label>正文内容 (Markdown Body)</label>
-          <textarea id="edit-body" class="form-control" rows="10" style="font-family:monospace; font-size:12px;" placeholder="支持标准 Markdown 语法，详细阐述规约或根因..."></textarea>
+
+        <!-- 高级元数据折叠卡片 (默认折叠收起，按需点击展开) -->
+        <div class="drawer-meta-section is-collapsed" id="drawer-meta-section">
+          <div class="drawer-meta-toggle" id="drawer-meta-toggle" title="点击展开/折叠规约元数据与高级配置">
+            <div class="meta-toggle-left">
+              <span class="meta-toggle-icon">⚙️</span>
+              <span class="meta-toggle-title">规约元数据与高级属性</span>
+              <span class="meta-summary-pill" id="meta-summary-pill">分类与配置</span>
+            </div>
+            <span class="meta-toggle-arrow" id="meta-toggle-arrow">▸ 点击展开</span>
+          </div>
+          <div class="drawer-meta-content" id="drawer-meta-content">
+            <div class="form-group">
+              <label for="edit-filename">📄 文件名 (File Name)</label>
+              <input type="text" id="edit-filename" class="form-control" placeholder="例如：maven-surefire-skiptests-true.md">
+            </div>
+
+            <div class="drawer-grid-2">
+              <div class="form-group">
+                <label for="edit-type">🏛️ 官方类型 (Type)</label>
+                <select id="edit-type" class="form-control" title="Qoder / 灵码官方规范四大核心分类">
+                  <option value="project">project (工程架构规约)</option>
+                  <option value="feedback">feedback (踩坑反馈修正)</option>
+                  <option value="user">user (用户习惯偏好)</option>
+                  <option value="reference">reference (外部规范参考)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="edit-source">🌱 来源机制 (Source)</label>
+                <select id="edit-source" class="form-control">
+                  <option value="auto">auto (自动归纳/沉淀)</option>
+                  <option value="init">init (初始脚手架)</option>
+                  <option value="feedback">feedback (用户明确反馈)</option>
+                  <option value="manual">manual (人工维护)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-category-select">🗂️ 认知分类体系 (Category)</label>
+              <select id="edit-category-select" class="form-control" onchange="if(this.value==='custom') { document.getElementById('edit-category-custom').style.display='block'; } else { document.getElementById('edit-category-custom').style.display='none'; }">
+                <option value="common_pitfalls_experience">常见工程避坑 (common_pitfalls)</option>
+                <option value="important_decision_experience">重大决策经验 (important_decision)</option>
+                <option value="development_code_specification">开发与代码规约 (development_code)</option>
+                <option value="development_practice_specification">工程实践规约 (development_practice)</option>
+                <option value="development_comment_specification">代码与注释规约 (development_comment)</option>
+                <option value="project_architecture">系统与模块架构 (project_architecture)</option>
+                <option value="project_tech_stack">项目技术栈 (project_tech_stack)</option>
+                <option value="project_introduction">系统与业务概述 (project_introduction)</option>
+                <option value="project_build_configuration">编译与构建配置 (project_build)</option>
+                <option value="project_dependency_configuration">依赖管理配置 (project_dependency)</option>
+                <option value="learned_skill_experience">工作流与技能经验 (learned_skill)</option>
+                <option value="task_summary_experience">任务交付复盘 (task_summary)</option>
+                <option value="tool_experience">工具与环境经验 (tool_experience)</option>
+                <option value="user_behavior">用户沟通与偏好 (user_behavior)</option>
+                <option value="common">通用工程规约 (common)</option>
+                <option value="custom">+ 自定义分类...</option>
+              </select>
+              <input type="text" id="edit-category-custom" class="form-control" style="display:none; margin-top:6px;" placeholder="输入自定义分类名称">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-keywords">🏷️ 高频关键词 (Keywords，以逗号分隔)</label>
+              <input type="text" id="edit-keywords" class="form-control" placeholder="例如：Maven, Surefire, skipTests, 单测跳过">
+            </div>
+
+            <div class="form-group">
+              <label for="edit-chain-target">🔗 显式链式关联 (关联前置/衍生记忆卡片)</label>
+              <select id="edit-chain-target" class="form-control">
+                <option value="">-- 选择要建立链式关联的目标记忆 --</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
       <div class="drawer-footer">
-        <button class="btn btn-subtle" id="drawer-cancel-btn">取消</button>
+        <button class="btn btn-danger" id="drawer-delete-btn" title="彻底删除此记忆切片及物理 Markdown 文件">🗑️ 删除此记忆</button>
+        <div style="flex:1;"></div>
+        <button class="btn btn-subtle" id="drawer-cancel-btn">关闭</button>
         <button class="btn" id="drawer-save-btn">保存并应用</button>
       </div>
     </aside>

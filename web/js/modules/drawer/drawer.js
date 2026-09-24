@@ -1,10 +1,13 @@
 /**
  * Qoder Memory Visualizer - 抽屉编辑控制器与 CRUD 交互 (Drawer Module)
+ * 职责：核心内容优先展示、规约元数据按需折叠、Markdown 优雅预览、物理删除闭环
  */
 window.QM = window.QM || {};
 
 window.QM.drawer = (function() {
   const drawerEl = () => document.getElementById('editor-drawer');
+  let currentActiveItemId = null;
+  let isEventsBound = false;
 
   function setDrawerInputsDisabled(disabled) {
     const fieldIds = [
@@ -17,22 +20,100 @@ window.QM.drawer = (function() {
     });
   }
 
+  function setMetaSectionCollapsed(collapsed) {
+    const metaSec = document.getElementById('drawer-meta-section');
+    const arrowEl = document.getElementById('meta-toggle-arrow');
+    if (!metaSec) return;
+
+    if (collapsed) {
+      metaSec.classList.add('is-collapsed');
+      if (arrowEl) arrowEl.innerText = '▸ 点击展开';
+    } else {
+      metaSec.classList.remove('is-collapsed');
+      if (arrowEl) arrowEl.innerText = '▾ 收起配置';
+    }
+  }
+
+  function updateMetaSummary(item) {
+    const pill = document.getElementById('meta-summary-pill');
+    if (!pill) return;
+    const cat = item.category || 'common';
+    const type = item.type || 'project';
+    const kwCount = (item.keywords || []).length;
+    pill.innerText = `${cat} · ${type}${kwCount > 0 ? ` · 🏷️ ${kwCount}` : ''}`;
+    pill.title = `分类: ${cat} | 类型: ${type} | 关键词: ${kwCount} 个`;
+  }
+
+  function bindDrawerStaticEvents() {
+    if (isEventsBound) return;
+    isEventsBound = true;
+
+    // 1. 折叠卡片点击展开/收起
+    const metaToggle = document.getElementById('drawer-meta-toggle');
+    if (metaToggle) {
+      metaToggle.addEventListener('click', () => {
+        const metaSec = document.getElementById('drawer-meta-section');
+        if (metaSec) {
+          const isCurrentlyCollapsed = metaSec.classList.contains('is-collapsed');
+          setMetaSectionCollapsed(!isCurrentlyCollapsed);
+        }
+      });
+    }
+
+    // 2. 一键复制正文 Markdown
+    const btnCopy = document.getElementById('btn-copy-drawer-content');
+    if (btnCopy) {
+      btnCopy.addEventListener('click', () => {
+        const bodyInput = document.getElementById('edit-body');
+        const text = (bodyInput && bodyInput.value) || '';
+        if (!text.trim()) {
+          window.QM.utils?.showToast('正文内容为空');
+          return;
+        }
+        navigator.clipboard.writeText(text).then(() => {
+          window.QM.utils?.showToast('📋 已成功复制正文 Markdown 到剪贴板！');
+        }).catch(() => {
+          window.QM.utils?.showToast('复制失败，请手动选择复制');
+        });
+      });
+    }
+
+    // 3. 抽屉内删除按钮
+    const btnDelete = document.getElementById('drawer-delete-btn');
+    if (btnDelete) {
+      btnDelete.addEventListener('click', () => {
+        if (currentActiveItemId) {
+          deleteCard(currentActiveItemId);
+        }
+      });
+    }
+  }
+
   function openDrawer(id) {
+    bindDrawerStaticEvents();
     const { memories, isEditMode, currentProject, currentProjectScope } = window.QM.state.state;
     const item = memories.find(m => m.id === id);
     if (!item) return;
 
+    currentActiveItemId = id;
     const drawer = drawerEl();
     const titleEl = document.getElementById('drawer-title');
     const scopeSubEl = document.getElementById('drawer-scope-sub');
     const noticeEl = document.getElementById('drawer-readonly-notice');
     const saveBtn = document.getElementById('drawer-save-btn');
     const cancelBtn = document.getElementById('drawer-cancel-btn');
+    const deleteBtn = document.getElementById('drawer-delete-btn');
 
     if (scopeSubEl) {
       scopeSubEl.innerText = currentProjectScope === 'global'
         ? '作用范围：🌐 全局 (Global Scope)'
         : `作用范围：📁 当前工程 (${currentProject})`;
+    }
+
+    // 控制删除按钮：具体记忆切片展示删除按钮，支持安全维护
+    if (deleteBtn) {
+      deleteBtn.style.display = 'inline-flex';
+      deleteBtn.innerText = '🗑️ 删除此记忆';
     }
 
     if (isEditMode) {
@@ -43,7 +124,7 @@ window.QM.drawer = (function() {
       if (drawer) drawer.classList.remove('is-readonly');
       setDrawerInputsDisabled(false);
     } else {
-      if (titleEl) titleEl.innerText = "查阅记忆切片 [只读]";
+      if (titleEl) titleEl.innerText = "查阅记忆切片";
       if (noticeEl) noticeEl.style.display = 'flex';
       if (saveBtn) saveBtn.style.display = 'none';
       if (cancelBtn) cancelBtn.innerText = "关闭";
@@ -51,8 +132,20 @@ window.QM.drawer = (function() {
       setDrawerInputsDisabled(true);
     }
 
+    // 填充核心字段
     document.getElementById('edit-id').value = item.id;
     document.getElementById('edit-name').value = item.name || '';
+    document.getElementById('edit-description').value = item.description || '';
+    document.getElementById('edit-body').value = item.body || '';
+
+    // Markdown 预览渲染
+    const previewEl = document.getElementById('drawer-body-preview');
+    if (previewEl) {
+      const renderFn = window.QM.utils?.renderMarkdown || (t => t);
+      previewEl.innerHTML = renderFn(item.body || '*(暂无正文内容)*');
+    }
+
+    // 填充高级配置折叠区字段
     document.getElementById('edit-filename').value = item.filename || '';
 
     const typeSelect = document.getElementById('edit-type');
@@ -72,9 +165,7 @@ window.QM.drawer = (function() {
     }
 
     document.getElementById('edit-source').value = item.source || 'auto';
-    document.getElementById('edit-description').value = item.description || '';
     document.getElementById('edit-keywords').value = (item.keywords || []).join(', ');
-    document.getElementById('edit-body').value = item.body || '';
 
     const chainSelect = document.getElementById('edit-chain-target');
     if (chainSelect) {
@@ -87,15 +178,22 @@ window.QM.drawer = (function() {
       });
     }
 
+    // 更新折叠摘要并默认折叠元数据，突出核心内容
+    updateMetaSummary(item);
+    setMetaSectionCollapsed(true);
+
     if (drawer) drawer.classList.add('open');
   }
 
   function closeDrawer() {
+    currentActiveItemId = null;
     const drawer = drawerEl();
     if (drawer) drawer.classList.remove('open');
   }
 
   function openDomainDrawer(node) {
+    bindDrawerStaticEvents();
+    currentActiveItemId = null;
     const { memories } = window.QM.state.state;
     const cat = node.categoryKey;
     const catMemories = memories.filter(m => m.category === cat);
@@ -104,6 +202,9 @@ window.QM.drawer = (function() {
     const noticeEl = document.getElementById('drawer-readonly-notice');
     const saveBtn = document.getElementById('drawer-save-btn');
     const cancelBtn = document.getElementById('drawer-cancel-btn');
+    const deleteBtn = document.getElementById('drawer-delete-btn');
+
+    if (deleteBtn) deleteBtn.style.display = 'none';
 
     if (titleEl) titleEl.innerText = `主题认知域 [${node.name}]`;
     if (noticeEl) {
@@ -154,16 +255,30 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
 `;
     document.getElementById('edit-body').value = bodyText;
 
+    const previewEl = document.getElementById('drawer-body-preview');
+    if (previewEl) {
+      const renderFn = window.QM.utils?.renderMarkdown || (t => t);
+      previewEl.innerHTML = renderFn(bodyText);
+    }
+
+    updateMetaSummary({ category: cat, type: 'domain', keywords: allKeywords });
+    setMetaSectionCollapsed(true);
+
     if (drawer) drawer.classList.add('open');
   }
 
   function openCoreDrawer(node) {
+    bindDrawerStaticEvents();
+    currentActiveItemId = null;
     const { memories, currentDirName, currentProject } = window.QM.state.state;
     const drawer = drawerEl();
     const titleEl = document.getElementById('drawer-title');
     const noticeEl = document.getElementById('drawer-readonly-notice');
     const saveBtn = document.getElementById('drawer-save-btn');
     const cancelBtn = document.getElementById('drawer-cancel-btn');
+    const deleteBtn = document.getElementById('drawer-delete-btn');
+
+    if (deleteBtn) deleteBtn.style.display = 'none';
 
     if (titleEl) titleEl.innerText = `项目意图枢纽 [${node.name}]`;
     if (noticeEl) {
@@ -209,10 +324,21 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
 此节点为整座认知星系的中心恒星，所有主题认知域行星及记忆切片卫星均受其意图引力牵引。`;
     document.getElementById('edit-body').value = bodyText;
 
+    const previewEl = document.getElementById('drawer-body-preview');
+    if (previewEl) {
+      const renderFn = window.QM.utils?.renderMarkdown || (t => t);
+      previewEl.innerHTML = renderFn(bodyText);
+    }
+
+    updateMetaSummary({ category: 'core', type: 'anchor', keywords: allKeywords });
+    setMetaSectionCollapsed(true);
+
     if (drawer) drawer.classList.add('open');
   }
 
   function openNewCardDrawer() {
+    bindDrawerStaticEvents();
+    currentActiveItemId = null;
     const { isEditMode, memories, currentProject, currentProjectScope } = window.QM.state.state;
     if (!isEditMode) {
       window.QM.utils?.showToast('当前处于只读模式。请先在顶部工具栏切换至「✏️ 编辑模式」后再新建记忆！');
@@ -224,6 +350,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     const noticeEl = document.getElementById('drawer-readonly-notice');
     const saveBtn = document.getElementById('drawer-save-btn');
     const cancelBtn = document.getElementById('drawer-cancel-btn');
+    const deleteBtn = document.getElementById('drawer-delete-btn');
+
+    if (deleteBtn) deleteBtn.style.display = 'none';
 
     if (titleEl) titleEl.innerText = "新建记忆卡片";
     if (noticeEl) noticeEl.style.display = 'none';
@@ -252,6 +381,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     document.getElementById('edit-keywords').value = "";
     document.getElementById('edit-body').value = "";
 
+    const previewEl = document.getElementById('drawer-body-preview');
+    if (previewEl) previewEl.innerHTML = '';
+
     const chainSelect = document.getElementById('edit-chain-target');
     if (chainSelect) {
       chainSelect.innerHTML = '<option value="">-- 选择要建立链式关联的目标记忆 --</option>';
@@ -259,6 +391,10 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         chainSelect.add(new Option('🔗 链向：' + other.name, other.id));
       });
     }
+
+    updateMetaSummary({ category: isGlobal ? "user_behavior" : "common_pitfalls_experience", type: isGlobal ? 'user' : 'project', keywords: [] });
+    // 新建卡片时允许展开配置以便设定文件名或分类
+    setMetaSectionCollapsed(false);
 
     if (drawer) drawer.classList.add('open');
     document.getElementById('edit-name').focus();
@@ -312,7 +448,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
           item.chains.push(selectedChain);
         }
       }
-      window.QM.utils?.showToast('记忆与链式关系已更新');
+      window.QM.utils?.showToast('记忆切片已成功更新');
     } else {
       const newId = 'mem-' + Date.now();
       state.memories.unshift({
@@ -336,35 +472,44 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   }
 
   async function deleteCard(id) {
-    const { isEditMode, isServerMode, currentProject, memories } = window.QM.state.state;
-
-    if (!isEditMode) {
-      window.QM.utils?.showToast('当前处于只读模式，无法删除记忆切片！');
-      return;
-    }
-
+    const { isServerMode, currentProject, memories } = window.QM.state.state;
     const item = memories.find(m => m.id === id);
     if (!item) return;
 
-    if (confirm(`确定彻底删除记忆切片 "${item.name}" 吗？`)) {
-      if (isServerMode && window.QM.api) {
-        try {
-          await window.QM.api.deleteMemory(currentProject, id, item.filename);
-          window.QM.state.state.memories = memories.filter(m => m.id !== id);
-          window.QM.state.setDirty(false);
-          window.QM.cards?.renderUI();
-          window.QM.utils?.showToast(`已从磁盘真实删除 ${item.filename} 并刷新 MEMORY.md 索引`);
-          return;
-        } catch (err) {
-          console.warn('[Delete] 服务端删除失败，降级本地:', err.message);
-        }
-      }
+    const confirmed = confirm(`⚠️ 危险维护操作确认：\n\n确定彻底删除记忆切片 "${item.name}" 吗？\n文件：${item.filename}\n\n此操作将从物理磁盘中彻底删除该 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`);
+    if (!confirmed) return;
 
-      window.QM.state.state.memories = memories.filter(m => m.id !== id);
-      window.QM.state.setDirty(true);
-      window.QM.cards?.renderUI();
-      window.QM.utils?.showToast(`已删除记忆条目`);
+    if (isServerMode && window.QM.api) {
+      try {
+        await window.QM.api.deleteMemory(currentProject, id, item.filename);
+        window.QM.state.state.memories = memories.filter(m => m.id !== id);
+        window.QM.state.setDirty(false);
+        closeDrawer();
+
+        // 若当前天体常驻卡片正在展示该项，隐藏之
+        if (window.QM.topology?.hideCelestialCard) {
+          window.QM.topology.hideCelestialCard();
+        }
+
+        window.QM.cards?.renderUI();
+        window.QM.utils?.showToast(`🗑️ 已从磁盘彻底删除 ${item.filename} 并刷新索引！`);
+        return;
+      } catch (err) {
+        console.error('[Delete] 服务端删除失败:', err.message);
+        window.QM.utils?.showToast(`删除失败: ${err.message}`);
+        return;
+      }
     }
+
+    // 离线模式降级处理
+    window.QM.state.state.memories = memories.filter(m => m.id !== id);
+    window.QM.state.setDirty(true);
+    closeDrawer();
+    if (window.QM.topology?.hideCelestialCard) {
+      window.QM.topology.hideCelestialCard();
+    }
+    window.QM.cards?.renderUI();
+    window.QM.utils?.showToast(`已删除记忆条目 (离线态)`);
   }
 
   return {

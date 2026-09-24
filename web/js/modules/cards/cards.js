@@ -104,10 +104,10 @@ window.QM.cards = (function() {
             <div class="card-actions">
               ${isEditMode ? `
                 <button class="btn btn-subtle btn-sm" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">✏️ 编辑</button>
-                <button class="btn btn-danger btn-sm" onclick="window.QM.drawer.deleteCard('${escapeHtml(m.id)}')">🗑️ 删除</button>
               ` : `
                 <button class="btn btn-subtle btn-sm" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">👁️ 查阅</button>
               `}
+              <button class="btn btn-danger btn-sm" onclick="window.QM.drawer.deleteCard('${escapeHtml(m.id)}')">🗑️ 删除</button>
             </div>
           </div>
         </div>

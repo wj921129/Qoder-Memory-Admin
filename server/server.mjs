@@ -797,9 +797,27 @@ export function createServer() {
           }
         }
 
+        // 探测工程目录下一级子分类目录
+        if (targetProj.realPath && fsSync.existsSync(targetProj.realPath)) {
+          try {
+            const subs = await fs.readdir(targetProj.realPath, { withFileTypes: true });
+            for (const s of subs) {
+              if (s.isDirectory()) {
+                candidatePaths.push(path.join(targetProj.realPath, s.name, targetFile));
+              }
+            }
+          } catch (e) {}
+        }
+
+        let deletedCount = 0;
         for (const p of candidatePaths) {
           if (fsSync.existsSync(p)) {
-            try { await fs.unlink(p); } catch (e) {}
+            try {
+              await fs.unlink(p);
+              deletedCount++;
+            } catch (e) {
+              console.warn('[Delete Error]', e.message);
+            }
           }
         }
 
@@ -808,13 +826,18 @@ export function createServer() {
           const files = await fs.readdir(targetProj.realPath);
           const remaining = [];
           for (const f of files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md')) {
-            const text = await fs.readFile(path.join(targetProj.realPath, f), 'utf-8');
-            remaining.push(parseMarkdownFile(text, f));
+            try {
+              const text = await fs.readFile(path.join(targetProj.realPath, f), 'utf-8');
+              remaining.push(parseMarkdownFile(text, f));
+            } catch (e) {}
           }
           await fs.writeFile(path.join(targetProj.realPath, 'MEMORY.md'), generateMemoryIndex(remaining), 'utf-8');
         }
 
-        sendJson(res, 200, { ok: true });
+        // 刷新内存中的项目列表与计数
+        await scanAllProjects();
+
+        sendJson(res, 200, { ok: true, deletedFile: targetFile, deletedCount });
         return;
       }
 
@@ -866,40 +889,94 @@ export function createServer() {
   });
 }
 
-// 独立启动支持
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const appServer = createServer();
-
-  async function startServer(portToUse) {
-    const projs = await scanAllProjects();
-    appServer.listen(portToUse, () => {
-      const activePort = appServer.address().port;
-      const url = `http://localhost:${activePort}`;
-      console.log('\n============================================================');
-      console.log('⚡ Qoder Memory 工业级记忆拓扑管理台 (本地自愈直读直写版)');
-      console.log(`🌐 访问地址: ${url}`);
-      console.log(`🔍 已自动识别本地 Qoder 知识库: ${projs.length} 个 (全局与工程级自适应)`);
-      console.log(`🖥️ 运行平台: Windows (${os.release()}) / Node ${process.version}`);
-      console.log('💡 特性支持: 零软链接依赖、Slug 物理自愈、原子落盘、MEMORY.md 索引同步');
-      console.log('============================================================\n');
-
-      if (!process.argv.includes('--no-open')) {
-        const startCmd = process.platform === 'win32' ? `start ${url}` : (process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url}`);
-        exec(startCmd, err => {
-          if (err) console.warn('自动拉起浏览器失败，请手动打开:', url);
-        });
-      }
-    });
+// 安全拉起系统默认浏览器 (防止 Windows 平台下裸 start 误匹配当前目录下的 start.bat 导致循环重入)
+function openBrowserSafe(url) {
+  let openCmd;
+  if (process.platform === 'win32') {
+    openCmd = `explorer.exe "${url}"`;
+  } else if (process.platform === 'darwin') {
+    openCmd = `open "${url}"`;
+  } else {
+    openCmd = `xdg-open "${url}"`;
   }
 
-  appServer.on('error', err => {
-    if (err.code === 'EADDRINUSE') {
-      console.warn(`[WARN] 默认端口 ${PORT} 已被占用，正在自动切换备用端口...`);
-      startServer(0);
-    } else {
-      console.error('服务启动异常:', err);
-    }
+  exec(openCmd, err => {
+    if (err) console.warn('自动拉起浏览器失败，请手动打开:', url);
   });
+}
 
-  startServer(PORT);
+// 探测目标端口是否已有存活且健康的 Qoder Memory 实例
+function checkExistingInstance(port) {
+  return new Promise(resolve => {
+    const req = http.get(`http://127.0.0.1:${port}/api/status`, { timeout: 350 }, res => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          resolve(Boolean(parsed && parsed.ok === true));
+        } catch {
+          resolve(false);
+        }
+      });
+    });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+// 独立启动支持
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const shouldOpenBrowser = !process.argv.includes('--no-open');
+
+  (async () => {
+    // 启动前防重探测：若默认端口已存在健康的 Qoder Memory 服务实例，则直接呼出已有窗口并退出，避免重复拉起与双开
+    const isAlreadyRunning = await checkExistingInstance(PORT);
+    if (isAlreadyRunning) {
+      const url = `http://localhost:${PORT}`;
+      console.log('\n============================================================');
+      console.log('⚡ Qoder Memory 工业级记忆拓扑管理平台已在运行中 (8901 实例存活)');
+      console.log(`🌐 正在为您呼出已有管理台窗口: ${url}`);
+      console.log('============================================================\n');
+      if (shouldOpenBrowser) {
+        openBrowserSafe(url);
+      }
+      process.exit(0);
+    }
+
+    const appServer = createServer();
+
+    async function startServer(portToUse) {
+      const projs = await scanAllProjects();
+      appServer.listen(portToUse, () => {
+        const activePort = appServer.address().port;
+        const url = `http://localhost:${activePort}`;
+        console.log('\n============================================================');
+        console.log('⚡ Qoder Memory 工业级记忆拓扑管理台 (本地自愈直读直写版)');
+        console.log(`🌐 访问地址: ${url}`);
+        console.log(`🔍 已自动识别本地 Qoder 知识库: ${projs.length} 个 (全局与工程级自适应)`);
+        console.log(`🖥️ 运行平台: Windows (${os.release()}) / Node ${process.version}`);
+        console.log('💡 特性支持: 零软链接依赖、Slug 物理自愈、原子落盘、MEMORY.md 索引同步');
+        console.log('============================================================\n');
+
+        if (shouldOpenBrowser) {
+          openBrowserSafe(url);
+        }
+      });
+    }
+
+    appServer.on('error', err => {
+      if (err.code === 'EADDRINUSE') {
+        console.warn(`[WARN] 默认端口 ${PORT} 已被其他程序占用，正在自动切换备用端口...`);
+        startServer(0);
+      } else {
+        console.error('服务启动异常:', err);
+      }
+    });
+
+    startServer(PORT);
+  })();
 }

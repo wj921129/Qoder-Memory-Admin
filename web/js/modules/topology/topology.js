@@ -870,6 +870,11 @@ window.QM.topology = (function() {
       if (openBtn) openBtn.innerText = state.isEditMode ? "✏️ 编辑切片" : "📖 查阅规约";
     }
 
+    const cardDeleteBtn = document.getElementById('c-card-delete-btn');
+    if (cardDeleteBtn) {
+      cardDeleteBtn.style.display = (node.rawItem && node.rawItem.id) ? 'inline-flex' : 'none';
+    }
+
     cardEl.style.display = 'flex';
   }
 
@@ -1249,6 +1254,18 @@ window.QM.topology = (function() {
             if (currentCardNode.type === 'core') drawer.openCoreDrawer(currentCardNode);
             else if (currentCardNode.type === 'domain') drawer.openDomainDrawer(currentCardNode);
             else if (currentCardNode.rawItem) drawer.openDrawer(currentCardNode.rawItem.id);
+          }
+        }
+      });
+    }
+
+    const cardDeleteBtn = document.getElementById('c-card-delete-btn');
+    if (cardDeleteBtn) {
+      cardDeleteBtn.addEventListener('click', () => {
+        if (currentCardNode && currentCardNode.rawItem) {
+          const drawer = window.QM.drawer;
+          if (drawer && typeof drawer.deleteCard === 'function') {
+            drawer.deleteCard(currentCardNode.rawItem.id);
           }
         }
       });
