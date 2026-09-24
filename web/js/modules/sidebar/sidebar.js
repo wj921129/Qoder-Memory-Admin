@@ -6,12 +6,9 @@ window.QM = window.QM || {};
 
 window.QM.sidebar = (function() {
   function render() {
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-    const { memories, activeCategory, activeTag } = state;
-    const constants = (window.QM && window.QM.constants) || window.QM_CONSTANTS;
-    const utils = (window.QM && window.QM.utils) || window.QM_CONSTANTS;
-    const { CATEGORY_MAP } = constants;
-    const { escapeHtml } = utils;
+    const { memories, activeCategory, activeTag } = window.QM.state.state;
+    const { CATEGORY_MAP } = window.QM.constants;
+    const { escapeHtml } = window.QM.utils;
 
     // 1. 分类统计与列表
     const catCounts = {};
@@ -23,7 +20,7 @@ window.QM.sidebar = (function() {
     const catListEl = document.getElementById('category-list');
     if (catListEl) {
       let catHtml = `
-        <div class="cat-item ${activeCategory === 'all' ? 'active' : ''}" data-category="all" onclick="QM.sidebar.selectCategory('all')">
+        <div class="cat-item ${activeCategory === 'all' ? 'active' : ''}" data-category="all" onclick="window.QM.sidebar.selectCategory('all')">
           <span>🌟 全部记忆集群</span>
           <span class="cat-count">${memories.length}</span>
         </div>
@@ -31,7 +28,7 @@ window.QM.sidebar = (function() {
       Object.keys(catCounts).sort().forEach(cat => {
         const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
         catHtml += `
-          <div class="cat-item ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" onclick="QM.sidebar.selectCategory(this.getAttribute('data-category'))">
+          <div class="cat-item ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
             <span>${escapeHtml(label)}</span>
             <span class="cat-count">${catCounts[cat]}</span>
           </div>
@@ -56,7 +53,7 @@ window.QM.sidebar = (function() {
       let tagHtml = '';
       Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]).slice(0, 30).forEach(tag => {
         tagHtml += `
-          <span class="tag-pill ${activeTag === tag ? 'active' : ''}" onclick="QM.sidebar.toggleTag('${escapeHtml(tag)}')">
+          <span class="tag-pill ${activeTag === tag ? 'active' : ''}" onclick="window.QM.sidebar.toggleTag('${escapeHtml(tag)}')">
             ${escapeHtml(tag)} <small style="opacity:0.7;">(${tagCounts[tag]})</small>
           </span>
         `;
@@ -68,21 +65,16 @@ window.QM.sidebar = (function() {
   }
 
   function highlightCategory(catKey, shouldScroll = true) {
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
+    const state = window.QM.state.state;
     state.activeCategory = catKey || 'all';
 
     const catListEl = document.getElementById('category-list');
     if (catListEl) {
-      const items = catListEl.querySelectorAll('.cat-item');
       let targetItem = null;
-      items.forEach(item => {
-        const itemCat = item.getAttribute('data-category');
-        if (itemCat === state.activeCategory) {
-          item.classList.add('active');
-          targetItem = item;
-        } else {
-          item.classList.remove('active');
-        }
+      catListEl.querySelectorAll('.cat-item').forEach(item => {
+        const isMatch = item.getAttribute('data-category') === state.activeCategory;
+        item.classList.toggle('active', isMatch);
+        if (isMatch) targetItem = item;
       });
 
       if (shouldScroll && targetItem) {
@@ -90,46 +82,36 @@ window.QM.sidebar = (function() {
       }
     }
 
-    const cardsModule = (window.QM && window.QM.cards) || window.QM_CARDS;
-    if (cardsModule) {
-      const filtered = cardsModule.getFilteredMemories();
+    if (window.QM.cards) {
+      const filtered = window.QM.cards.getFilteredMemories();
       const viewStatsEl = document.getElementById('view-stats');
       if (viewStatsEl) {
         viewStatsEl.innerText = `显示 ${filtered.length} / ${state.memories.length} 条记忆`;
       }
 
       if (state.viewMode === 'cards') {
-        cardsModule.renderCardsGrid(filtered);
+        window.QM.cards.renderCardsGrid(filtered);
       }
     }
   }
 
-  function selectCategory(cat) {
-    cat = cat || 'all';
+  function selectCategory(cat = 'all') {
     highlightCategory(cat, false);
 
     // 如果处于银河星系视图，联动聚焦对应的天体与运镜
-    const topology = (window.QM && window.QM.topology) || window.QM_GALAXY;
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-    if (state.viewMode === 'galaxy' && topology && typeof topology.focusOnCategory === 'function') {
-      topology.focusOnCategory(cat);
+    if (window.QM.state.state.viewMode === 'galaxy') {
+      window.QM.topology?.focusOnCategory(cat);
     }
   }
 
   function toggleTag(tag) {
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-    const utils = (window.QM && window.QM.utils) || window.QM_CONSTANTS;
-    const cardsModule = (window.QM && window.QM.cards) || window.QM_CARDS;
-
+    const state = window.QM.state.state;
     state.activeTag = state.activeTag === tag ? null : tag;
 
-    if (cardsModule && typeof cardsModule.renderUI === 'function') {
-      cardsModule.renderUI();
-    }
+    window.QM.cards?.renderUI();
 
     const hudText = document.getElementById('hud-text');
     const hudIndicator = document.getElementById('hud-indicator');
-    const topology = (window.QM && window.QM.topology) || window.QM_GALAXY;
 
     if (state.activeTag) {
       const matchedUnits = state.memories.filter(m => (m.keywords || []).includes(state.activeTag));
@@ -138,16 +120,10 @@ window.QM.sidebar = (function() {
         hudIndicator.style.background = "#c084fc";
         hudIndicator.style.boxShadow = "0 0 10px #c084fc";
       }
-      if (utils && utils.showToast) {
-        utils.showToast(`⚡ 已激活「${state.activeTag}」语义共振场（${matchedUnits.length} 条切片聚焦）`);
-      }
+      window.QM.utils?.showToast(`⚡ 已激活「${state.activeTag}」语义共振场（${matchedUnits.length} 条切片聚焦）`);
     } else {
-      if (topology && typeof topology.updateFocusRelatedSet === 'function') {
-        topology.updateFocusRelatedSet();
-      }
-      if (utils && utils.showToast) {
-        utils.showToast(`已重置关键词共振，恢复全域星系`);
-      }
+      window.QM.topology?.updateFocusRelatedSet();
+      window.QM.utils?.showToast(`已重置关键词共振，恢复全域星系`);
     }
   }
 

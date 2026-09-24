@@ -6,8 +6,7 @@ window.QM = window.QM || {};
 
 window.QM.cards = (function() {
   function getFilteredMemories() {
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-    const { memories, activeCategory, activeTag, searchQuery, sortBy } = state;
+    const { memories, activeCategory, activeTag, searchQuery, sortBy } = window.QM.state.state;
 
     let filtered = memories.filter(m => {
       if (activeCategory !== 'all' && m.category !== activeCategory) return false;
@@ -34,12 +33,9 @@ window.QM.cards = (function() {
   }
 
   function renderCardsGrid(filtered) {
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-    const { isEditMode } = state;
-    const constants = (window.QM && window.QM.constants) || window.QM_CONSTANTS;
-    const utils = (window.QM && window.QM.utils) || window.QM_CONSTANTS;
-    const { CATEGORY_MAP, TYPE_MAP } = constants;
-    const { escapeHtml, renderMarkdown } = utils;
+    const { isEditMode } = window.QM.state.state;
+    const { CATEGORY_MAP, TYPE_MAP } = window.QM.constants;
+    const { escapeHtml, renderMarkdown } = window.QM.utils;
 
     const gridEl = document.getElementById('cards-grid');
     if (!gridEl) return;
@@ -66,7 +62,7 @@ window.QM.cards = (function() {
 
       return `
         <div class="memory-card" id="card-${escapeHtml(m.id)}">
-          <div class="card-title" onclick="(window.QM?.drawer?.openDrawer || window.QM_DRAWER?.openDrawer)('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
+          <div class="card-title" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
           <div class="card-badges">
             ${typeHtml}
             <span class="badge-tag badge-cat">${escapeHtml(catLabel)}</span>
@@ -87,10 +83,10 @@ window.QM.cards = (function() {
             <div class="card-file" title="${escapeHtml(m.filename)}">📄 ${escapeHtml(m.filename)}</div>
             <div class="card-actions">
               ${isEditMode ? `
-                <button class="btn btn-subtle btn-sm" onclick="(window.QM?.drawer?.openDrawer || window.QM_DRAWER?.openDrawer)('${escapeHtml(m.id)}')">✏️ 编辑</button>
-                <button class="btn btn-danger btn-sm" onclick="(window.QM?.drawer?.deleteCard || window.QM_DRAWER?.deleteCard)('${escapeHtml(m.id)}')">🗑️ 删除</button>
+                <button class="btn btn-subtle btn-sm" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">✏️ 编辑</button>
+                <button class="btn btn-danger btn-sm" onclick="window.QM.drawer.deleteCard('${escapeHtml(m.id)}')">🗑️ 删除</button>
               ` : `
-                <button class="btn btn-subtle btn-sm" onclick="(window.QM?.drawer?.openDrawer || window.QM_DRAWER?.openDrawer)('${escapeHtml(m.id)}')">👁️ 查阅</button>
+                <button class="btn btn-subtle btn-sm" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">👁️ 查阅</button>
               `}
             </div>
           </div>
@@ -100,8 +96,7 @@ window.QM.cards = (function() {
   }
 
   function renderUI() {
-    const state = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-    const { memories, currentDirName } = state;
+    const { memories, currentDirName, viewMode } = window.QM.state.state;
     const filtered = getFilteredMemories();
 
     const statInfoEl = document.getElementById('stat-info');
@@ -111,47 +106,29 @@ window.QM.cards = (function() {
     if (viewStatsEl) viewStatsEl.innerText = `显示 ${filtered.length} / ${memories.length} 条记忆`;
 
     // 渲染侧边栏
-    const sidebar = (window.QM && window.QM.sidebar) || window.QM_SIDEBAR;
-    if (sidebar && typeof sidebar.render === 'function') {
-      sidebar.render();
-    }
+    window.QM.sidebar?.render();
 
     // 性能优化：在卡片模式下按需渲染卡片
-    if (state.viewMode === 'cards') {
+    if (viewMode === 'cards') {
       renderCardsGrid(filtered);
     }
 
-    const topology = (window.QM && window.QM.topology) || window.QM_GALAXY;
-    if (topology && typeof topology.buildGalaxyGraph === 'function') {
-      topology.buildGalaxyGraph();
-    }
+    window.QM.topology?.buildGalaxyGraph();
   }
 
   // 监听视图切换事件，若切换到卡片模式则按需渲染卡片，若切换到拓扑模式则联动聚焦
-  const stateCenter = (window.QM && window.QM.state) || window.QM_STATE;
-  if (stateCenter && typeof stateCenter.on === 'function') {
-    stateCenter.on('view-changed', (mode) => {
-      if (mode === 'cards') {
-        const filtered = getFilteredMemories();
-        renderCardsGrid(filtered);
-      } else if (mode === 'galaxy') {
-        const topology = (window.QM && window.QM.topology) || window.QM_GALAXY;
-        const curState = (window.QM && window.QM.state) ? window.QM.state.state : window.QM_STATE.state;
-        if (topology && typeof topology.focusOnCategory === 'function') {
-          topology.focusOnCategory(curState.activeCategory);
-        }
-      }
-    });
-  }
+  window.QM.state.on('view-changed', (mode) => {
+    if (mode === 'cards') {
+      renderCardsGrid(getFilteredMemories());
+    } else if (mode === 'galaxy') {
+      window.QM.topology?.focusOnCategory(window.QM.state.state.activeCategory);
+    }
+  });
 
   return {
     renderUI,
     getFilteredMemories,
-    renderCardsGrid,
-    // 兼容代理侧边栏方法
-    selectCategory: (cat) => ((window.QM?.sidebar || window.QM_SIDEBAR)?.selectCategory(cat)),
-    highlightCategory: (cat, scroll) => ((window.QM?.sidebar || window.QM_SIDEBAR)?.highlightCategory(cat, scroll)),
-    toggleTag: (tag) => ((window.QM?.sidebar || window.QM_SIDEBAR)?.toggleTag(tag))
+    renderCardsGrid
   };
 })();
 

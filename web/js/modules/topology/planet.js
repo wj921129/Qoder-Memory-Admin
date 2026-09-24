@@ -33,7 +33,6 @@ window.QM.planet = (function() {
       eccentricity,
       omega: baseOmega,
       inclination,
-      orientation: 0,
       theta: initialTheta,
       isContracted: isStrongAffinity
     };
@@ -239,7 +238,6 @@ window.QM.planet = (function() {
     c.semiMinor = newSemiMinor;
     c.theta = newTheta;
     c.omega = newOmega;
-    c.orientation = 0;
 
     node.x = localX;
     node.y = localY * solved.cosTilt;

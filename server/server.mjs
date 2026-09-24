@@ -391,6 +391,20 @@ export async function scanAllProjects() {
   return projects;
 }
 
+// 获取或动态重新探测目标项目 (SSOT)
+export async function getTargetProject(projKey) {
+  if (!projKey) return null;
+  if (activeProjectRegistry.size === 0) {
+    await scanAllProjects();
+  }
+  let target = activeProjectRegistry.get(projKey) || activeProjectRegistry.get(projKey.toLowerCase());
+  if (!target) {
+    await scanAllProjects();
+    target = activeProjectRegistry.get(projKey) || activeProjectRegistry.get(projKey.toLowerCase());
+  }
+  return target || null;
+}
+
 // MIME 类型字典
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -620,17 +634,8 @@ export function createServer() {
 
       // 3. 读取指定项目/全局的全部记忆切片 (汇聚 Agent 记忆与 IDE 会话记忆)
       if (pathname === '/api/memories' && req.method === 'GET') {
-        let projKey = parsedUrl.searchParams.get('project') || 'fmmpay-busi';
-        if (activeProjectRegistry.size === 0) {
-          await scanAllProjects();
-        }
-
-        let targetProj = activeProjectRegistry.get(projKey) || activeProjectRegistry.get(projKey.toLowerCase());
-        if (!targetProj) {
-          // 重新探测一次，以防是刚刚在 Qoder 中生成的新工程
-          await scanAllProjects();
-          targetProj = activeProjectRegistry.get(projKey) || activeProjectRegistry.get(projKey.toLowerCase());
-        }
+        const projKey = parsedUrl.searchParams.get('project') || 'fmmpay-busi';
+        const targetProj = await getTargetProject(projKey);
 
         if (!targetProj) {
           sendJson(res, 404, { error: `未找到该项目的物理记忆库: ${projKey}` });
@@ -725,12 +730,7 @@ export function createServer() {
           return;
         }
 
-        let targetProj = activeProjectRegistry.get(project) || activeProjectRegistry.get(project.toLowerCase());
-        if (!targetProj) {
-          await scanAllProjects();
-          targetProj = activeProjectRegistry.get(project) || activeProjectRegistry.get(project.toLowerCase());
-        }
-
+        const targetProj = await getTargetProject(project);
         if (!targetProj) {
           sendJson(res, 404, { error: `无法落盘：未定位到项目物理路径 [${project}]` });
           return;
@@ -773,12 +773,7 @@ export function createServer() {
           return;
         }
 
-        let targetProj = activeProjectRegistry.get(project) || activeProjectRegistry.get(project.toLowerCase());
-        if (!targetProj) {
-          await scanAllProjects();
-          targetProj = activeProjectRegistry.get(project) || activeProjectRegistry.get(project.toLowerCase());
-        }
-
+        const targetProj = await getTargetProject(project);
         if (!targetProj) {
           sendJson(res, 404, { error: `未定位到项目物理路径 [${project}]` });
           return;
@@ -826,12 +821,7 @@ export function createServer() {
       // 6. 在本地资源管理器打开记忆目录或源码工程
       if (pathname === '/api/open-folder' && req.method === 'POST') {
         const { project, target } = await readRequestBody(req);
-        let targetProj = activeProjectRegistry.get(project) || activeProjectRegistry.get(project?.toLowerCase());
-        if (!targetProj) {
-          await scanAllProjects();
-          targetProj = activeProjectRegistry.get(project) || activeProjectRegistry.get(project?.toLowerCase());
-        }
-
+        const targetProj = await getTargetProject(project);
         if (!targetProj) {
           sendJson(res, 404, { error: `未定位到项目 [${project}]` });
           return;

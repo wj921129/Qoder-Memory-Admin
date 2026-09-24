@@ -6,13 +6,6 @@ window.QM = window.QM || {};
 window.QM.drawer = (function() {
   const drawerEl = () => document.getElementById('editor-drawer');
 
-  function getState() { return (window.QM?.state?.state) || window.QM_STATE.state; }
-  function getStateCenter() { return (window.QM?.state) || window.QM_STATE; }
-  function getConstants() { return window.QM?.constants || window.QM_CONSTANTS; }
-  function getUtils() { return window.QM?.utils || window.QM_CONSTANTS; }
-  function getApi() { return window.QM?.api || window.QM_API; }
-  function getCardsModule() { return window.QM?.cards || window.QM_CARDS; }
-
   function setDrawerInputsDisabled(disabled) {
     const fieldIds = [
       'edit-name', 'edit-filename', 'edit-type', 'edit-category-select', 'edit-category-custom',
@@ -25,8 +18,7 @@ window.QM.drawer = (function() {
   }
 
   function openDrawer(id) {
-    const state = getState();
-    const { memories, isEditMode, currentProject, currentProjectScope } = state;
+    const { memories, isEditMode, currentProject, currentProjectScope } = window.QM.state.state;
     const item = memories.find(m => m.id === id);
     if (!item) return;
 
@@ -104,8 +96,7 @@ window.QM.drawer = (function() {
   }
 
   function openDomainDrawer(node) {
-    const state = getState();
-    const { memories } = state;
+    const { memories } = window.QM.state.state;
     const cat = node.categoryKey;
     const catMemories = memories.filter(m => m.category === cat);
     const drawer = drawerEl();
@@ -167,8 +158,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   }
 
   function openCoreDrawer(node) {
-    const state = getState();
-    const { memories, currentDirName, currentProject } = state;
+    const { memories, currentDirName, currentProject } = window.QM.state.state;
     const drawer = drawerEl();
     const titleEl = document.getElementById('drawer-title');
     const noticeEl = document.getElementById('drawer-readonly-notice');
@@ -223,13 +213,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   }
 
   function openNewCardDrawer() {
-    const state = getState();
-    const utils = getUtils();
-    const { isEditMode, memories } = state;
+    const { isEditMode, memories, currentProject, currentProjectScope } = window.QM.state.state;
     if (!isEditMode) {
-      if (utils && utils.showToast) {
-        utils.showToast('当前处于只读模式。请先在顶部工具栏切换至「✏️ 编辑模式」后再新建记忆！');
-      }
+      window.QM.utils?.showToast('当前处于只读模式。请先在顶部工具栏切换至「✏️ 编辑模式」后再新建记忆！');
       return;
     }
 
@@ -246,12 +232,12 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (drawer) drawer.classList.remove('is-readonly');
     setDrawerInputsDisabled(false);
 
-    const isGlobal = state.currentProjectScope === 'global';
+    const isGlobal = currentProjectScope === 'global';
     const scopeSubEl = document.getElementById('drawer-scope-sub');
     if (scopeSubEl) {
       scopeSubEl.innerText = isGlobal
         ? '作用范围：🌐 全局 (Global Scope)'
-        : `作用范围：📁 当前工程 (${state.currentProject})`;
+        : `作用范围：📁 当前工程 (${currentProject})`;
     }
 
     document.getElementById('edit-id').value = "";
@@ -279,20 +265,15 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   }
 
   function saveCurrentDrawer() {
-    const state = getState();
-    const stateCenter = getStateCenter();
-    const utils = getUtils();
-    const cardsModule = getCardsModule();
-    const { isEditMode } = state;
-
-    if (!isEditMode) {
-      if (utils && utils.showToast) utils.showToast('当前处于只读模式，无法保存修改！');
+    const state = window.QM.state.state;
+    if (!state.isEditMode) {
+      window.QM.utils?.showToast('当前处于只读模式，无法保存修改！');
       return;
     }
 
     const id = document.getElementById('edit-id').value;
     const name = document.getElementById('edit-name').value.trim();
-    if (!name) return utils.showToast ? utils.showToast('请输入记忆标题') : alert('请输入记忆标题');
+    if (!name) return window.QM.utils?.showToast ? window.QM.utils.showToast('请输入记忆标题') : alert('请输入记忆标题');
 
     let filename = document.getElementById('edit-filename').value.trim();
     if (!filename) {
@@ -331,7 +312,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
           item.chains.push(selectedChain);
         }
       }
-      if (utils && utils.showToast) utils.showToast('记忆与链式关系已更新');
+      window.QM.utils?.showToast('记忆与链式关系已更新');
     } else {
       const newId = 'mem-' + Date.now();
       state.memories.unshift({
@@ -346,26 +327,19 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         chains: selectedChain ? [selectedChain] : [],
         body
       });
-      if (utils && utils.showToast) utils.showToast('记忆切片已成功创建！');
+      window.QM.utils?.showToast('记忆切片已成功创建！');
     }
 
     closeDrawer();
-    stateCenter.setDirty(true);
-    if (cardsModule && typeof cardsModule.renderUI === 'function') {
-      cardsModule.renderUI();
-    }
+    window.QM.state.setDirty(true);
+    window.QM.cards?.renderUI();
   }
 
   async function deleteCard(id) {
-    const state = getState();
-    const stateCenter = getStateCenter();
-    const utils = getUtils();
-    const api = getApi();
-    const cardsModule = getCardsModule();
-    const { isEditMode, isServerMode, currentProject, memories } = state;
+    const { isEditMode, isServerMode, currentProject, memories } = window.QM.state.state;
 
     if (!isEditMode) {
-      if (utils && utils.showToast) utils.showToast('当前处于只读模式，无法删除记忆切片！');
+      window.QM.utils?.showToast('当前处于只读模式，无法删除记忆切片！');
       return;
     }
 
@@ -373,23 +347,23 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (!item) return;
 
     if (confirm(`确定彻底删除记忆切片 "${item.name}" 吗？`)) {
-      if (isServerMode && api) {
+      if (isServerMode && window.QM.api) {
         try {
-          await api.deleteMemory(currentProject, id, item.filename);
-          state.memories = memories.filter(m => m.id !== id);
-          stateCenter.setDirty(false);
-          if (cardsModule && typeof cardsModule.renderUI === 'function') cardsModule.renderUI();
-          if (utils && utils.showToast) utils.showToast(`已从磁盘真实删除 ${item.filename} 并刷新 MEMORY.md 索引`);
+          await window.QM.api.deleteMemory(currentProject, id, item.filename);
+          window.QM.state.state.memories = memories.filter(m => m.id !== id);
+          window.QM.state.setDirty(false);
+          window.QM.cards?.renderUI();
+          window.QM.utils?.showToast(`已从磁盘真实删除 ${item.filename} 并刷新 MEMORY.md 索引`);
           return;
         } catch (err) {
           console.warn('[Delete] 服务端删除失败，降级本地:', err.message);
         }
       }
 
-      state.memories = memories.filter(m => m.id !== id);
-      stateCenter.setDirty(true);
-      if (cardsModule && typeof cardsModule.renderUI === 'function') cardsModule.renderUI();
-      if (utils && utils.showToast) utils.showToast(`已删除记忆条目`);
+      window.QM.state.state.memories = memories.filter(m => m.id !== id);
+      window.QM.state.setDirty(true);
+      window.QM.cards?.renderUI();
+      window.QM.utils?.showToast(`已删除记忆条目`);
     }
   }
 

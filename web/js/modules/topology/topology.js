@@ -15,16 +15,12 @@ window.QM.topology = (function() {
   let hoveredNode = null;
   let draggedNode = null;
   let dragStartMouse = { x: 0, y: 0 };
-  let dragStartNodePos = { x: 0, y: 0 };
   let grabOffsetX = 0;             // 抓取点相对天体球心的X偏移量 (消除抓取跳变)
   let grabOffsetY = 0;             // 抓取点相对天体球心的Y偏移量 (消除抓取跳变)
-  let dragDisplacement = { x: 0, y: 0 };
   const dragSnapshotMap = new Map();
-  const rippleDampingList = [];
 
   let focusTarget = null;
   let focusRelatedIds = new Set();
-  let focusProgress = 0;
   let animationTime = 0;
 
   // 摄像机镜头平滑运镜中枢 (Camera Director)
@@ -32,6 +28,10 @@ window.QM.topology = (function() {
   let cameraTargetScale = 1.0;
   let isAutoCameraActive = false;
   let initialScale = 1.0;
+
+  function getDomainCameraScale(cardCount = 10) {
+    return cardCount > 25 ? 0.95 : (cardCount > 12 ? 1.05 : 1.15);
+  }
 
   const celestialStore = new Map();
   const transform = { x: 0, y: 0, scale: 1.0 };
@@ -51,16 +51,6 @@ window.QM.topology = (function() {
       twinklePhase: Math.random() * Math.PI * 2
     });
   }
-
-  function getStarModule() { return window.QM?.star || window.QM_STAR; }
-  function getPlanetModule() { return window.QM?.planet || window.QM_PLANET; }
-  function getSatelliteModule() { return window.QM?.satellite || window.QM_SATELLITE; }
-  function getDrawerModule() { return window.QM?.drawer || window.QM_DRAWER; }
-  function getSidebarModule() { return window.QM?.sidebar || window.QM_SIDEBAR; }
-  function getCardsModule() { return window.QM?.cards || window.QM_CARDS; }
-  function getState() { return (window.QM?.state?.state) || window.QM_STATE.state; }
-  function getConstants() { return window.QM?.constants || window.QM_CONSTANTS; }
-  function getUtils() { return window.QM?.utils || window.QM_CONSTANTS; }
 
   function init() {
     canvas = document.getElementById('galaxy-canvas');
@@ -127,13 +117,11 @@ window.QM.topology = (function() {
     edges = [];
     nodeMap.clear();
 
-    const state = getState();
-    const constants = getConstants();
-    const star = getStarModule();
-    const planet = getPlanetModule();
-    const satellite = getSatelliteModule();
-    const { memories, currentDirName } = state;
-    const { CATEGORY_MAP } = constants;
+    const { memories, currentDirName } = window.QM.state.state;
+    const { CATEGORY_MAP } = window.QM.constants;
+    const star = window.QM.star;
+    const planet = window.QM.planet;
+    const satellite = window.QM.satellite;
 
     // 1. 全局意图核心恒星
     const coreNode = star.createStarNode(currentDirName);
@@ -152,20 +140,9 @@ window.QM.topology = (function() {
 
     const catList = Array.from(categoriesFound);
     const totalCards = memories.length || 1;
-    const maxCatCards = Math.max(...Array.from(catCountMap.values()), 0);
     const numDomains = catList.length;
     const domainNodeMap = new Map();
-
     const tierCapacities = [6, 12, 18, 24, 30, 36, 42];
-    let maxSatTier = 0;
-    if (maxCatCards > 0) {
-      let rem = maxCatCards;
-      for (let t = 0; t < tierCapacities.length; t++) {
-        if (rem <= tierCapacities[t]) { maxSatTier = t; break; }
-        rem -= tierCapacities[t];
-        maxSatTier = t + 1;
-      }
-    }
 
     const R_MIN = 240;
     const domainTiers = numDomains > 11 ? 4 : (numDomains > 6 ? 3 : (numDomains > 2 ? 2 : 1));
@@ -200,7 +177,7 @@ window.QM.topology = (function() {
 
         edges.push({
           from: coreNode.id, to: domainNode.id,
-          type: "hierarchy", label: pStore.isContracted ? "核心引力" : "主题引力场",
+          type: "hierarchy",
           isChain: false
         });
       });
@@ -232,7 +209,8 @@ window.QM.topology = (function() {
 
         edges.push({
           from: parentDomain.id, to: unitNode.id,
-          type: "belongs_to", label: "归属纽带", isChain: false
+          type: "belongs_to",
+          isChain: false
         });
       });
     });
@@ -251,7 +229,8 @@ window.QM.topology = (function() {
         if (targetItem && targetItem.id !== m.id) {
           edges.push({
             from: m.id, to: targetItem.id,
-            type: "chain", label: "链式衍生 ➔", isChain: true
+            type: "chain",
+            isChain: true
           });
         }
       });
@@ -266,7 +245,8 @@ window.QM.topology = (function() {
         if (shared.length >= 2) {
           edges.push({
             from: a.id, to: b.id,
-            type: "shared_keywords", label: shared.slice(0, 2).join('·'), isChain: false
+            type: "shared_keywords",
+            isChain: false
           });
         }
       }
@@ -352,7 +332,7 @@ window.QM.topology = (function() {
     if (!node) return false;
     if (hoveredNode && hoveredNode.id === node.id) return false;
 
-    const { activeTag, searchQuery, activeCategory, memories } = getState();
+    const { activeTag, searchQuery, activeCategory, memories } = window.QM.state.state;
 
     // 1. 标签过滤模式
     if (activeTag) {
@@ -407,12 +387,10 @@ window.QM.topology = (function() {
 
   function simulateCelestialSystem() {
     animationTime += 1;
-    const targetProgress = focusTarget ? 1 : 0;
-    focusProgress += (targetProgress - focusProgress) * 0.12;
 
-    const star = getStarModule();
-    const planet = getPlanetModule();
-    const satellite = getSatelliteModule();
+    const star = window.QM.star;
+    const planet = window.QM.planet;
+    const satellite = window.QM.satellite;
 
     const core = nodeMap.get("core-root");
     star.simulateStar(core);
@@ -435,15 +413,6 @@ window.QM.topology = (function() {
       const parentDomain = nodeMap.get(n.parentId) || core;
       satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE);
     });
-
-    for (let i = rippleDampingList.length - 1; i >= 0; i--) {
-      const item = rippleDampingList[i];
-      item.offsetX *= 0.85;
-      item.offsetY *= 0.85;
-      item.node.x += item.offsetX * 0.15;
-      item.node.y += item.offsetY * 0.15;
-      if (Math.hypot(item.offsetX, item.offsetY) < 0.2) rippleDampingList.splice(i, 1);
-    }
 
     if (isAutoCameraActive && container) {
       const panLerp = 0.08;
@@ -534,19 +503,17 @@ window.QM.topology = (function() {
   }
 
   function drawOrbits() {
-    const planet = getPlanetModule();
     nodes.forEach(n => {
       if (n.type !== 'domain') return;
       const isRelated = focusRelatedIds.has(n.id) || (focusTarget && focusTarget.id === n.id);
       const isDimmed = isNodeDimmed(n);
-      planet.drawPlanetOrbit(ctx, n, isRelated, SYSTEM_TILT_X, isDimmed);
+      window.QM.planet?.drawPlanetOrbit(ctx, n, isRelated, SYSTEM_TILT_X, isDimmed);
     });
   }
 
   function drawEdges() {
     ctx.save();
-    const state = getState();
-    const { activeTag, searchQuery, activeCategory } = state;
+    const { activeTag, searchQuery, activeCategory } = window.QM.state.state;
     const isTagFilterActive = Boolean(activeTag);
     const isSearchFilterActive = Boolean(searchQuery) || activeCategory !== 'all';
     const isFocusActive = Boolean(focusTarget);
@@ -616,13 +583,12 @@ window.QM.topology = (function() {
   }
 
   function drawCelestialBodies() {
-    const state = getState();
-    const { activeTag } = state;
+    const { activeTag, memories } = window.QM.state.state;
     const sorted = [...nodes].sort((a, b) => (a.z || 0) - (b.z || 0));
 
-    const star = getStarModule();
-    const planet = getPlanetModule();
-    const satellite = getSatelliteModule();
+    const star = window.QM.star;
+    const planet = window.QM.planet;
+    const satellite = window.QM.satellite;
 
     sorted.forEach(n => {
       const isCore = n.type === 'core';
@@ -636,7 +602,7 @@ window.QM.topology = (function() {
       let isTagHit = false;
       if (activeTag) {
         if (isUnit) isTagHit = n.rawItem ? (n.rawItem.keywords || []).includes(activeTag) : false;
-        else if (isDomain) isTagHit = state.memories.some(m => m.category === n.categoryKey && (m.keywords || []).includes(activeTag));
+        else if (isDomain) isTagHit = memories.some(m => m.category === n.categoryKey && (m.keywords || []).includes(activeTag));
         else if (isCore) isTagHit = true;
       }
 
@@ -647,11 +613,11 @@ window.QM.topology = (function() {
       ctx.globalAlpha = nodeAlpha;
 
       if (isCore) {
-        star.drawStar(ctx, n, animationTime, isDimmed);
+        star?.drawStar(ctx, n, animationTime, isDimmed);
       } else if (isDomain) {
-        planet.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
+        planet?.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
       } else if (isUnit) {
-        satellite.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
+        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
       }
 
       ctx.restore();
@@ -659,8 +625,7 @@ window.QM.topology = (function() {
   }
 
   function galaxyLoop() {
-    const state = getState();
-    if (state.viewMode === 'galaxy') {
+    if (window.QM.state.state.viewMode === 'galaxy') {
       simulateCelestialSystem();
       drawGalaxy();
     }
@@ -840,10 +805,7 @@ window.QM.topology = (function() {
     isAutoCameraActive = true;
     updateFocusRelatedSet();
 
-    const drawer = getDrawerModule();
-    if (drawer && typeof drawer.closeDrawer === 'function') {
-      drawer.closeDrawer();
-    }
+    window.QM.drawer?.closeDrawer();
     hideCelestialCard();
 
     const moreMenu = document.getElementById('more-menu');
@@ -852,10 +814,7 @@ window.QM.topology = (function() {
     if (indexModal) indexModal.classList.add('hidden');
 
     if (shouldSyncSidebar) {
-      const sidebar = getSidebarModule();
-      if (sidebar && typeof sidebar.highlightCategory === 'function') {
-        sidebar.highlightCategory('all', true);
-      }
+      window.QM.sidebar?.highlightCategory('all', true);
     }
   }
 
@@ -875,19 +834,14 @@ window.QM.topology = (function() {
     updateFocusRelatedSet();
 
     cameraTargetNode = domainNode;
-    const unitCount = domainNode.cardCount || 10;
-    cameraTargetScale = unitCount > 25 ? 0.95 : (unitCount > 12 ? 1.05 : 1.15);
+    cameraTargetScale = getDomainCameraScale(domainNode.cardCount);
     isAutoCameraActive = true;
 
     showCelestialCard(domainNode);
 
     const drawerEl = document.getElementById('editor-drawer');
-    const isDrawerOpen = drawerEl && drawerEl.classList.contains('open');
-    if (isDrawerOpen) {
-      const drawer = getDrawerModule();
-      if (drawer && typeof drawer.openDomainDrawer === 'function') {
-        drawer.openDomainDrawer(domainNode);
-      }
+    if (drawerEl && drawerEl.classList.contains('open')) {
+      window.QM.drawer?.openDomainDrawer(domainNode);
     }
   }
 
@@ -905,12 +859,10 @@ window.QM.topology = (function() {
         isAutoCameraActive = false;
         cameraTargetNode = null;
         dragStartMouse = worldPos;
-        dragStartNodePos = { x: hit.x, y: hit.y, screenX: hit.screenX, screenY: hit.screenY };
 
         grabOffsetX = worldPos.x - hit.screenX;
         grabOffsetY = worldPos.y - hit.screenY;
 
-        dragDisplacement = { x: 0, y: 0 };
         dragSnapshotMap.clear();
         nodes.forEach(n => {
           dragSnapshotMap.set(n.id, {
@@ -943,15 +895,11 @@ window.QM.topology = (function() {
 
       if (draggedNode) {
         canvas.style.cursor = "grabbing";
-        const dx = worldPos.x - dragStartMouse.x;
-        const dy = worldPos.y - dragStartMouse.y;
-        dragDisplacement = { x: dx, y: dy };
-
         const targetScreenX = worldPos.x - grabOffsetX;
         const targetScreenY = worldPos.y - grabOffsetY;
 
-        const planet = getPlanetModule();
-        const satellite = getSatelliteModule();
+        const planet = window.QM.planet;
+        const satellite = window.QM.satellite;
 
         if (draggedNode.id !== "core-root") {
           if (draggedNode.type === 'domain') {
@@ -1017,10 +965,10 @@ window.QM.topology = (function() {
       const worldPos = screenToWorld(sx, sy);
       const screenMoved = Math.hypot(e.clientX - clickOrigin.x, e.clientY - clickOrigin.y);
 
-      const drawer = getDrawerModule();
-      const sidebar = getSidebarModule();
-      const planet = getPlanetModule();
-      const satellite = getSatelliteModule();
+      const drawer = window.QM.drawer;
+      const sidebar = window.QM.sidebar;
+      const planet = window.QM.planet;
+      const satellite = window.QM.satellite;
 
       if (draggedNode) {
         if (screenMoved < 6) {
@@ -1040,8 +988,7 @@ window.QM.topology = (function() {
             }
           } else if (clicked.type === 'domain') {
             cameraTargetNode = clicked;
-            const unitCount = clicked.cardCount || 10;
-            cameraTargetScale = unitCount > 25 ? 0.95 : (unitCount > 12 ? 1.05 : 1.15);
+            cameraTargetScale = getDomainCameraScale(clicked.cardCount);
             isAutoCameraActive = true;
             if (drawer) drawer.openDomainDrawer(clicked);
             if (sidebar && typeof sidebar.highlightCategory === 'function') {
@@ -1110,7 +1057,7 @@ window.QM.topology = (function() {
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       const hit = getNodeAtScreen(sx, sy);
-      const drawer = getDrawerModule();
+      const drawer = window.QM.drawer;
       if (hit && drawer) {
         if (hit.type === 'core') drawer.openCoreDrawer(hit);
         else if (hit.type === 'domain') drawer.openDomainDrawer(hit);
@@ -1127,13 +1074,12 @@ window.QM.topology = (function() {
         if (currentCardNode) {
           focusTarget = currentCardNode;
           updateFocusRelatedSet();
-          const sidebar = getSidebarModule();
+          const sidebar = window.QM.sidebar;
           if (currentCardNode.type !== 'unit') {
             cameraTargetNode = currentCardNode;
             isAutoCameraActive = true;
             if (currentCardNode.type === 'domain') {
-              const unitCount = currentCardNode.cardCount || 10;
-              cameraTargetScale = unitCount > 25 ? 0.95 : (unitCount > 12 ? 1.05 : 1.15);
+              cameraTargetScale = getDomainCameraScale(currentCardNode.cardCount);
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
                 sidebar.highlightCategory(currentCardNode.categoryKey, true);
               }
@@ -1157,7 +1103,7 @@ window.QM.topology = (function() {
     if (cardOpenBtn) {
       cardOpenBtn.addEventListener('click', () => {
         if (currentCardNode) {
-          const drawer = getDrawerModule();
+          const drawer = window.QM.drawer;
           if (drawer) {
             if (currentCardNode.type === 'core') drawer.openCoreDrawer(currentCardNode);
             else if (currentCardNode.type === 'domain') drawer.openDomainDrawer(currentCardNode);
@@ -1187,7 +1133,6 @@ window.QM.topology = (function() {
     celestialStore.clear();
     focusTarget = null;
     focusRelatedIds.clear();
-    focusProgress = 0;
     cameraTargetNode = null;
     isAutoCameraActive = false;
     hideCelestialCard();

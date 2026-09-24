@@ -56,7 +56,7 @@ window.QM.state = (function() {
     const btnAppMode = document.getElementById('btn-app-mode');
     const hudModePill = document.getElementById('hud-mode-pill');
     const legendTip = document.querySelector('.legend-tip');
-    const toastFn = (window.QM && window.QM.utils && window.QM.utils.showToast) || (window.QM_CONSTANTS && window.QM_CONSTANTS.showToast);
+    const toastFn = window.QM?.utils?.showToast;
 
     if (btnAppMode) {
       btnAppMode.classList.toggle('is-edit', state.isEditMode);
@@ -106,112 +106,6 @@ window.QM.state = (function() {
     emit('view-changed', mode);
   }
 
-  function parseMarkdownFile(text, filename, subDirCategory = null) {
-    const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-    let name = filename.replace(/\.md$/, '');
-    let category = subDirCategory || '';
-    let source = 'auto';
-    let type = '';
-    let description = '';
-    let keywords = [];
-    let chains = [];
-    let body = text;
-
-    if (fmMatch) {
-      const fmText = fmMatch[1];
-      body = fmMatch[2].trim();
-
-      const nameMatch = fmText.match(/^(?:name|title):\s*["']?([^"'\r\n]+)["']?/m);
-      if (nameMatch) name = nameMatch[1].trim();
-
-      const catMatch = fmText.match(/category:\s*["']?([^"'\r\n]+)["']?/m);
-      if (catMatch) category = catMatch[1].trim();
-
-      const srcMatch = fmText.match(/source:\s*["']?([^"'\r\n]+)["']?/m);
-      if (srcMatch) source = srcMatch[1].trim();
-
-      const typeMatch = fmText.match(/type:\s*["']?([^"'\r\n]+)["']?/m);
-      if (typeMatch) type = typeMatch[1].trim();
-
-      const descMatch = fmText.match(/description:\s*["']?([^"'\r\n]+)["']?/m);
-      if (descMatch) description = descMatch[1].trim();
-
-      if (!description) {
-        const scenarioMatch = fmText.match(/usage_scenario:\s*\r?\n((?:\s*-[^\r\n]+\r?\n?)+)/m);
-        if (scenarioMatch) {
-          const lines = scenarioMatch[1].split(/\r?\n/)
-            .map(l => l.replace(/^\s*-\s*["']?/, '').replace(/["']?\s*$/, '').trim())
-            .filter(Boolean);
-          if (lines.length > 0) description = lines.join('; ');
-        }
-      }
-
-      const kwMatch = fmText.match(/keywords:\s*\[(.*?)\]/m) || fmText.match(/keywords:\s*([^\r\n]+)/m);
-      if (kwMatch) {
-        keywords = kwMatch[1].split(/[,，]/).map(s => s.replace(/["']/g, '').trim()).filter(Boolean);
-      }
-
-      const chainMatch = fmText.match(/chains:\s*\[(.*?)\]/m);
-      if (chainMatch) {
-        chains = chainMatch[1].split(/[,，]/).map(s => s.replace(/["']/g, '').trim()).filter(Boolean);
-      }
-    }
-
-    if (!category || category === 'common') {
-      if (subDirCategory) {
-        category = subDirCategory;
-      } else if (type === 'feedback') {
-        category = 'common_pitfalls_experience';
-      } else if (type === 'user') {
-        category = 'user_behavior';
-      } else if (type === 'project') {
-        category = 'project_architecture';
-      } else if (type === 'reference') {
-        category = 'development_code_specification';
-      } else {
-        category = 'common_pitfalls_experience';
-      }
-    }
-
-    if (!['user', 'feedback', 'project', 'reference'].includes(type)) {
-      if (category.startsWith('user_')) type = 'user';
-      else if (category.includes('pitfalls') || category.includes('feedback')) type = 'feedback';
-      else if (category.startsWith('project_') || category.includes('decision')) type = 'project';
-      else type = 'reference';
-    }
-
-    return {
-      id: filename.replace(/\.md$/, ''),
-      filename,
-      name,
-      category,
-      source,
-      type,
-      description,
-      keywords,
-      chains,
-      body
-    };
-  }
-
-  function serializeToMarkdown(item) {
-    const kwStr = (item.keywords || []).map(k => `"${k.replace(/"/g, '\\"')}"`).join(', ');
-    const chainStr = (item.chains || []).map(c => `"${c.replace(/"/g, '\\"')}"`).join(', ');
-    return `---
-name: "${(item.name || '').replace(/"/g, '\\"')}"
-description: "${(item.description || '').replace(/"/g, '\\"')}"
-metadata:
-  type: ${item.type || 'feedback'}
-  category: ${item.category || 'common'}
-  source: ${item.source || 'auto'}
-  keywords: [${kwStr}]
-  chains: [${chainStr}]
----
-
-${item.body || ''}
-`;
-  }
-
   function generateMemoryIndex(memories) {
     const lines = [];
     (memories || state.memories).forEach(m => {
@@ -228,8 +122,6 @@ ${item.body || ''}
     setDirty,
     setEditMode,
     setViewMode,
-    parseMarkdownFile,
-    serializeToMarkdown,
     generateMemoryIndex
   };
 })();

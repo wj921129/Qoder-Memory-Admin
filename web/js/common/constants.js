@@ -32,23 +32,9 @@ window.QM.constants = (function() {
     reference: { name: "外部规范与参考 (reference)", color: "#8b5cf6", icon: "📖", badgeClass: "type-reference" }
   };
 
-  // 项目元信息字典
-  const PROJECT_META = {
-    global: { name: "🌐 全局研发智库 (Qoder CN 通用规范)", icon: "🌐", shortName: "global" },
-    "fmmpay-busi": { name: "⚡ fmmpay-busi (国际卡收单核心服务)", icon: "⚡", shortName: "fmmpay-busi" },
-    "fmmpay-dev": { name: "🚀 fmmpay-dev (国际卡开发工程与业务库)", icon: "🚀", shortName: "fmmpay-dev" },
-    "gpay-gateb": { name: "🛡️ gpay-gateb (支付网关接入前置服务)", icon: "🛡️", shortName: "gpay-gateb" },
-    "gpay-gateb-dev": { name: "🛡️ gpay-gateb (支付网关接入前置服务)", icon: "🛡️", shortName: "gpay-gateb-dev" },
-    "gpay-chnlwg": { name: "🔌 gpay-chnlwg (渠道网关通道通信服务)", icon: "🔌", shortName: "gpay-chnlwg" },
-    "gpay-cbmu": { name: "🌐 gpay-cbmu (跨境商户结算中台服务)", icon: "🌐", shortName: "gpay-cbmu" },
-    "gpay-cbmu-dev": { name: "🌐 gpay-cbmu (跨境商户结算中台服务)", icon: "🌐", shortName: "gpay-cbmu-dev" },
-    "gpay-busi": { name: "💳 gpay-busi (全渠道支付核心业务服务)", icon: "💳", shortName: "gpay-busi" }
-  };
-
   return {
     CATEGORY_MAP,
-    TYPE_MAP,
-    PROJECT_META
+    TYPE_MAP
   };
 })();
 

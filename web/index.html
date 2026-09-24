@@ -253,7 +253,7 @@
       <p style="font-size:12px; color:#94a3b8;">该文件为 Qoder 记忆根索引，保存时会自动根据当前全部记忆条目与链式关系同步更新。</p>
       <textarea id="index-content-preview" class="form-control" rows="14" style="font-family:monospace; font-size:12px;" readonly></textarea>
       <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn btn-subtle" onclick="navigator.clipboard.writeText(document.getElementById('index-content-preview').value); (window.QM?.utils?.showToast || QM_CONSTANTS.showToast)('已复制 MEMORY.md 内容');">复制到剪贴板</button>
+        <button class="btn btn-subtle" onclick="navigator.clipboard.writeText(document.getElementById('index-content-preview').value); window.QM.utils.showToast('已复制 MEMORY.md 内容');">复制到剪贴板</button>
         <button class="btn" onclick="document.getElementById('index-modal').classList.add('hidden')">关闭</button>
       </div>
     </div>

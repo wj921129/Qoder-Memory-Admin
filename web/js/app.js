@@ -5,26 +5,15 @@
 window.QM = window.QM || {};
 
 window.QM.app = (function() {
-  function getTopology() { return window.QM?.topology || window.QM_GALAXY; }
-  function getStateCenter() { return window.QM?.state || window.QM_STATE; }
-  function getState() { return getStateCenter().state; }
-  function getCards() { return window.QM?.cards || window.QM_CARDS; }
-  function getDrawer() { return window.QM?.drawer || window.QM_DRAWER; }
-  function getApi() { return window.QM?.api || window.QM_API; }
-  function getUtils() { return window.QM?.utils || window.QM_CONSTANTS; }
-  function getConstants() { return window.QM?.constants || window.QM_CONSTANTS; }
-
   async function initApp() {
     // 1. 初始化 3D 引力拓扑引擎
-    const topology = getTopology();
-    if (topology && typeof topology.init === 'function') {
-      topology.init();
+    if (window.QM.topology?.init) {
+      window.QM.topology.init();
     }
 
     // 2. 默认以只读安全模式启动
-    const stateCenter = getStateCenter();
-    if (stateCenter && typeof stateCenter.setEditMode === 'function') {
-      stateCenter.setEditMode(false);
+    if (window.QM.state?.setEditMode) {
+      window.QM.state.setEditMode(false);
     }
 
     // 3. 绑定 UI 事件
@@ -38,8 +27,7 @@ window.QM.app = (function() {
     const sel = document.getElementById('project-select');
     if (!sel || !projects) return;
 
-    const utils = getUtils();
-    const escapeHtml = utils.escapeHtml || (s => s);
+    const escapeHtml = window.QM.utils?.escapeHtml || (s => s);
 
     const globalGroup = projects.filter(p => p.scope === 'global');
     const projectGroup = projects.filter(p => p.scope !== 'global');
@@ -93,11 +81,8 @@ window.QM.app = (function() {
 
   async function connectServer() {
     const sBadge = document.getElementById('server-badge');
-    const api = getApi();
-    const state = getState();
-    const utils = getUtils();
-    const cards = getCards();
-    const topology = getTopology();
+    const { api, state: stateCenter, utils, cards, topology } = window.QM;
+    const state = stateCenter.state;
 
     const sStatus = await api.checkStatus();
 
@@ -114,21 +99,17 @@ window.QM.app = (function() {
     } else {
       state.isServerMode = false;
       if (sBadge) sBadge.style.display = 'none';
-      if (utils && utils.showToast) {
+      if (utils?.showToast) {
         utils.showToast('提示：当前为离线模式，双击 start.bat 可启动本地服务实现免软链接物理直读直写');
       }
-      if (cards && typeof cards.renderUI === 'function') cards.renderUI();
-      if (topology && typeof topology.fitGalaxyView === 'function') topology.fitGalaxyView();
+      if (cards?.renderUI) cards.renderUI();
+      if (topology?.fitGalaxyView) topology.fitGalaxyView();
     }
   }
 
   async function switchProject(projKey) {
-    const s = getState();
-    const api = getApi();
-    const stateCenter = getStateCenter();
-    const cards = getCards();
-    const topology = getTopology();
-    const utils = getUtils();
+    const { api, state: stateCenter, cards, topology, utils } = window.QM;
+    const s = stateCenter.state;
 
     if (s.isServerMode) {
       try {
@@ -144,26 +125,26 @@ window.QM.app = (function() {
 
           updateScopeBadge(s.currentProjectScope, projKey, meta);
 
-          if (topology && typeof topology.clearCelestialStore === 'function') {
+          if (topology?.clearCelestialStore) {
             topology.clearCelestialStore();
           }
-          if (stateCenter && typeof stateCenter.setDirty === 'function') {
+          if (stateCenter?.setDirty) {
             stateCenter.setDirty(false);
           }
-          if (cards && typeof cards.renderUI === 'function') {
+          if (cards?.renderUI) {
             cards.renderUI();
           }
-          if (topology && typeof topology.fitGalaxyView === 'function') {
+          if (topology?.fitGalaxyView) {
             topology.fitGalaxyView();
           }
-          if (utils && utils.showToast) {
+          if (utils?.showToast) {
             utils.showToast(`已实时载入 ${s.currentProjectScope === 'global' ? '全局记忆库' : '工程记忆库'}：${projKey} (${s.memories.length} 篇切片)`);
           }
           return;
         }
       } catch (err) {
         console.error('切换项目异常:', err);
-        if (utils && utils.showToast) {
+        if (utils?.showToast) {
           utils.showToast(`读取磁盘项目失败: ${err.message}`);
         }
       }
@@ -171,13 +152,11 @@ window.QM.app = (function() {
   }
 
   async function saveAllToDisk() {
-    const s = getState();
-    const stateCenter = getStateCenter();
-    const api = getApi();
-    const utils = getUtils();
+    const { api, state: stateCenter, utils } = window.QM;
+    const s = stateCenter.state;
 
     if (!s.isEditMode) {
-      if (utils && utils.showToast) {
+      if (utils?.showToast) {
         utils.showToast('当前处于只读模式。请先在顶部工具栏切换至「✏️ 编辑模式」后再同步落盘！');
       }
       return;
@@ -187,41 +166,36 @@ window.QM.app = (function() {
       try {
         const res = await api.saveMemories(s.currentProject, s.memories);
         if (res && res.ok) {
-          if (stateCenter && typeof stateCenter.setDirty === 'function') {
+          if (stateCenter?.setDirty) {
             stateCenter.setDirty(false);
           }
-          if (utils && utils.showToast) {
+          if (utils?.showToast) {
             utils.showToast(`已全部保存落盘至 ${s.currentProject}！真实 .md 与 MEMORY.md 索引已同步！`);
           }
           return;
         }
       } catch (err) {
-        if (utils && utils.showToast) {
+        if (utils?.showToast) {
           utils.showToast(`落盘失败: ${err.message}`);
         }
         return;
       }
     } else {
-      if (utils && utils.showToast) {
+      if (utils?.showToast) {
         utils.showToast('离线模式无法直接写入磁盘，请运行 start.bat 开启本地微服务！');
       }
     }
   }
 
   function bindUIEvents() {
-    const stateCenter = getStateCenter();
-    const cards = getCards();
-    const topology = getTopology();
-    const drawer = getDrawer();
-    const api = getApi();
-    const utils = getUtils();
+    const { state: stateCenter, cards, topology, drawer, api, utils } = window.QM;
 
     // 1. 运行模式切换
     const btnAppMode = document.getElementById('btn-app-mode');
     if (btnAppMode) {
       btnAppMode.addEventListener('click', () => {
         stateCenter.setEditMode(!stateCenter.state.isEditMode);
-        if (cards && typeof cards.renderUI === 'function') cards.renderUI();
+        if (cards?.renderUI) cards.renderUI();
       });
     }
 
@@ -231,7 +205,7 @@ window.QM.app = (function() {
     if (btnModeGalaxy) {
       btnModeGalaxy.addEventListener('click', () => {
         stateCenter.setViewMode('galaxy');
-        if (topology && typeof topology.resizeCanvas === 'function') topology.resizeCanvas();
+        if (topology?.resizeCanvas) topology.resizeCanvas();
       });
     }
     if (btnModeCards) {
@@ -253,7 +227,7 @@ window.QM.app = (function() {
         if (projects && projects.length > 0) {
           stateCenter.state.availableProjects = projects;
           populateProjectSelect(projects, stateCenter.state.currentProject);
-          if (utils && utils.showToast) {
+          if (utils?.showToast) {
             utils.showToast(`已自动刷新探测：识别到 ${projects.length} 个本地 Qoder 知识库`);
           }
         }
@@ -263,14 +237,14 @@ window.QM.app = (function() {
     const btnOpenFolder = document.getElementById('btn-open-folder');
     if (btnOpenFolder) {
       btnOpenFolder.addEventListener('click', async () => {
-        const s = getState();
+        const s = stateCenter.state;
         try {
           const res = await api.openFolder(s.currentProject, 'memory');
-          if (res && res.ok && utils && utils.showToast) {
+          if (res && res.ok && utils?.showToast) {
             utils.showToast(`已在系统资源管理器打开目录：${res.opened}`);
           }
         } catch (err) {
-          if (utils && utils.showToast) {
+          if (utils?.showToast) {
             utils.showToast(`打开目录失败: ${err.message}`);
           }
         }
@@ -282,7 +256,7 @@ window.QM.app = (function() {
     if (searchBox) {
       searchBox.addEventListener('input', e => {
         stateCenter.state.searchQuery = e.target.value.trim();
-        if (cards && typeof cards.renderUI === 'function') cards.renderUI();
+        if (cards?.renderUI) cards.renderUI();
       });
     }
 
@@ -291,7 +265,7 @@ window.QM.app = (function() {
     if (sortSelect) {
       sortSelect.addEventListener('change', e => {
         stateCenter.state.sortBy = e.target.value;
-        if (cards && typeof cards.renderUI === 'function') cards.renderUI();
+        if (cards?.renderUI) cards.renderUI();
       });
     }
 
@@ -299,7 +273,7 @@ window.QM.app = (function() {
     const newCardBtn = document.getElementById('new-card-btn');
     if (newCardBtn) {
       newCardBtn.addEventListener('click', () => {
-        if (drawer && typeof drawer.openNewCardDrawer === 'function') drawer.openNewCardDrawer();
+        if (drawer?.openNewCardDrawer) drawer.openNewCardDrawer();
       });
     }
 
@@ -312,19 +286,19 @@ window.QM.app = (function() {
     const saveDrawerBtn = document.getElementById('drawer-save-btn');
     if (closeDrawerBtn) {
       closeDrawerBtn.addEventListener('click', () => {
-        if (drawer) drawer.closeDrawer();
-        if (topology && typeof topology.deselectFocus === 'function') topology.deselectFocus();
+        if (drawer?.closeDrawer) drawer.closeDrawer();
+        if (topology?.deselectFocus) topology.deselectFocus();
       });
     }
     if (cancelDrawerBtn) {
       cancelDrawerBtn.addEventListener('click', () => {
-        if (drawer) drawer.closeDrawer();
-        if (topology && typeof topology.deselectFocus === 'function') topology.deselectFocus();
+        if (drawer?.closeDrawer) drawer.closeDrawer();
+        if (topology?.deselectFocus) topology.deselectFocus();
       });
     }
     if (saveDrawerBtn) {
       saveDrawerBtn.addEventListener('click', () => {
-        if (drawer && typeof drawer.saveCurrentDrawer === 'function') drawer.saveCurrentDrawer();
+        if (drawer?.saveCurrentDrawer) drawer.saveCurrentDrawer();
       });
     }
 
@@ -347,7 +321,7 @@ window.QM.app = (function() {
       viewIndexBtn.addEventListener('click', () => {
         if (moreMenu) moreMenu.classList.remove('show');
         const preview = document.getElementById('index-content-preview');
-        if (preview && stateCenter && typeof stateCenter.generateMemoryIndex === 'function') {
+        if (preview && stateCenter?.generateMemoryIndex) {
           preview.value = stateCenter.generateMemoryIndex();
         }
         indexModal.classList.remove('hidden');
@@ -360,9 +334,9 @@ window.QM.app = (function() {
         e.preventDefault();
         saveAllToDisk();
       } else if (e.key === 'Escape') {
-        if (drawer) drawer.closeDrawer();
+        if (drawer?.closeDrawer) drawer.closeDrawer();
         if (indexModal) indexModal.classList.add('hidden');
-        if (topology && typeof topology.deselectFocus === 'function') topology.deselectFocus();
+        if (topology?.deselectFocus) topology.deselectFocus();
       }
     });
   }

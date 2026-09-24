@@ -48,7 +48,6 @@ window.QM.satellite = (function() {
       eccentricity,
       omega,
       inclination,
-      orientation: 0,
       theta: initialTheta,
       tier: myTier
     };
@@ -229,7 +228,6 @@ window.QM.satellite = (function() {
     c.semiMinor = newSemiMinor;
     c.theta = newTheta;
     c.omega = newOmega;
-    c.orientation = 0;
 
     node.x = parent.x + localX;
     node.y = parent.y + localY * solved.cosTilt;
