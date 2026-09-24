@@ -827,8 +827,9 @@ window.QM.topology = (function() {
   function startGalaxyLoop() {
     if (animLoopId) return;
     function loop() {
+      const { viewMode, enableEffects } = window.QM.state.state;
       // 满足特效开启条件、运镜过渡期间、或认知域正在扩散/收缩过渡期间，平滑维持动画帧
-      const isStillAnimating = enableEffects || isAutoCameraActive || hasDomainExpanding;
+      const isStillAnimating = Boolean(enableEffects || isAutoCameraActive || hasDomainExpanding);
       if (viewMode === 'galaxy' && isStillAnimating) {
         simulateCelestialSystem();
         drawGalaxy();
