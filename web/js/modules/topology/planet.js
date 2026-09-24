@@ -166,18 +166,7 @@ window.QM.planet = (function() {
     const hx = lx * r * 0.38;
     const hy = ly * r * 0.38;
 
-    // 大气散射发光层 (Atmospheric Rayleigh Scattering)
-    const atmoR = r * 1.25;
-    const atmoGrad = ctx.createRadialGradient(0, 0, r * 0.85, 0, 0, atmoR);
-    atmoGrad.addColorStop(0, node.color || '#0284c7');
-    atmoGrad.addColorStop(0.5, isDimmed ? 'rgba(56, 189, 248, 0.10)' : 'rgba(56, 189, 248, 0.20)');
-    atmoGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
-    ctx.beginPath();
-    ctx.arc(0, 0, atmoR, 0, Math.PI * 2);
-    ctx.fillStyle = atmoGrad;
-    ctx.fill();
-
-    // 行星表面 3D 拟真质感球体 (保留真实主题色彩)
+    // 行星表面质感球体 (保留真实主题色彩)
     const sphereGrad = ctx.createRadialGradient(hx, hy, 1.5, 0, 0, r);
     sphereGrad.addColorStop(0, '#ffffff');
     sphereGrad.addColorStop(0.18, node.core || '#7dd3fc');
@@ -194,20 +183,15 @@ window.QM.planet = (function() {
     ctx.lineWidth = isFocus ? 2 : 1;
     ctx.stroke();
 
-    // 行星名称与包含切片计数文字
+    // 行星名称与包含切片计数文字 (去除昂贵 CPU 模糊阴影，改用清爽抗锯齿直绘)
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 1;
-
     ctx.font = '600 12px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = isDimmed ? '#e2e8f0' : '#f0f9ff';
+    ctx.fillStyle = isDimmed ? '#94a3b8' : '#f0f9ff';
     ctx.fillText(node.name, 0, r + 15);
     if (node.cardCount) {
       ctx.font = '9.5px sans-serif';
-      ctx.fillStyle = '#94a3b8';
+      ctx.fillStyle = isDimmed ? '#64748b' : '#94a3b8';
       ctx.fillText(`${node.cardCount} 记忆切片`, 0, r + 27);
     }
     ctx.restore();

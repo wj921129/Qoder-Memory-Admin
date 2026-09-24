@@ -610,27 +610,14 @@ window.QM.topology = (function() {
     ctx.fillStyle = `rgba(148, 163, 184, ${dustAlpha.toFixed(2)})`;
     ctx.fill();
 
-    // 2. 恒星引力光晕 (若远离视口则跳过大径向渐变计算)
-    const haloR = 480;
-    const isHaloInView = !bounds || (bounds.minX <= haloR && bounds.maxX >= -haloR && bounds.minY <= haloR && bounds.maxY >= -haloR);
-    if (isHaloInView) {
-      const coreHalo = ctx.createRadialGradient(0, 0, 20, 0, 0, haloR);
-      coreHalo.addColorStop(0, 'rgba(245, 158, 11, 0.14)');
-      coreHalo.addColorStop(0.35, 'rgba(56, 189, 248, 0.05)');
-      coreHalo.addColorStop(1, 'rgba(15, 23, 42, 0)');
-      ctx.beginPath();
-      ctx.arc(0, 0, haloR, 0, Math.PI * 2);
-      ctx.fillStyle = coreHalo;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 115, 115 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.16)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([2, 5]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // 2. 恒星引力参考环 (去除超大径向渐变阴影，仅保留轻质科技虚线环)
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 115, 115 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
     ctx.restore();
   }
@@ -813,7 +800,8 @@ window.QM.topology = (function() {
       } else if (isDomain) {
         planet?.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
       } else if (isUnit) {
-        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed, isTransitioning, currentScale);
+        const isDomainFocused = Boolean(focusTarget && focusTarget.type === 'domain' && focusTarget.id === n.parentId);
+        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed, isDomainFocused);
       }
 
       ctx.restore();

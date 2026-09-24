@@ -127,103 +127,67 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 绘制记忆切片卫星本体及标题标签 (工业级自适应 LOD 与运镜轻量化优化版)
+   * 绘制记忆切片卫星本体及标题标签 (视觉全面统一，彻底消除灰白与彩色混搭、去除阴影)
    */
-  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, isTransitioning = false, currentScale = 1.0) {
+  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, isDomainFocused = false) {
     const r = node.screenRadius;
     const isHighlightedTag = Boolean(activeTag && isTagHit);
-    const isImportant = isFocus || isHover || isRelated || isHighlightedTag;
-    const effectivePixelRadius = r * currentScale;
+    const isImportant = isFocus || isHover || isHighlightedTag;
 
-    // 1. 远景微缩极速路径 (LOD Level 0)
-    // 当镜头拉远、在屏幕上物理尺寸极其微小且非重点关注对象时，以纯色圆点秒级光栅化
-    if (!isImportant && effectivePixelRadius < 4.8) {
-      ctx.beginPath();
-      ctx.arc(0, 0, Math.max(1.6, r), 0, Math.PI * 2);
-      ctx.fillStyle = isDimmed ? 'rgba(148, 163, 184, 0.4)' : (node.parentColor || '#94a3b8');
-      ctx.fill();
-      return;
-    }
-
-    // 2. 焦点与悬停高亮光环
+    // 1. 焦点与悬停高亮外环
     if (isFocus || isHover) {
       ctx.beginPath();
-      ctx.arc(0, 0, r + 5, 0, Math.PI * 2);
+      ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
       ctx.strokeStyle = isFocus ? '#ffffff' : '#38bdf8';
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    // 3. 3D 球体拟真光照 / 运镜快速着色
-    // 在运镜/高频缩放过渡期对次要星体启用轻量单色填充，避免数百次 createRadialGradient 阻塞 GPU
-    if (!isTransitioning && (isImportant || effectivePixelRadius >= 8.5)) {
-      const distToCore = Math.hypot(node.screenX, node.screenY) || 1;
-      const lx = -node.screenX / distToCore;
-      const ly = -node.screenY / distToCore;
-      const hx = lx * r * 0.38;
-      const hy = ly * r * 0.38;
+    // 2. 视觉特效全量统一：一律使用所属认知域主题色 (node.parentColor)
+    // 彻底根除“部分灰白水泥、部分粉红色”的撕裂感，全星系统一纯正科技天体质感
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = isDimmed ? 'rgba(71, 85, 105, 0.55)' : (node.parentColor || '#64748b');
+    ctx.fill();
 
-      const sphereGrad = ctx.createRadialGradient(hx, hy, 1, 0, 0, r);
-      sphereGrad.addColorStop(0, '#ffffff');
-      sphereGrad.addColorStop(0.3, '#cbd5e1');
-      sphereGrad.addColorStop(0.7, '#64748b');
-      sphereGrad.addColorStop(1, '#0f172a');
+    // 统一边框轮廓线 (无阴影、干净利落)
+    ctx.strokeStyle = isFocus ? '#ffffff' : (isDimmed ? 'rgba(148, 163, 184, 0.25)' : 'rgba(255, 255, 255, 0.4)');
+    ctx.lineWidth = isFocus ? 2 : 1;
+    ctx.stroke();
 
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fillStyle = sphereGrad;
-      ctx.fill();
-    } else {
-      ctx.beginPath();
-      ctx.arc(0, 0, r, 0, Math.PI * 2);
-      ctx.fillStyle = isDimmed ? '#475569' : (node.parentColor || '#64748b');
-      ctx.fill();
-    }
-
-    if (isFocus || effectivePixelRadius >= 6.0) {
-      ctx.strokeStyle = isFocus ? '#ffffff' : (node.parentColor ? node.parentColor + '88' : 'rgba(148, 163, 184, 0.45)');
-      ctx.lineWidth = isFocus ? 2 : 1;
-      ctx.stroke();
-    }
-
-    // 4. 文字标题标签渲染 (自适应 LOD 与过渡期抑制)
-    // 规则：
-    // ① 运镜或高频滚轮缩放期间（isTransitioning），仅重点对象显示文字，普通卫星跳过耗时的文本排版与描边；
-    // ② 远景时（effectivePixelRadius < 9.5），文字挤成一团不可读，坚决跳过渲染；
-    // ③ 只有处于舒适阅读尺寸或重点聚焦状态时才进行高质量抗锯齿排版。
-    const shouldRenderText = isImportant || (!isTransitioning && effectivePixelRadius >= 9.5);
-    if (shouldRenderText) {
+    // 3. 文字标题展示规则彻底统一：
+    // ① 全景未聚焦时一律隐藏卫星文字，保持星系整体干净、不杂乱遮挡；
+    // ② 仅当所属认知域被点击聚焦 (isDomainFocused)、或单个卫星被 hover/focus/tagHit 时统一展示；
+    // ③ 去除昂贵的 CPU 描边阴影，采用纯净轻量 fillText。
+    const shouldShowText = isImportant || isDomainFocused;
+    if (shouldShowText) {
       const title = node.name || '';
       if (!title) return;
 
+      ctx.save();
       ctx.textAlign = 'center';
       const textY = r + 13;
 
       let font = '10px sans-serif';
-      let fillStyle = isDimmed ? '#94a3b8' : '#cbd5e1';
+      let fillStyle = isDimmed ? '#94a3b8' : '#e2e8f0';
       let displayText = title;
 
       if (isHover || isFocus) {
-        font = 'bold 12px sans-serif';
+        font = 'bold 11px sans-serif';
         fillStyle = '#38bdf8';
       } else if (isHighlightedTag) {
-        font = 'bold 11px sans-serif';
+        font = 'bold 10.5px sans-serif';
         fillStyle = '#e879f9';
         displayText = `⚡ ${title}`;
-      } else if (isRelated) {
-        font = '10.5px sans-serif';
-        fillStyle = '#f8fafc';
+      } else if (isDomainFocused) {
+        font = '10px sans-serif';
+        fillStyle = '#cbd5e1';
       }
 
       ctx.font = font;
-
-      // 使用轻量描边增强对比度
-      ctx.strokeStyle = '#090d16';
-      ctx.lineWidth = 2.5;
-      ctx.strokeText(displayText, 0, textY);
-
       ctx.fillStyle = fillStyle;
       ctx.fillText(displayText, 0, textY);
+      ctx.restore();
     }
   }
 

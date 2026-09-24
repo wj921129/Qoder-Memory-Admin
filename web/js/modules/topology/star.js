@@ -65,18 +65,7 @@ window.QM.star = (function() {
   function drawStar(ctx, node, animationTime, isDimmed = false) {
     const r = node.screenRadius || node.radius;
 
-    // 1. 恒星日冕呼吸光晕
-    const pulse = Math.sin(animationTime * 0.05);
-    const flareR = r * (2.1 + pulse * 0.2);
-    const coronaGlow = ctx.createRadialGradient(0, 0, r * 0.75, 0, 0, flareR);
-    coronaGlow.addColorStop(0, 'rgba(254, 240, 138, 0.65)');
-    coronaGlow.addColorStop(0.4, 'rgba(245, 158, 11, 0.32)');
-    coronaGlow.addColorStop(0.8, 'rgba(245, 158, 11, 0.08)');
-    coronaGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');
-    ctx.beginPath();
-    ctx.arc(0, 0, flareR, 0, Math.PI * 2);
-    ctx.fillStyle = coronaGlow;
-    ctx.fill();
+    const flareR = r * 1.8;
 
     // 2. 旋转日冕耀斑射线 (6道轻量微光流)
     const rayRot = animationTime * 0.008;
