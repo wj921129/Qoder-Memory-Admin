@@ -40,6 +40,7 @@ window.QM.topology = (function() {
   let clickOrigin = { x: 0, y: 0 };
   let isWheelInteracting = false;
   let wheelDebounceTimer = null;
+  let hasDomainExpanding = false;
 
   /**
    * 计算机体世界坐标视口可视范围包围盒 (Viewport Frustum Culling)
@@ -478,12 +479,12 @@ window.QM.topology = (function() {
       else if (focusTarget.type === 'unit' && focusTarget.parentId) activeDomainId = focusTarget.parentId;
     }
 
-    // 检查是否有认知域正在进行扩散动画过渡
-    let hasDomainExpanding = false;
+    // 检查是否有认知域正在进行扩散/收缩动画过渡
+    hasDomainExpanding = false;
     nodes.forEach(n => {
       if (n.type !== 'domain') return;
       const targetExp = (n.id === activeDomainId) ? 1.0 : 0.0;
-      if (Math.abs(targetExp - (n.expansionProgress || 0)) > 0.01) {
+      if (Math.abs(targetExp - (n.expansionProgress || 0)) > 0.005) {
         hasDomainExpanding = true;
       }
     });
@@ -800,8 +801,7 @@ window.QM.topology = (function() {
       } else if (isDomain) {
         planet?.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
       } else if (isUnit) {
-        const isDomainFocused = Boolean(focusTarget && focusTarget.type === 'domain' && focusTarget.id === n.parentId);
-        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed, isDomainFocused);
+        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
       }
 
       ctx.restore();
@@ -827,9 +827,9 @@ window.QM.topology = (function() {
   function startGalaxyLoop() {
     if (animLoopId) return;
     function loop() {
-      const { viewMode, enableEffects } = window.QM.state.state;
-      // 满足特效开启条件，或运镜过渡期间自动维持平滑帧
-      if (viewMode === 'galaxy' && (enableEffects || isAutoCameraActive)) {
+      // 满足特效开启条件、运镜过渡期间、或认知域正在扩散/收缩过渡期间，平滑维持动画帧
+      const isStillAnimating = enableEffects || isAutoCameraActive || hasDomainExpanding;
+      if (viewMode === 'galaxy' && isStillAnimating) {
         simulateCelestialSystem();
         drawGalaxy();
         animLoopId = requestAnimationFrame(loop);
@@ -989,35 +989,43 @@ window.QM.topology = (function() {
     if (!hoveredNode || !container) return;
     const target = hoveredNode;
     const sp = getNodeScreenPos(target);
-    const boxW = Math.max(130, Math.min(240, target.name.length * 11 + 36));
+
+    const fullName = target.name || '';
+    if (!fullName) return;
+
+    ctx.save();
+    ctx.font = 'bold 12px sans-serif';
+    const textMetrics = ctx.measureText(fullName);
+    const textW = textMetrics.width;
+
+    const padX = 14;
+    const boxW = Math.max(90, textW + padX * 2);
     const boxH = 30;
 
     const cw = container.clientWidth;
     let bx = sp.x - boxW / 2;
     let by = sp.y - sp.r - 40;
 
+    // 屏幕边缘安全保护，防止超长标签溢出屏幕边界
     if (bx < 15) bx = 15;
     if (bx + boxW > cw - 15) bx = cw - boxW - 15;
     if (by < 15) by = sp.y + sp.r + 14;
 
-    ctx.save();
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(bx, by, boxW, boxH, 6);
     else ctx.rect(bx, by, boxW, boxH);
-    ctx.fillStyle = 'rgba(10, 16, 30, 0.92)';
+    ctx.fillStyle = 'rgba(10, 16, 30, 0.94)';
     ctx.fill();
 
     const colorTheme = target.type === 'core' ? '#f59e0b' : (target.color || target.parentColor || '#38bdf8');
     ctx.strokeStyle = colorTheme;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    ctx.font = 'bold 11px sans-serif';
     ctx.fillStyle = '#f8fafc';
     ctx.textAlign = 'center';
-    let shortName = target.name;
-    if (shortName.length > 17) shortName = shortName.slice(0, 16) + '…';
-    ctx.fillText(shortName, bx + boxW / 2, by + 19);
+    ctx.textBaseline = 'middle';
+    ctx.fillText(fullName, bx + boxW / 2, by + boxH / 2);
     ctx.restore();
   }
 
@@ -1026,6 +1034,7 @@ window.QM.topology = (function() {
     cameraTargetNode = null;
     cameraTargetScale = initialScale || 0.85;
     isAutoCameraActive = true;
+    hasDomainExpanding = true;
     startGalaxyLoop();
     updateFocusRelatedSet();
 
@@ -1061,6 +1070,7 @@ window.QM.topology = (function() {
     cameraTargetNode = domainNode;
     cameraTargetScale = getDomainCameraScale(domainNode.cardCount);
     isAutoCameraActive = true;
+    hasDomainExpanding = true;
     startGalaxyLoop();
 
     showCelestialCard(domainNode);
@@ -1218,6 +1228,8 @@ window.QM.topology = (function() {
             if (clicked.type === 'unit') {
               isAutoCameraActive = false;
               cameraTargetNode = null;
+              hasDomainExpanding = true;
+              startGalaxyLoop();
               if (clicked.rawItem && drawer) {
                 drawer.openDrawer(clicked.rawItem.id);
               }
@@ -1229,6 +1241,7 @@ window.QM.topology = (function() {
               cameraTargetNode = clicked;
               cameraTargetScale = getDomainCameraScale(clicked.cardCount);
               isAutoCameraActive = true;
+              hasDomainExpanding = true;
               startGalaxyLoop();
               if (drawer) drawer.openDomainDrawer(clicked);
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
@@ -1238,6 +1251,7 @@ window.QM.topology = (function() {
               cameraTargetNode = clicked;
               cameraTargetScale = 0.75;
               isAutoCameraActive = true;
+              hasDomainExpanding = true;
               startGalaxyLoop();
               if (drawer) drawer.openCoreDrawer(clicked);
               if (sidebar && typeof sidebar.highlightCategory === 'function') {

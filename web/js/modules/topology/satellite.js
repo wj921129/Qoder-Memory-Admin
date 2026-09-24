@@ -129,7 +129,7 @@ window.QM.satellite = (function() {
   /**
    * 绘制记忆切片卫星本体及标题标签 (视觉全面统一，彻底消除灰白与彩色混搭、去除阴影)
    */
-  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, isDomainFocused = false) {
+  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false) {
     const r = node.screenRadius;
     const isHighlightedTag = Boolean(activeTag && isTagHit);
     const isImportant = isFocus || isHover || isHighlightedTag;
@@ -144,7 +144,6 @@ window.QM.satellite = (function() {
     }
 
     // 2. 视觉特效全量统一：一律使用所属认知域主题色 (node.parentColor)
-    // 彻底根除“部分灰白水泥、部分粉红色”的撕裂感，全星系统一纯正科技天体质感
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fillStyle = isDimmed ? 'rgba(71, 85, 105, 0.55)' : (node.parentColor || '#64748b');
@@ -155,11 +154,12 @@ window.QM.satellite = (function() {
     ctx.lineWidth = isFocus ? 2 : 1;
     ctx.stroke();
 
-    // 3. 文字标题展示规则彻底统一：
-    // ① 全景未聚焦时一律隐藏卫星文字，保持星系整体干净、不杂乱遮挡；
-    // ② 仅当所属认知域被点击聚焦 (isDomainFocused)、或单个卫星被 hover/focus/tagHit 时统一展示；
-    // ③ 去除昂贵的 CPU 描边阴影，采用纯净轻量 fillText。
-    const shouldShowText = isImportant || isDomainFocused;
+    // 3. 文字标题展示规则：
+    // ① 选中的星体 (isFocus) 必然展示；
+    // ② 与当前选中星体有关联的所有星体 (isRelated) 必须全部正常显示标题；
+    // ③ 鼠标悬停 (isHover) 或标签命中 (isHighlightedTag) 展示；
+    // ④ 全景且无选中关联时，普通星体保持静默，突出网络核心。
+    const shouldShowText = isFocus || isRelated || isHover || isHighlightedTag;
     if (shouldShowText) {
       const title = node.name || '';
       if (!title) return;
@@ -179,7 +179,7 @@ window.QM.satellite = (function() {
         font = 'bold 10.5px sans-serif';
         fillStyle = '#e879f9';
         displayText = `⚡ ${title}`;
-      } else if (isDomainFocused) {
+      } else if (isRelated) {
         font = '10px sans-serif';
         fillStyle = '#cbd5e1';
       }
