@@ -21,7 +21,7 @@
 根目录保持极致精简，所有关键核心模块与数据均收敛于对应子目录中：
 
 ```text
-.agents/memory/
+Qoder-Memory-Admin/
 ├── 🚀 start.bat            # 核心启动入口：Windows 纯 ASCII 免乱码一键启动脚本
 ├── 📋 README.md           # 平台架构、目录规范与使用说明文档
 ├── 📦 package.json        # 项目元信息与轻量 npm 运行脚本声明
@@ -72,8 +72,8 @@
 │       │       └── topology.js     # 拓扑主引擎 (视口投影/运镜缩放/碰撞拾取/手势交互)
 │       └── app.js         # 应用生命周期中枢、事件总线绑定与快捷键监听器
 │
-└── 🗄️ memory/              # 【本地记忆库】真实项目记忆库 (.md 记忆切片与 MEMORY.md 索引)
-    ├── fmmpay-busi/       # 国际卡核心服务记忆库 (支持通过 NTFS Junction 软链接至工作区)
+└── 🗄️ memory/              # 【本地记忆库】项目记忆库示例 (.md 记忆切片与 MEMORY.md 索引，按需生成)
+    ├── demo-project/      # 示例工程专属记忆库 (自动动态识别或按需维护)
     └── global/            # 全局研发智库与通用工程规范
 ```
 
