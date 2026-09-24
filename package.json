@@ -1,0 +1,23 @@
+{
+  "name": "qoder-memory-hub",
+  "version": "1.1.0",
+  "description": "Qoder Memory 工业级记忆拓扑管理平台 (跨机便携原生版)",
+  "type": "module",
+  "main": "server/server.mjs",
+  "bin": {
+    "qoder-memory": "./server/server.mjs"
+  },
+  "scripts": {
+    "start": "node server/server.mjs",
+    "dev": "node --watch server/server.mjs"
+  },
+  "keywords": [
+    "qoder",
+    "memory",
+    "topology",
+    "galaxy",
+    "knowledge-base"
+  ],
+  "author": "FUIOU",
+  "license": "MIT"
+}

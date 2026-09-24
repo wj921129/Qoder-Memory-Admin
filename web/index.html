@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qoder Memory 工业级记忆拓扑管理台 - 认知引力场</title>
+  <!-- 模块化样式表 -->
+  <link rel="stylesheet" href="./css/variables.css">
+  <link rel="stylesheet" href="./css/layout.css">
+  <link rel="stylesheet" href="./css/cards.css">
+  <link rel="stylesheet" href="./css/galaxy.css">
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <header>
+    <div class="brand">
+      <h1>⚡ Qoder 工业级记忆拓扑管理台</h1>
+      <div class="project-selector-wrap">
+        <label>记忆目标工程：</label>
+        <select id="project-select" class="project-select" title="选择当前要查看或直接维护的 Qoder 记忆文档库">
+          <option value="fmmpay-busi" selected>正在载入项目库...</option>
+        </select>
+        <button class="btn-icon-mini" id="btn-rescan-projects" title="重新扫描本地 Qoder 记忆文档 (无需重启服务)">🔄</button>
+        <button class="btn-icon-mini" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
+      </div>
+      <div class="badge-scope project" id="scope-badge" title="当前记忆库的作用范围 (Scope)">
+        <span id="scope-badge-text">📁 工程 Scope</span>
+      </div>
+      <div class="badge">
+        <span class="dot" id="dirty-dot"></span>
+        <span id="stat-info">正在连接记忆拓扑...</span>
+      </div>
+      <div class="badge" id="server-badge" style="display:none;" title="Node 本地服务已激活 · 支持本地自愈直读直写与 MEMORY.md 索引同步">
+        <span class="dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span>
+        <span id="server-status-text" style="color:#6ee7b7; font-weight:500;">Qoder 本地直连</span>
+      </div>
+    </div>
+
+    <!-- 运行模式切换：单一胶囊开关 -->
+    <button class="mode-toggle-btn" id="btn-app-mode" title="当前处于只读保护状态 · 点击切换至编辑模式">
+      <span>🔒 只读模式</span>
+    </button>
+
+    <!-- 视图切换模式：紧凑双分段 -->
+    <div class="view-switcher">
+      <button class="view-switcher-btn active" id="btn-mode-galaxy" title="切换至语义引力拓扑视界">
+        <span>🧠 拓扑</span>
+      </button>
+      <button class="view-switcher-btn" id="btn-mode-cards" title="切换至知识卡片流列表">
+        <span>🗂️ 卡片</span>
+      </button>
+    </div>
+
+    <!-- 精简工具栏：仅常驻核心业务操作 -->
+    <div class="toolbar">
+      <input type="text" id="search-box" class="search-input" placeholder="检索认知锚点 / 关键词...">
+      <button class="btn btn-primary" id="new-card-btn" title="新建记忆知识切片">+ 新建</button>
+      <button class="btn" id="save-all-btn" title="保存修改至磁盘 (Ctrl+S)">💾 保存</button>
+      
+      <!-- 更多辅助工具收敛菜单 -->
+      <div class="dropdown" id="more-dropdown">
+        <button class="btn btn-subtle btn-icon" id="more-menu-btn" title="更多辅助工具">⋯</button>
+        <div class="dropdown-menu" id="more-menu">
+          <button class="dropdown-item" id="view-index-btn">📋 查看 MEMORY.md 索引</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主体工作区 -->
+  <main>
+    <!-- 左侧分类与标签侧边栏 -->
+    <aside id="sidebar-filter">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <span>认知分类体系 (Category)</span>
+          <span id="cat-total-count" style="color:#38bdf8;">0</span>
+        </div>
+        <div id="category-list"></div>
+      </div>
+
+      <div class="sidebar-section" style="flex:1;">
+        <div class="sidebar-section-title">
+          <span>高频语义标签 (Keywords)</span>
+          <span id="tag-total-count">0</span>
+        </div>
+        <div class="tag-cloud" id="tag-cloud"></div>
+      </div>
+    </aside>
+
+    <!-- 中间工作区 -->
+    <section id="content-area">
+      <!-- 视图 1：语义认知引力场画布 -->
+      <div id="galaxy-container">
+        <canvas id="galaxy-canvas"></canvas>
+        <div class="galaxy-hud" id="galaxy-hud">
+          <span class="hud-mode-pill" id="hud-mode-pill">🔒 只读模式</span>
+          <span class="hud-focus-indicator" id="hud-indicator"></span>
+          <span id="hud-text">🌌 认知引力网络待命 · 全局拓扑就绪</span>
+        </div>
+        <div class="galaxy-legend" id="galaxy-legend">
+          <div class="legend-header">
+            <span class="legend-header-title">ℹ️ 拓扑图例与图示指南</span>
+            <span class="legend-header-arrow">▴</span>
+          </div>
+          <div class="legend-content">
+            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b; color:#f59e0b;"></span> 全局意图枢纽：项目核心语义源 (Core Anchor)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8; color:#38bdf8;"></span> 主题认知域：一级分类引力中心 (Topic Domain)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#a78bfa; color:#a78bfa;"></span> 记忆知识节点：具体规约/避坑事实 (Memory Unit)</div>
+            <div class="legend-item"><span class="legend-line" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span> 链式激活流：显式衍生脉冲与依赖 (Activation Flow)</div>
+            <div class="legend-item"><span class="legend-line" style="background:#38bdf8; opacity:0.5;"></span> 认知引力轨道：语义亲和度约束环 (Semantic Field)</div>
+            <div class="legend-tip">💡 滚轮以鼠标为中心缩放 · 点击行星居中放大并扩展间距 · 取消选中后介绍卡片常驻</div>
+          </div>
+        </div>
+
+        <!-- 天体基本信息常驻介绍卡片 (点击星体激活，取消选中后依然常驻) -->
+        <div class="celestial-card" id="celestial-card" style="display:none;">
+          <div class="celestial-card-header">
+            <div class="celestial-badge" id="c-card-badge">
+              <span class="c-badge-dot" id="c-card-dot"></span>
+              <span id="c-card-type">主题认知域</span>
+            </div>
+            <button class="c-close-btn" id="c-card-close" title="收起介绍卡片">&times;</button>
+          </div>
+          <div class="celestial-card-body">
+            <h3 class="c-card-title" id="c-card-title">常见工程避坑</h3>
+            <div class="c-card-sub" id="c-card-sub">common_pitfalls_experience · 6 篇切片</div>
+            <p class="c-card-desc" id="c-card-desc">针对 Surefire skipTests、版本依赖等关键避坑与踩坑实战总结。</p>
+            <div class="c-card-tags" id="c-card-tags"></div>
+          </div>
+          <div class="celestial-card-footer">
+            <button class="btn btn-subtle btn-sm" id="c-card-center-btn" title="将镜头重新平滑运镜对齐至该天体">🎯 视角居中</button>
+            <button class="btn btn-sm" id="c-card-open-btn" style="background:#0284c7;" title="在侧边栏查阅完整 Markdown 正文或编辑">📖 详细规约</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视图 2：知识卡片流 -->
+      <div id="cards-container" class="hidden">
+        <div class="view-control-bar">
+          <div class="view-stats" id="view-stats">显示 0 条记忆</div>
+          <div class="view-actions">
+            <label style="font-size:11px; color:#94a3b8;">排序：</label>
+            <select id="sort-select" class="sort-select">
+              <option value="name">按标题字母 (A-Z)</option>
+              <option value="category">按分类分组</option>
+              <option value="source">按来源类型</option>
+            </select>
+          </div>
+        </div>
+        <div class="cards-scroll-wrap">
+          <div class="cards-grid" id="cards-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右侧编辑抽屉面板 -->
+    <aside id="editor-drawer">
+      <div class="drawer-header">
+        <div>
+          <h2 id="drawer-title" style="margin-bottom:2px;">查阅记忆切片 [只读]</h2>
+          <span id="drawer-scope-sub" style="font-size:11px; color:#38bdf8; font-weight:500;">Scope: 智能识别中</span>
+        </div>
+        <button class="close-btn" id="close-drawer">&times;</button>
+      </div>
+      <div class="drawer-body">
+        <div id="drawer-readonly-notice" class="drawer-notice-banner" style="display:none;">
+          <span>🔒 <strong>只读查阅模式</strong>：当前处于安全保护状态。如需编辑此记忆切片，请先在顶部导航栏开启「✏️ 编辑模式」。</span>
+        </div>
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label>记忆标题 (Name / Title)</label>
+          <input type="text" id="edit-name" class="form-control" placeholder="例如：Maven Surefire 硬编码 skipTests 避坑">
+        </div>
+        <div class="form-group">
+          <label>文件名 (File Name)</label>
+          <input type="text" id="edit-filename" class="form-control" placeholder="例如：maven-surefire-skiptests-true.md">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label>官方类型 (Type)</label>
+            <select id="edit-type" class="form-control" title="Qoder / 灵码官方规范四大核心分类">
+              <option value="project">project (工程架构规约)</option>
+              <option value="feedback">feedback (踩坑反馈修正)</option>
+              <option value="user">user (用户习惯偏好)</option>
+              <option value="reference">reference (外部规范参考)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>认知分类 (Category)</label>
+            <select id="edit-category-select" class="form-control" onchange="if(this.value==='custom') { document.getElementById('edit-category-custom').style.display='block'; } else { document.getElementById('edit-category-custom').style.display='none'; }">
+              <option value="common_pitfalls_experience">常见工程避坑 (common_pitfalls)</option>
+              <option value="important_decision_experience">重大决策经验 (important_decision)</option>
+              <option value="development_code_specification">开发与代码规约 (development_code)</option>
+              <option value="development_practice_specification">工程实践规约 (development_practice)</option>
+              <option value="development_comment_specification">代码与注释规约 (development_comment)</option>
+              <option value="project_architecture">系统与模块架构 (project_architecture)</option>
+              <option value="project_tech_stack">项目技术栈 (project_tech_stack)</option>
+              <option value="project_introduction">系统与业务概述 (project_introduction)</option>
+              <option value="project_build_configuration">编译与构建配置 (project_build)</option>
+              <option value="project_dependency_configuration">依赖管理配置 (project_dependency)</option>
+              <option value="learned_skill_experience">工作流与技能经验 (learned_skill)</option>
+              <option value="task_summary_experience">任务交付复盘 (task_summary)</option>
+              <option value="tool_experience">工具与环境经验 (tool_experience)</option>
+              <option value="user_behavior">用户沟通与偏好 (user_behavior)</option>
+              <option value="common">通用工程规约 (common)</option>
+              <option value="custom">+ 自定义分类...</option>
+            </select>
+            <input type="text" id="edit-category-custom" class="form-control" style="display:none; margin-top:4px;" placeholder="输入自定义分类名称">
+          </div>
+          <div class="form-group">
+            <label>来源机制 (Source)</label>
+            <select id="edit-source" class="form-control">
+              <option value="auto">auto (自动归纳/沉淀)</option>
+              <option value="init">init (初始脚手架)</option>
+              <option value="feedback">feedback (用户明确反馈)</option>
+              <option value="manual">manual (人工维护)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>🔗 显式链式关联 (关联前置/衍生记忆卡片)</label>
+          <select id="edit-chain-target" class="form-control">
+            <option value="">-- 选择要建立链式关联的目标记忆 --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>触发场景 / 描述 (Description / Usage Scenario)</label>
+          <textarea id="edit-description" class="form-control" rows="3" placeholder="简述大模型在何时应召回该条记忆..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>关键词 (Keywords，以英文逗号分隔)</label>
+          <input type="text" id="edit-keywords" class="form-control" placeholder="例如：Maven, Surefire, skipTests, 单测跳过">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>正文内容 (Markdown Body)</label>
+          <textarea id="edit-body" class="form-control" rows="10" style="font-family:monospace; font-size:12px;" placeholder="支持标准 Markdown 语法，详细阐述规约或根因..."></textarea>
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button class="btn btn-subtle" id="drawer-cancel-btn">取消</button>
+        <button class="btn" id="drawer-save-btn">保存并应用</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- MEMORY.md 查看模态框 -->
+  <div class="modal-backdrop hidden" id="index-modal">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="color:#f8fafc; font-size:15px;">📋 MEMORY.md 索引文件预览</h3>
+        <button class="close-btn" onclick="document.getElementById('index-modal').classList.add('hidden')">&times;</button>
+      </div>
+      <p style="font-size:12px; color:#94a3b8;">该文件为 Qoder 记忆根索引，保存时会自动根据当前全部记忆条目与链式关系同步更新。</p>
+      <textarea id="index-content-preview" class="form-control" rows="14" style="font-family:monospace; font-size:12px;" readonly></textarea>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-subtle" onclick="navigator.clipboard.writeText(document.getElementById('index-content-preview').value); QM_CONSTANTS.showToast('已复制 MEMORY.md 内容');">复制到剪贴板</button>
+        <button class="btn" onclick="document.getElementById('index-modal').classList.add('hidden')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- 工业化模块化 JavaScript 驱动 -->
+  <script src="./js/constants.js"></script>
+  <script src="./js/api.js"></script>
+  <script src="./js/state.js"></script>
+  <script src="./js/cards.js"></script>
+  <script src="./js/celestial-star.js"></script>
+  <script src="./js/celestial-planet.js"></script>
+  <script src="./js/celestial-satellite.js"></script>
+  <script src="./js/galaxy.js"></script>
+  <script src="./js/drawer.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
