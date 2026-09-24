@@ -127,9 +127,9 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 绘制记忆切片卫星本体及标题标签 (视觉全面统一，彻底消除灰白与彩色混搭、去除阴影)
+   * 绘制记忆切片卫星本体及标题标签 (支持无选中全量显示、选中关联高亮展示)
    */
-  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false) {
+  function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, hasFocus = false) {
     const r = node.screenRadius;
     const isHighlightedTag = Boolean(activeTag && isTagHit);
     const isImportant = isFocus || isHover || isHighlightedTag;
@@ -155,11 +155,10 @@ window.QM.satellite = (function() {
     ctx.stroke();
 
     // 3. 文字标题展示规则：
-    // ① 选中的星体 (isFocus) 必然展示；
-    // ② 与当前选中星体有关联的所有星体 (isRelated) 必须全部正常显示标题；
-    // ③ 鼠标悬停 (isHover) 或标签命中 (isHighlightedTag) 展示；
-    // ④ 全景且无选中关联时，普通星体保持静默，突出网络核心。
-    const shouldShowText = isFocus || isRelated || isHover || isHighlightedTag;
+    // ① 无选中状态下 (!hasFocus)：全量显示所有星体名称；
+    // ② 存在选中状态下 (hasFocus)：选中的星体及其所有关联星体、悬停或高亮命中的星体正常显示标题；
+    // ③ 选中的关联网络之外的星体静默置灰。
+    const shouldShowText = !hasFocus || isFocus || isRelated || isHover || isHighlightedTag;
     if (shouldShowText) {
       const title = node.name || '';
       if (!title) return;

@@ -361,7 +361,7 @@ window.QM.topology = (function() {
     });
 
     updateFocusRelatedSet();
-    simulateCelestialSystem();
+    simulateCelestialSystem(true);
     requestRender();
   }
 
@@ -460,7 +460,7 @@ window.QM.topology = (function() {
     return false;
   }
 
-  function simulateCelestialSystem() {
+  function simulateCelestialSystem(forceFull = false) {
     const { enableEffects } = window.QM.state.state;
     if (enableEffects) {
       animationTime += 1;
@@ -489,8 +489,11 @@ window.QM.topology = (function() {
       }
     });
 
+    // 检查是否存在未完成初始定位的天体节点 (避免静止模式初始化聚在原点)
+    const hasUnpositionedNodes = nodes.some(n => n.type !== 'core' && n.screenX === 0 && n.screenY === 0);
+
     // 性能保护：在静态节能模式下，若无拖拽且天体扩散已收敛，运镜期间跳过全量天体的多余动力学与开普勒反解
-    const shouldSimulateDynamics = enableEffects || Boolean(draggedNode) || hasDomainExpanding;
+    const shouldSimulateDynamics = forceFull || hasUnpositionedNodes || enableEffects || Boolean(draggedNode) || hasDomainExpanding;
     if (shouldSimulateDynamics) {
       nodes.forEach(n => {
         if (n.type !== 'domain') return;
@@ -568,6 +571,12 @@ window.QM.topology = (function() {
 
   function drawGalaxy() {
     if (!ctx || !container) return;
+
+    // 兜底保障：若检测到未定位天体，立即强制补算一次几何坐标
+    if (nodes.some(n => n.type !== 'core' && n.screenX === 0 && n.screenY === 0)) {
+      simulateCelestialSystem(true);
+    }
+
     const w = container.clientWidth;
     const h = container.clientHeight;
     ctx.clearRect(0, 0, w, h);
@@ -754,6 +763,7 @@ window.QM.topology = (function() {
   function drawCelestialBodies(bounds, nodeDimmedMap, isTransitioning) {
     const { activeTag, memories } = window.QM.state.state;
     const currentScale = transform.scale || 1.0;
+    const hasFocus = Boolean(focusTarget);
 
     // 视口几何裁剪：快速筛选屏幕视野内可见节点，大幅减少全量深度排序与绘图调用
     const visibleNodes = nodes.filter(n => {
@@ -801,7 +811,7 @@ window.QM.topology = (function() {
       } else if (isDomain) {
         planet?.drawPlanet(ctx, n, isFocus, isHover, isRelated, isDimmed);
       } else if (isUnit) {
-        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed);
+        satellite?.drawSatellite(ctx, n, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed, hasFocus);
       }
 
       ctx.restore();
