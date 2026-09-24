@@ -889,11 +889,11 @@ export function createServer() {
   });
 }
 
-// 安全拉起系统默认浏览器 (防止 Windows 平台下裸 start 误匹配当前目录下的 start.bat 导致循环重入)
+// 安全拉起系统默认浏览器 (显式指定空标题 start ""，绝不调用当前目录下的 start.bat)
 function openBrowserSafe(url) {
   let openCmd;
   if (process.platform === 'win32') {
-    openCmd = `explorer.exe "${url}"`;
+    openCmd = `cmd.exe /c start "" "${url}"`;
   } else if (process.platform === 'darwin') {
     openCmd = `open "${url}"`;
   } else {
@@ -901,29 +901,24 @@ function openBrowserSafe(url) {
   }
 
   exec(openCmd, err => {
-    if (err) console.warn('自动拉起浏览器失败，请手动打开:', url);
+    if (err) console.warn('[WARN] 自动拉起浏览器失败，请手动打开:', url);
   });
 }
 
-// 探测目标端口是否已有存活且健康的 Qoder Memory 实例
-function checkExistingInstance(port) {
-  return new Promise(resolve => {
-    const req = http.get(`http://127.0.0.1:${port}/api/status`, { timeout: 350 }, res => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          resolve(Boolean(parsed && parsed.ok === true));
-        } catch {
-          resolve(false);
-        }
-      });
+// 自动探测可用端口 (若 8901 被占用，则依次顺延尝试 8902, 8903...)
+function findAvailablePort(startPort) {
+  return new Promise((resolve, reject) => {
+    const testServer = http.createServer();
+    testServer.listen(startPort, () => {
+      const port = testServer.address().port;
+      testServer.close(() => resolve(port));
     });
-    req.on('error', () => resolve(false));
-    req.on('timeout', () => {
-      req.destroy();
-      resolve(false);
+    testServer.on('error', err => {
+      if (err.code === 'EADDRINUSE') {
+        resolve(findAvailablePort(startPort + 1));
+      } else {
+        reject(err);
+      }
     });
   });
 }
@@ -933,50 +928,38 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const shouldOpenBrowser = !process.argv.includes('--no-open');
 
   (async () => {
-    // 启动前防重探测：若默认端口已存在健康的 Qoder Memory 服务实例，则直接呼出已有窗口并退出，避免重复拉起与双开
-    const isAlreadyRunning = await checkExistingInstance(PORT);
-    if (isAlreadyRunning) {
-      const url = `http://localhost:${PORT}`;
-      console.log('\n============================================================');
-      console.log('⚡ Qoder Memory 工业级记忆拓扑管理平台已在运行中 (8901 实例存活)');
-      console.log(`🌐 正在为您呼出已有管理台窗口: ${url}`);
-      console.log('============================================================\n');
-      if (shouldOpenBrowser) {
-        openBrowserSafe(url);
-      }
-      process.exit(0);
-    }
+    try {
+      const portToUse = await findAvailablePort(PORT);
+      const isSwitched = portToUse !== PORT;
 
-    const appServer = createServer();
-
-    async function startServer(portToUse) {
       const projs = await scanAllProjects();
+      const appServer = createServer();
+
       appServer.listen(portToUse, () => {
-        const activePort = appServer.address().port;
-        const url = `http://localhost:${activePort}`;
+        const url = `http://localhost:${portToUse}`;
         console.log('\n============================================================');
         console.log('⚡ Qoder Memory 工业级记忆拓扑管理台 (本地自愈直读直写版)');
+        if (isSwitched) {
+          console.log(`⚠️ 提示: 默认端口 ${PORT} 已被占用，已自动切换至端口: ${portToUse}`);
+        }
         console.log(`🌐 访问地址: ${url}`);
         console.log(`🔍 已自动识别本地 Qoder 知识库: ${projs.length} 个 (全局与工程级自适应)`);
         console.log(`🖥️ 运行平台: Windows (${os.release()}) / Node ${process.version}`);
         console.log('💡 特性支持: 零软链接依赖、Slug 物理自愈、原子落盘、MEMORY.md 索引同步');
+        console.log('🛑 如需停止服务，请直接在此窗口按下 Ctrl + C');
         console.log('============================================================\n');
 
         if (shouldOpenBrowser) {
           openBrowserSafe(url);
         }
       });
+
+      appServer.on('error', err => {
+        console.error('服务运行异常:', err);
+      });
+    } catch (err) {
+      console.error('服务启动失败:', err);
+      process.exit(1);
     }
-
-    appServer.on('error', err => {
-      if (err.code === 'EADDRINUSE') {
-        console.warn(`[WARN] 默认端口 ${PORT} 已被其他程序占用，正在自动切换备用端口...`);
-        startServer(0);
-      } else {
-        console.error('服务启动异常:', err);
-      }
-    });
-
-    startServer(PORT);
   })();
 }
