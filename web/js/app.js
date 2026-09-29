@@ -28,6 +28,50 @@ window.QM.app = (function() {
     await connectServer();
   }
 
+  function populateEditionAndAccountSelect(ctx) {
+    const edSel = document.getElementById('edition-select');
+    const accSel = document.getElementById('account-select');
+    const trkSel = document.getElementById('track-select');
+    const state = window.QM.state.state;
+
+    if (edSel && ctx.editions) {
+      edSel.innerHTML = ctx.editions.map(e => 
+        `<option value="${e.id}" ${e.id === state.edition ? 'selected' : ''}>${e.name}</option>`
+      ).join('');
+    }
+
+    if (accSel) {
+      updateAccountOptions(ctx, state.edition, state.account);
+    }
+
+    if (trkSel) {
+      trkSel.value = state.track || 'ide';
+    }
+  }
+
+  function updateAccountOptions(ctx, edition, currentAcc) {
+    const accSel = document.getElementById('account-select');
+    if (!accSel) return;
+    const accList = (ctx.accounts && ctx.accounts[edition]) || [];
+
+    if (accList.length === 0) {
+      accSel.innerHTML = '<option value="" disabled selected>暂无账号目录</option>';
+      window.QM.state.state.account = null;
+      return;
+    }
+
+    let defaultAcc = currentAcc;
+    if (!defaultAcc || !accList.some(a => a.id === defaultAcc)) {
+      const activeItem = accList.find(a => a.isActive);
+      defaultAcc = activeItem ? activeItem.id : accList[0].id;
+    }
+    window.QM.state.state.account = defaultAcc;
+
+    accSel.innerHTML = accList.map(a => 
+      `<option value="${a.id}" ${a.id === defaultAcc ? 'selected' : ''}>👤 ${a.name}</option>`
+    ).join('');
+  }
+
   function populateProjectSelect(projects, currentVal) {
     const sel = document.getElementById('project-select');
     if (!sel || !projects) return;
@@ -84,6 +128,8 @@ window.QM.app = (function() {
     }
   }
 
+  let serverContextCache = null;
+
   async function connectServer() {
     const sBadge = document.getElementById('server-badge');
     const { api, state: stateCenter, utils, cards, topology } = window.QM;
@@ -95,12 +141,17 @@ window.QM.app = (function() {
       state.isServerMode = true;
       if (sBadge) sBadge.style.display = 'inline-flex';
 
-      const projects = await api.getProjects();
-      state.availableProjects = projects;
+      // 1. 获取国内外版本与账号上下文
+      const ctx = await api.getContext();
+      if (ctx && ctx.ok) {
+        serverContextCache = ctx;
+        state.edition = ctx.defaultEdition || 'cn';
+        state.account = (ctx.defaultAccounts && ctx.defaultAccounts[state.edition]) || null;
+        populateEditionAndAccountSelect(ctx);
+      }
 
-      const defaultProj = projects.find(p => p.id === 'fmmpay-busi') ? 'fmmpay-busi' : (projects[0] ? projects[0].id : 'global');
-      populateProjectSelect(projects, defaultProj);
-      await switchProject(defaultProj);
+      // 2. 加载项目列表
+      await refreshProjectList('fmmpay-dev');
     } else {
       state.isServerMode = false;
       if (sBadge) sBadge.style.display = 'none';
@@ -112,21 +163,49 @@ window.QM.app = (function() {
     }
   }
 
+  async function refreshProjectList(preferredProj = null) {
+    const { api, state: stateCenter } = window.QM;
+    const state = stateCenter.state;
+
+    const projects = await api.getProjects({
+      edition: state.edition,
+      account: state.account,
+      track: state.track
+    });
+    state.availableProjects = projects;
+
+    let targetProj = preferredProj;
+    if (!targetProj || !projects.some(p => p.id === targetProj)) {
+      targetProj = projects.find(p => p.id === 'fmmpay-dev') 
+        ? 'fmmpay-dev' 
+        : (projects.find(p => p.id === 'fmmpay-busi') ? 'fmmpay-busi' : (projects[0] ? projects[0].id : 'global'));
+    }
+
+    populateProjectSelect(projects, targetProj);
+    await switchProject(targetProj);
+  }
+
   async function switchProject(projKey) {
     const { api, state: stateCenter, cards, topology, utils } = window.QM;
     const s = stateCenter.state;
 
     if (s.isServerMode) {
       try {
-        const list = await api.getMemories(projKey);
-        if (list !== null) {
+        const res = await api.getMemories(projKey, {
+          edition: s.edition,
+          account: s.account,
+          track: s.track
+        });
+
+        if (res && res.memories) {
           s.currentProject = projKey;
           const meta = s.availableProjects.find(p => p.id === projKey) || {};
-          s.currentProjectScope = meta.scope || (projKey === 'global' ? 'global' : 'project');
-          s.currentProjectRealPath = meta.realPath || '';
-          s.currentProjectWorkspacePath = meta.workspacePath || '';
+          s.currentProjectScope = meta.scope || res.scope || (projKey === 'global' ? 'global' : 'project');
+          s.currentProjectRealPath = res.realPath || meta.realPath || '';
+          s.currentProjectWorkspacePath = res.workspacePath || meta.workspacePath || '';
           s.currentDirName = meta.rawName || meta.name || projKey;
-          s.memories = list;
+          s.memories = res.memories;
+          s.groupCounts = res.groupCounts || res.currentGroupCounts || { spec: 0, project: 0, experience: 0, task: 0 };
 
           updateScopeBadge(s.currentProjectScope, projKey, meta);
 
@@ -143,7 +222,8 @@ window.QM.app = (function() {
             topology.fitGalaxyView();
           }
           if (utils?.showToast) {
-            utils.showToast(`已实时载入 ${s.currentProjectScope === 'global' ? '全局记忆库' : '工程记忆库'}：${projKey} (${s.memories.length} 篇切片)`);
+            const trackNote = s.track === 'agent' ? '🤖 Agent 任务库' : (s.track === 'all' ? '🌐 全量透视' : '🌟 IDE 官方记忆');
+            utils.showToast(`已载入 [${trackNote}] ${s.currentProjectScope === 'global' ? '全局智库' : '工程智库'}：${projKey} (${s.memories.length} 篇切片)`);
           }
           return;
         }
@@ -208,6 +288,45 @@ window.QM.app = (function() {
 
   function bindUIEvents() {
     const { state: stateCenter, cards, topology, drawer, api, utils } = window.QM;
+
+    // 0. 版本切换 (国内版 / 国际版)
+    const selEdition = document.getElementById('edition-select');
+    if (selEdition) {
+      selEdition.addEventListener('change', async e => {
+        const newEdition = e.target.value;
+        stateCenter.state.edition = newEdition;
+        if (serverContextCache) {
+          updateAccountOptions(serverContextCache, newEdition, null);
+        }
+        await refreshProjectList();
+        if (utils?.showToast) {
+          utils.showToast(`已切换至版本：${newEdition === 'cn' ? '🇨🇳 国内版 (Qoder CN)' : '🌐 国际版 (Qoder Global)'}`);
+        }
+      });
+    }
+
+    // 0.1 账号切换
+    const selAccount = document.getElementById('account-select');
+    if (selAccount) {
+      selAccount.addEventListener('change', async e => {
+        const newAcc = e.target.value;
+        stateCenter.state.account = newAcc;
+        await refreshProjectList();
+        if (utils?.showToast) {
+          utils.showToast(`已切换至账号：${newAcc}`);
+        }
+      });
+    }
+
+    // 0.2 记忆源轨道切换 (🌟 IDE 官方长期记忆 / 🤖 Agent 任务记忆 / 🌐 全量透视)
+    const selTrack = document.getElementById('track-select');
+    if (selTrack) {
+      selTrack.addEventListener('change', async e => {
+        const newTrack = e.target.value;
+        stateCenter.state.track = newTrack;
+        await refreshProjectList(stateCenter.state.currentProject);
+      });
+    }
 
     // 1. 运行模式切换
     const btnAppMode = document.getElementById('btn-app-mode');

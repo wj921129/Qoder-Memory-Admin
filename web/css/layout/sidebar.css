@@ -29,6 +29,44 @@
   align-items: center;
 }
 
+/* 官方四大分类体系 (对齐 Qoder 原生) */
+.official-cat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e2e8f0;
+  cursor: pointer;
+  margin-bottom: 5px;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  transition: all 0.15s ease;
+}
+.official-cat-item:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: #38bdf8;
+  color: #fff;
+  transform: translateX(2px);
+}
+.official-cat-item.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  font-weight: 600;
+}
+.official-cat-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #38bdf8;
+}
+
 .cat-item {
   display: flex;
   align-items: center;

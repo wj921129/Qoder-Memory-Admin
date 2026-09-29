@@ -92,289 +92,353 @@ function detectProjectMeta(baseName, workspacePath, exists) {
   };
 }
 
+// Qoder 国内版与国际版环境定义 SSOT
+export const EDITIONS = {
+  cn: {
+    id: 'cn',
+    name: '🇨🇳 国内版 (Qoder CN)',
+    root: path.join(USER_HOME, '.qoder-cn'),
+    statusFile: path.join(USER_HOME, '.qoder-cn', '.qoder-app-status.json')
+  },
+  intl: {
+    id: 'intl',
+    name: '🌐 国际版 (Qoder Global)',
+    root: path.join(USER_HOME, '.qoder'),
+    statusFile: path.join(USER_HOME, '.qoder', '.qoder-app-status.json')
+  }
+};
+
+// Qoder 官方 4 大分类聚类体系 SSOT (国际版与国内版 100% 同构)
+export const OFFICIAL_CATEGORIES = {
+  spec: {
+    id: 'spec',
+    name: '开发规范',
+    icon: '🔗',
+    badgeClass: 'cat-spec',
+    subs: [
+      'development_code_specification',
+      'development_practice_specification',
+      'development_comment_specification',
+      'development_test_specification'
+    ]
+  },
+  project: {
+    id: 'project',
+    name: '项目信息',
+    icon: '📖',
+    badgeClass: 'cat-project',
+    subs: [
+      'project_architecture',
+      'project_dependency_configuration',
+      'project_environment_configuration',
+      'project_build_configuration',
+      'project_ide_configuration',
+      'project_introduction',
+      'project_rule',
+      'project_scm_configuration',
+      'project_tech_stack'
+    ]
+  },
+  experience: {
+    id: 'experience',
+    name: '经验教训',
+    icon: '💡',
+    badgeClass: 'cat-experience',
+    subs: [
+      'common_pitfalls_experience',
+      'important_decision_experience',
+      'task_experience',
+      'expert_experience',
+      'learned_skill_experience',
+      'mcp_experience',
+      'skill_experience',
+      'tool_experience',
+      'plan_experience'
+    ]
+  },
+  task: {
+    id: 'task',
+    name: '任务总结',
+    icon: '📋',
+    badgeClass: 'cat-task',
+    subs: [
+      'task_summary_experience',
+      'task_breakdown_experience',
+      'task_flow_experience',
+      'history_task_reference_files',
+      'history_task_workflow'
+    ]
+  }
+};
+
+// 探测与映射至官方四大分类
+export function mapToOfficialGroup(subCatName) {
+  if (!subCatName) return { id: 'experience', name: '经验教训', icon: '💡' };
+  for (const [key, grp] of Object.entries(OFFICIAL_CATEGORIES)) {
+    if (grp.subs.includes(subCatName)) {
+      return { id: grp.id, name: grp.name, icon: grp.icon };
+    }
+  }
+  if (subCatName.startsWith('project_')) return { id: 'project', name: '项目信息', icon: '📖' };
+  if (subCatName.startsWith('development_')) return { id: 'spec', name: '开发规范', icon: '🔗' };
+  if (subCatName.startsWith('task_') || subCatName.startsWith('history_')) return { id: 'task', name: '任务总结', icon: '📋' };
+  return { id: 'experience', name: '经验教训', icon: '💡' };
+}
+
+// 获取指定版本下的全部可用账号及活跃状态
+export async function getEditionAccounts(editionKey = 'cn') {
+  const ed = EDITIONS[editionKey] || EDITIONS.cn;
+  const memoriesDir = path.join(ed.root, 'memories');
+  const accounts = [];
+  let activeId = null;
+
+  // 探测当前活跃登录账号
+  if (fsSync.existsSync(ed.statusFile)) {
+    try {
+      const s = JSON.parse(await fs.readFile(ed.statusFile, 'utf-8'));
+      if (s && s.logged_in) {
+        const m = (s.avatar_url || '').match(/users\/([a-zA-Z0-9_-]+)/);
+        if (m) activeId = m[1].slice(0, 8);
+      }
+    } catch (e) {}
+  }
+
+  if (fsSync.existsSync(memoriesDir)) {
+    try {
+      const entries = await fs.readdir(memoriesDir, { withFileTypes: true });
+      for (const ent of entries) {
+        if (!ent.isDirectory()) continue;
+        const accId = ent.name;
+        const isActive = activeId ? (accId === activeId || accId.startsWith(activeId)) : false;
+        accounts.push({
+          id: accId,
+          name: isActive ? `${accId} (当前登录)` : accId,
+          isActive
+        });
+      }
+    } catch (e) {}
+  }
+
+  if (accounts.length > 0 && !accounts.some(a => a.isActive)) {
+    accounts[0].isActive = true;
+  }
+
+  return accounts;
+}
+
 // 全局在内存中的项目路由映射表 (支持 id, slug, realPath 多维索引)
 export const activeProjectRegistry = new Map();
+let currentScanContext = { edition: 'cn', account: null, track: 'ide' };
 
-// 多源动态扫描全部 Qoder 记忆文档 (无需依赖本地软链接)
-export async function scanAllProjects() {
+// 多源动态扫描全部 Qoder 记忆文档 (支持版本隔离、账号隔离、IDE/Agent 轨道切换)
+export async function scanAllProjects(options = {}) {
+  const editionKey = options.edition || currentScanContext.edition || 'cn';
+  const targetEdition = EDITIONS[editionKey] || EDITIONS.cn;
+  
+  const accounts = await getEditionAccounts(targetEdition.id);
+  const activeAcc = accounts.find(a => a.isActive) || accounts[0];
+  const targetAccount = options.account || (options.edition ? activeAcc?.id : currentScanContext.account) || activeAcc?.id || null;
+  const track = options.track || currentScanContext.track || 'ide';
+
+  currentScanContext = { edition: targetEdition.id, account: targetAccount, track };
   activeProjectRegistry.clear();
+
   const projects = [];
   const scannedRealPaths = new Set();
+  const projectMap = new Map(); // key: slug/baseName -> 聚合对象
 
-  const QODER_CN_HOME = path.join(USER_HOME, '.qoder-cn');
-  const QODER_INTL_HOME = path.join(USER_HOME, '.qoder');
-
-  // 1. 全局记忆扫描 (Global Scope)
-  const globalMemories = [
-    { home: QODER_CN_HOME, id: 'global', name: '🌐 全局研发智库 (Qoder CN 通用规范)' },
-    { home: QODER_INTL_HOME, id: 'global-intl', name: '🌐 国际版全局智库 (Qoder Intl)' }
-  ];
-
-  for (const gm of globalMemories) {
-    const memDir = path.join(gm.home, 'memory');
-    const realMemPathResolved = path.resolve(memDir).toLowerCase();
-    if (fsSync.existsSync(memDir) && !scannedRealPaths.has(realMemPathResolved)) {
-      let count = 0;
+  // 1. 扫描当前账号下的 IDE 会话长期记忆库 (memories/<account>/)
+  if (targetAccount) {
+    const accRoot = path.join(targetEdition.root, 'memories', targetAccount);
+    
+    // 1.1 全局用户记忆 (global)
+    const accGlobalDir = path.join(accRoot, 'global');
+    if (fsSync.existsSync(accGlobalDir)) {
+      const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+      let totalCount = 0;
       try {
-        const files = await fs.readdir(memDir);
-        count = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md').length;
+        const subCats = await fs.readdir(accGlobalDir, { withFileTypes: true });
+        for (const sub of subCats) {
+          if (!sub.isDirectory()) continue;
+          const grp = mapToOfficialGroup(sub.name);
+          const files = await fs.readdir(path.join(accGlobalDir, sub.name));
+          const count = files.filter(f => f.endsWith('.md')).length;
+          groupCounts[grp.id] = (groupCounts[grp.id] || 0) + count;
+          totalCount += count;
+        }
       } catch (e) {}
 
-      const projObj = {
-        id: gm.id,
-        slug: gm.id,
+      const globalObj = {
+        id: 'global',
+        slug: 'global',
         scope: 'global',
-        shortName: gm.id,
-        name: `${gm.name} [${count}篇]`,
-        rawName: gm.name,
+        shortName: 'global',
+        rawName: targetEdition.id === 'cn' ? '🌐 全局研发智库 (Qoder CN)' : '🌐 全局研发智库 (Qoder Intl)',
+        name: '',
         icon: '🌐',
-        count,
-        realPath: memDir,
-        workspacePath: gm.home,
+        edition: targetEdition.id,
+        account: targetAccount,
+        ideCount: totalCount,
+        agentCount: 0,
+        groupCounts,
+        idePath: accGlobalDir,
+        agentPath: path.join(targetEdition.root, 'memory'),
+        realPath: accGlobalDir,
+        workspacePath: targetEdition.root,
         isOffline: false
       };
-      projects.push(projObj);
-      scannedRealPaths.add(realMemPathResolved);
-      activeProjectRegistry.set(gm.id, projObj);
-      activeProjectRegistry.set(realMemPathResolved, projObj);
+      projectMap.set('global', globalObj);
+    }
+
+    // 1.2 项目级 IDE 记忆 (projects/)
+    const accProjsDir = path.join(accRoot, 'projects');
+    if (fsSync.existsSync(accProjsDir)) {
+      try {
+        const pEntries = await fs.readdir(accProjsDir, { withFileTypes: true });
+        for (const pEnt of pEntries) {
+          if (!pEnt.isDirectory()) continue;
+          const pDir = path.join(accProjsDir, pEnt.name);
+          const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+          let totalCount = 0;
+
+          try {
+            const subCats = await fs.readdir(pDir, { withFileTypes: true });
+            for (const sub of subCats) {
+              if (!sub.isDirectory()) continue;
+              const grp = mapToOfficialGroup(sub.name);
+              const files = await fs.readdir(path.join(pDir, sub.name));
+              const count = files.filter(f => f.endsWith('.md')).length;
+              groupCounts[grp.id] = (groupCounts[grp.id] || 0) + count;
+              totalCount += count;
+            }
+          } catch (e) {}
+
+          const { workspacePath, exists } = recoverPathFromSlug(pEnt.name);
+          const baseName = workspacePath ? path.basename(workspacePath) : pEnt.name;
+          const meta = detectProjectMeta(baseName, workspacePath, exists);
+
+          projectMap.set(pEnt.name, {
+            id: baseName,
+            slug: pEnt.name,
+            scope: 'project',
+            shortName: baseName,
+            rawName: meta.name || baseName,
+            name: '',
+            icon: meta.icon || '📁',
+            edition: targetEdition.id,
+            account: targetAccount,
+            ideCount: totalCount,
+            agentCount: 0,
+            groupCounts,
+            idePath: pDir,
+            agentPath: null,
+            realPath: pDir,
+            workspacePath: exists ? workspacePath : null,
+            isOffline: !exists
+          });
+        }
+      } catch (e) {}
     }
   }
 
-  // 2. Qoder 项目级记忆扫描 (Project Scope - Agent Auto-Memory)
-  const qoderHomes = [
-    { root: QODER_CN_HOME, tag: 'cn' },
-    { root: QODER_INTL_HOME, tag: 'intl' }
-  ];
-
-  for (const qh of qoderHomes) {
-    const projsDir = path.join(qh.root, 'projects');
-    if (!fsSync.existsSync(projsDir)) continue;
-
-    let entries = [];
+  // 2. 扫描 Agent 任务自治记忆库 (projects/<slug>/memory/)
+  const autoProjsDir = path.join(targetEdition.root, 'projects');
+  if (fsSync.existsSync(autoProjsDir)) {
     try {
-      entries = await fs.readdir(projsDir, { withFileTypes: true });
-    } catch (e) {
-      continue;
-    }
+      const autoEntries = await fs.readdir(autoProjsDir, { withFileTypes: true });
+      for (const ent of autoEntries) {
+        if (!ent.isDirectory()) continue;
+        const memDir = path.join(autoProjsDir, ent.name, 'memory');
+        if (!fsSync.existsSync(memDir)) continue;
 
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const memDir = path.join(projsDir, entry.name, 'memory');
-      const realMemPathResolved = path.resolve(memDir).toLowerCase();
-      if (scannedRealPaths.has(realMemPathResolved)) continue;
-
-      if (fsSync.existsSync(memDir)) {
-        let count = 0;
+        let agentCount = 0;
         try {
           const files = await fs.readdir(memDir);
-          count = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md').length;
-        } catch (e) {
-          continue;
-        }
-
-        // 跳过毫无记忆内容的空目录
-        if (count === 0 && !fsSync.existsSync(path.join(memDir, 'MEMORY.md'))) {
-          continue;
-        }
-
-        const { workspacePath, exists } = recoverPathFromSlug(entry.name);
-        const baseName = workspacePath ? path.basename(workspacePath) : entry.name;
-        const meta = detectProjectMeta(baseName, workspacePath, exists);
-
-        const displayName = meta.name ? `${meta.name} [${count}篇]` : `${baseName} [${count}篇]`;
-
-        const projObj = {
-          id: baseName,
-          slug: entry.name,
-          scope: 'project',
-          shortName: baseName,
-          name: displayName,
-          rawName: meta.name || baseName,
-          icon: meta.icon || '📁',
-          count,
-          realPath: memDir,
-          ideMemoryDirs: [],
-          workspacePath: exists ? workspacePath : null,
-          isOffline: !exists
-        };
-
-        projects.push(projObj);
-        scannedRealPaths.add(realMemPathResolved);
-
-        // 多键注册，短名、slug、绝对路径皆可无缝命中
-        activeProjectRegistry.set(baseName, projObj);
-        activeProjectRegistry.set(entry.name, projObj);
-        activeProjectRegistry.set(realMemPathResolved, projObj);
-        if (baseName.endsWith('-dev')) {
-          const withoutDev = baseName.replace(/-dev$/, '');
-          if (!activeProjectRegistry.has(withoutDev)) {
-            activeProjectRegistry.set(withoutDev, projObj);
-          }
-        }
-      }
-    }
-  }
-
-  // 3. 扫描 IDE 会话长期记忆库 (IDE Chat Memories: ~/.qoder-cn/memories/<account_id>/...)
-  for (const qh of qoderHomes) {
-    const memoriesRoot = path.join(qh.root, 'memories');
-    if (!fsSync.existsSync(memoriesRoot)) continue;
-
-    let accEntries = [];
-    try {
-      accEntries = await fs.readdir(memoriesRoot, { withFileTypes: true });
-    } catch (e) {
-      continue;
-    }
-
-    for (const acc of accEntries) {
-      if (!acc.isDirectory()) continue;
-
-      // 3.1 关联/汇聚 IDE Global 记忆
-      const accGlobalDir = path.join(memoriesRoot, acc.name, 'global');
-      if (fsSync.existsSync(accGlobalDir)) {
-        let globalFilesCount = 0;
-        try {
-          const cats = await fs.readdir(accGlobalDir, { withFileTypes: true });
-          for (const c of cats) {
-            if (!c.isDirectory()) continue;
-            const cFiles = await fs.readdir(path.join(accGlobalDir, c.name));
-            globalFilesCount += cFiles.filter(f => f.endsWith('.md')).length;
-          }
+          agentCount = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md').length;
         } catch (e) {}
 
-        if (globalFilesCount > 0) {
-          const globalProj = activeProjectRegistry.get('global');
-          if (globalProj) {
-            globalProj.ideMemoryDirs = globalProj.ideMemoryDirs || [];
-            if (!globalProj.ideMemoryDirs.includes(accGlobalDir)) {
-              globalProj.ideMemoryDirs.push(accGlobalDir);
-              globalProj.count += globalFilesCount;
-              globalProj.name = `${globalProj.rawName} [${globalProj.count}篇]`;
+        if (agentCount === 0 && !fsSync.existsSync(path.join(memDir, 'MEMORY.md'))) continue;
+
+        const { workspacePath, exists } = recoverPathFromSlug(ent.name);
+        const baseName = workspacePath ? path.basename(workspacePath) : ent.name;
+
+        // 尝试与 IDE 记忆项目汇聚
+        let proj = projectMap.get(ent.name) || (baseName ? projectMap.get(baseName) : null);
+        if (!proj) {
+          for (const item of projectMap.values()) {
+            if (item.id === baseName || item.shortName === baseName) {
+              proj = item;
+              break;
             }
           }
         }
-      }
 
-      // 3.2 关联/汇聚 IDE Projects 记忆
-      const accProjsDir = path.join(memoriesRoot, acc.name, 'projects');
-      if (!fsSync.existsSync(accProjsDir)) continue;
-
-      let pEntries = [];
-      try {
-        pEntries = await fs.readdir(accProjsDir, { withFileTypes: true });
-      } catch (e) {
-        continue;
-      }
-
-      for (const pEntry of pEntries) {
-        if (!pEntry.isDirectory()) continue;
-        const pDir = path.join(accProjsDir, pEntry.name);
-        let pFilesCount = 0;
-        try {
-          const cats = await fs.readdir(pDir, { withFileTypes: true });
-          for (const c of cats) {
-            if (!c.isDirectory()) continue;
-            const cFiles = await fs.readdir(path.join(pDir, c.name));
-            pFilesCount += cFiles.filter(f => f.endsWith('.md')).length;
-          }
-        } catch (e) {}
-
-        if (pFilesCount === 0) continue;
-
-        const { workspacePath, exists } = recoverPathFromSlug(pEntry.name);
-        const baseName = workspacePath ? path.basename(workspacePath) : pEntry.name;
-
-        // 尝试匹配已存在的项目
-        let matchedProj = activeProjectRegistry.get(baseName) 
-          || activeProjectRegistry.get(pEntry.name)
-          || (baseName.endsWith('-dev') ? activeProjectRegistry.get(baseName.replace(/-dev$/, '')) : null);
-
-        if (matchedProj) {
-          matchedProj.ideMemoryDirs = matchedProj.ideMemoryDirs || [];
-          if (!matchedProj.ideMemoryDirs.includes(pDir)) {
-            matchedProj.ideMemoryDirs.push(pDir);
-            matchedProj.count += pFilesCount;
-            matchedProj.name = `${matchedProj.rawName || matchedProj.shortName} [${matchedProj.count}篇]`;
-          }
+        if (proj) {
+          proj.agentCount = agentCount;
+          proj.agentPath = memDir;
         } else {
-          // 未在 projects/*/memory 出现过的纯 IDE 记忆工程
+          // 纯 Agent 任务记忆项目
           const meta = detectProjectMeta(baseName, workspacePath, exists);
-          const realMemPathResolved = path.resolve(pDir).toLowerCase();
-          if (scannedRealPaths.has(realMemPathResolved)) continue;
-
-          const projObj = {
+          projectMap.set(ent.name, {
             id: baseName,
-            slug: pEntry.name,
+            slug: ent.name,
             scope: 'project',
             shortName: baseName,
-            name: meta.name ? `${meta.name} [${pFilesCount}篇]` : `${baseName} [${pFilesCount}篇]`,
             rawName: meta.name || baseName,
+            name: '',
             icon: meta.icon || '📁',
-            count: pFilesCount,
-            realPath: pDir,
-            ideMemoryDirs: [pDir],
-            isIdeStore: true,
+            edition: targetEdition.id,
+            account: targetAccount,
+            ideCount: 0,
+            agentCount,
+            groupCounts: { spec: 0, project: 0, experience: 0, task: 0 },
+            idePath: null,
+            agentPath: memDir,
+            realPath: memDir,
             workspacePath: exists ? workspacePath : null,
             isOffline: !exists
-          };
+          });
+        }
+      }
+    } catch (e) {}
+  }
 
-          projects.push(projObj);
-          scannedRealPaths.add(realMemPathResolved);
-          activeProjectRegistry.set(baseName, projObj);
-          activeProjectRegistry.set(pEntry.name, projObj);
-          activeProjectRegistry.set(realMemPathResolved, projObj);
+  // 3. 统计生效篇数与注册
+  for (const proj of projectMap.values()) {
+    let effectiveCount = 0;
+    if (track === 'agent') {
+      effectiveCount = proj.agentCount;
+      proj.realPath = proj.agentPath || proj.idePath;
+    } else if (track === 'all') {
+      effectiveCount = proj.ideCount + proj.agentCount;
+      proj.realPath = proj.idePath || proj.agentPath;
+    } else {
+      // 默认 IDE 官方记忆轨道
+      effectiveCount = proj.ideCount;
+      proj.realPath = proj.idePath || proj.agentPath;
+    }
+
+    proj.count = effectiveCount;
+    proj.name = `${proj.rawName} [${effectiveCount}篇]`;
+
+    // 仅保留有效计数的项目或存在对应目录的项目
+    if (effectiveCount > 0 || proj.idePath || proj.agentPath) {
+      projects.push(proj);
+      const realResolved = path.resolve(proj.realPath || proj.idePath || proj.agentPath || '').toLowerCase();
+      
+      activeProjectRegistry.set(proj.id, proj);
+      activeProjectRegistry.set(proj.slug, proj);
+      if (realResolved) activeProjectRegistry.set(realResolved, proj);
+      if (proj.shortName && !activeProjectRegistry.has(proj.shortName)) {
+        activeProjectRegistry.set(proj.shortName, proj);
+      }
+      if (proj.id.endsWith('-dev')) {
+        const withoutDev = proj.id.replace(/-dev$/, '');
+        if (!activeProjectRegistry.has(withoutDev)) {
+          activeProjectRegistry.set(withoutDev, proj);
         }
       }
     }
-  }
-
-  // 4. Fallback 兼容本地 projects/ 目录 (若有用户自定义或外部指定目录)
-  const localProjectsDir = path.join(ROOT_DIR, 'projects');
-  if (fsSync.existsSync(localProjectsDir)) {
-    try {
-      const localEntries = await fs.readdir(localProjectsDir, { withFileTypes: true });
-      for (const entry of localEntries) {
-        const fullPath = path.join(localProjectsDir, entry.name);
-        let targetPath = fullPath;
-        try {
-          if (entry.isSymbolicLink()) {
-            targetPath = await fs.readlink(fullPath);
-            if (!path.isAbsolute(targetPath)) targetPath = path.resolve(localProjectsDir, targetPath);
-          }
-        } catch (e) {}
-
-        const targetResolved = path.resolve(targetPath).toLowerCase();
-        if (scannedRealPaths.has(targetResolved)) continue;
-
-        let count = 0;
-        try {
-          const files = await fs.readdir(targetPath);
-          count = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md').length;
-        } catch (e) {
-          continue;
-        }
-
-        const meta = PROJECT_META[entry.name] || { name: `${entry.name} (本地备用库)`, icon: '📁', shortName: entry.name };
-        const projObj = {
-          id: entry.name,
-          slug: entry.name,
-          scope: 'project',
-          shortName: entry.name,
-          name: `${meta.name} [${count}篇]`,
-          rawName: meta.name,
-          icon: meta.icon || '📁',
-          count,
-          realPath: targetPath,
-          workspacePath: null,
-          isOffline: false
-        };
-        projects.push(projObj);
-        scannedRealPaths.add(targetResolved);
-        activeProjectRegistry.set(entry.name, projObj);
-        activeProjectRegistry.set(targetResolved, projObj);
-      }
-    } catch (e) {}
   }
 
   // 排序优先级：global 优先，随后按业务重要度排布
@@ -392,14 +456,14 @@ export async function scanAllProjects() {
 }
 
 // 获取或动态重新探测目标项目 (SSOT)
-export async function getTargetProject(projKey) {
+export async function getTargetProject(projKey, options = {}) {
   if (!projKey) return null;
   if (activeProjectRegistry.size === 0) {
-    await scanAllProjects();
+    await scanAllProjects(options);
   }
   let target = activeProjectRegistry.get(projKey) || activeProjectRegistry.get(projKey.toLowerCase());
   if (!target) {
-    await scanAllProjects();
+    await scanAllProjects(options);
     target = activeProjectRegistry.get(projKey) || activeProjectRegistry.get(projKey.toLowerCase());
   }
   return target || null;
@@ -801,7 +865,7 @@ function normalizePathKey(absPath) {
 // 判断绝对路径是否落在该记忆库已探测到的物理根目录内
 function withinAllowedRoots(project, absPath) {
   const norm = path.resolve(absPath).toLowerCase();
-  return [project.realPath, ...(project.ideMemoryDirs || [])]
+  return [project.realPath, project.idePath, project.agentPath, ...(project.ideMemoryDirs || [])]
     .filter(Boolean)
     .some(root => norm.startsWith(path.resolve(root).toLowerCase() + path.sep));
 }
@@ -823,7 +887,7 @@ function resolveWriteTarget(project, item) {
 
   // 兼容旧客户端：IDE 切片按 subDir 回到对应来源目录
   if (item.storeType === 'ide' && item.subDir) {
-    const fallbackRoot = project.ideMemoryDirs && project.ideMemoryDirs.length > 0 ? project.ideMemoryDirs[0] : project.realPath;
+    const fallbackRoot = project.idePath || (project.ideMemoryDirs && project.ideMemoryDirs.length > 0 ? project.ideMemoryDirs[0] : project.realPath);
     if (fallbackRoot) {
       const abs = path.resolve(fallbackRoot, item.subDir, baseName);
       if (withinRoot(abs)) return abs;
@@ -935,7 +999,7 @@ export function createServer() {
         const projects = Array.from(new Set(activeProjectRegistry.values()));
         sendJson(res, 200, {
           ok: true,
-          version: '1.2.0',
+          version: '1.3.0',
           totalProjects: projects.length,
           totalMemories: projects.reduce((acc, p) => acc + (p.count || 0), 0),
           system: {
@@ -948,17 +1012,59 @@ export function createServer() {
         return;
       }
 
-      // 2. 扫描并获取项目列表 (自动识别本地 Qoder 记忆文档，支持 Global 与各个 Project)
-      if ((pathname === '/api/projects' || pathname === '/api/rescan') && req.method === 'GET') {
-        const projects = await scanAllProjects();
-        sendJson(res, 200, { ok: true, projects });
+      // 1.1 获取国内外版本与账号上下文元信息 (Context)
+      if (pathname === '/api/context' && req.method === 'GET') {
+        const cnAccounts = await getEditionAccounts('cn');
+        const intlAccounts = await getEditionAccounts('intl');
+
+        const activeCnAcc = cnAccounts.find(a => a.isActive)?.id || cnAccounts[0]?.id || null;
+        const activeIntlAcc = intlAccounts.find(a => a.isActive)?.id || intlAccounts[0]?.id || null;
+
+        sendJson(res, 200, {
+          ok: true,
+          editions: [
+            { id: 'cn', name: EDITIONS.cn.name, root: EDITIONS.cn.root, active: true },
+            { id: 'intl', name: EDITIONS.intl.name, root: EDITIONS.intl.root, active: false }
+          ],
+          accounts: {
+            cn: cnAccounts,
+            intl: intlAccounts
+          },
+          officialCategories: OFFICIAL_CATEGORIES,
+          defaultEdition: 'cn',
+          defaultAccounts: {
+            cn: activeCnAcc,
+            intl: activeIntlAcc
+          }
+        });
         return;
       }
 
-      // 3. 读取指定项目/全局的全部记忆切片 (汇聚 Agent 记忆与 IDE 会话记忆)
+      // 2. 扫描并获取项目列表 (支持版本隔离、账号隔离、IDE/Agent 轨道切换)
+      if ((pathname === '/api/projects' || pathname === '/api/rescan') && req.method === 'GET') {
+        const edition = parsedUrl.searchParams.get('edition') || 'cn';
+        const account = parsedUrl.searchParams.get('account') || null;
+        const track = parsedUrl.searchParams.get('track') || 'ide';
+
+        const projects = await scanAllProjects({ edition, account, track });
+        sendJson(res, 200, {
+          ok: true,
+          edition,
+          account,
+          track,
+          projects
+        });
+        return;
+      }
+
+      // 3. 读取指定项目/全局的全部记忆切片 (精准支持 IDE 原生记忆 vs Agent 任务自治记忆)
       if (pathname === '/api/memories' && req.method === 'GET') {
-        const projKey = parsedUrl.searchParams.get('project') || 'fmmpay-busi';
-        const targetProj = await getTargetProject(projKey);
+        const projKey = parsedUrl.searchParams.get('project') || 'fmmpay-dev';
+        const edition = parsedUrl.searchParams.get('edition') || 'cn';
+        const account = parsedUrl.searchParams.get('account') || null;
+        const track = parsedUrl.searchParams.get('track') || 'ide';
+
+        const targetProj = await getTargetProject(projKey, { edition, account, track });
 
         if (!targetProj) {
           sendJson(res, 404, { error: `未找到该项目的物理记忆库: ${projKey}` });
@@ -966,61 +1072,37 @@ export function createServer() {
         }
 
         const loaded = [];
-        const loadedNames = new Set();
+        const loadedKeys = new Set();
 
-        // 3.1 读取 Agent 记忆库 (平铺目录中的 .md，排除 MEMORY.md)
-        if (targetProj.realPath && fsSync.existsSync(targetProj.realPath) && !targetProj.isIdeStore) {
+        // 3.1 官方 IDE 原生会话长期记忆轨道 (分类子目录结构：<category>/*.md)
+        if ((track === 'ide' || track === 'all') && targetProj.idePath && fsSync.existsSync(targetProj.idePath)) {
           try {
-            const files = await fs.readdir(targetProj.realPath);
-            const mdFiles = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md');
-            for (const fname of mdFiles) {
-              try {
-                const filePath = path.join(targetProj.realPath, fname);
-                const content = await fs.readFile(filePath, 'utf-8');
-                const item = parseMarkdownFile(content, fname, null, 'agent');
-                item.storeType = 'agent';
-                item.relPath = fname;
-                item.diskPath = filePath;
-                item.originPath = filePath;
-                loaded.push(item);
-                loadedNames.add((item.name || fname).trim().toLowerCase());
-              } catch (err) {
-                console.error(`解析 Agent 记忆文件失败: ${fname}`, err.message);
-              }
-            }
-          } catch (e) {
-            console.error(`读取 Agent 记忆目录失败: ${targetProj.realPath}`, e.message);
-          }
-        }
-
-        // 3.2 读取 IDE 原生记忆库 (分类子目录结构：<category>/*.md)
-        const ideDirs = targetProj.ideMemoryDirs || (targetProj.isIdeStore ? [targetProj.realPath] : []);
-        for (const ideDir of ideDirs) {
-          if (!fsSync.existsSync(ideDir)) continue;
-          try {
-            const subEntries = await fs.readdir(ideDir, { withFileTypes: true });
+            const subEntries = await fs.readdir(targetProj.idePath, { withFileTypes: true });
             for (const sub of subEntries) {
               if (!sub.isDirectory()) continue;
-              const catDir = path.join(ideDir, sub.name);
+              const catDir = path.join(targetProj.idePath, sub.name);
               const catFiles = await fs.readdir(catDir);
+              const officialGroup = mapToOfficialGroup(sub.name);
+
               for (const fname of catFiles.filter(f => f.endsWith('.md') && f !== 'MEMORY.md')) {
                 try {
                   const filePath = path.join(catDir, fname);
                   const content = await fs.readFile(filePath, 'utf-8');
                   const item = parseMarkdownFile(content, fname, sub.name, 'ide');
                   item.storeType = 'ide';
+                  item.track = 'ide';
                   item.relPath = `${sub.name}/${fname}`;
                   item.subDir = sub.name;
-                  item.ideDir = ideDir;
+                  item.ideDir = targetProj.idePath;
                   item.diskPath = filePath;
                   item.originPath = filePath;
-                  item.category = sub.name; // 显式匹配目录名
+                  item.category = sub.name;
+                  item.officialGroup = officialGroup;
 
-                  // 避免同名切片重复展示（若 Agent 库中已有相同标题，以 Agent 优先）
-                  const normName = (item.name || fname).trim().toLowerCase();
-                  if (!loadedNames.has(normName)) {
+                  const normKey = (item.name || fname).trim().toLowerCase();
+                  if (!loadedKeys.has(normKey)) {
                     loaded.push(item);
-                    loadedNames.add(normName);
+                    loadedKeys.add(normKey);
                   }
                 } catch (err) {
                   console.error(`解析 IDE 记忆文件失败: ${fname}`, err.message);
@@ -1028,23 +1110,68 @@ export function createServer() {
               }
             }
           } catch (e) {
-            console.error(`读取 IDE 记忆目录失败: ${ideDir}`, e.message);
+            console.error(`读取 IDE 记忆目录失败: ${targetProj.idePath}`, e.message);
+          }
+        }
+
+        // 3.2 Agent 任务自治记忆轨道 (projects/<slug>/memory/ 平铺 .md，含 MEMORY.md 索引)
+        if ((track === 'agent' || track === 'all') && targetProj.agentPath && fsSync.existsSync(targetProj.agentPath)) {
+          try {
+            const files = await fs.readdir(targetProj.agentPath);
+            const mdFiles = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md');
+            for (const fname of mdFiles) {
+              try {
+                const filePath = path.join(targetProj.agentPath, fname);
+                const content = await fs.readFile(filePath, 'utf-8');
+                const item = parseMarkdownFile(content, fname, null, 'agent');
+                item.storeType = 'agent';
+                item.track = 'agent';
+                item.relPath = fname;
+                item.diskPath = filePath;
+                item.originPath = filePath;
+                item.officialGroup = mapToOfficialGroup(item.category);
+
+                const normKey = (item.name || fname).trim().toLowerCase();
+                if (track === 'agent' || !loadedKeys.has(normKey)) {
+                  loaded.push(item);
+                  loadedKeys.add(normKey);
+                }
+              } catch (err) {
+                console.error(`解析 Agent 记忆文件失败: ${fname}`, err.message);
+              }
+            }
+          } catch (e) {
+            console.error(`读取 Agent 记忆目录失败: ${targetProj.agentPath}`, e.message);
           }
         }
 
         // 按标题或文件名自然排序
         loaded.sort((a, b) => (a.name || a.filename).localeCompare(b.name || b.filename));
 
+        // 动态计算本次记忆集的官方 4 大分类计数
+        const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+        for (const m of loaded) {
+          const gid = m.officialGroup?.id || 'experience';
+          groupCounts[gid] = (groupCounts[gid] || 0) + 1;
+        }
+
         targetProj.count = loaded.length;
 
         sendJson(res, 200, {
           project: targetProj.id,
           scope: targetProj.scope,
+          edition,
+          account,
+          track,
           realPath: targetProj.realPath,
           workspacePath: targetProj.workspacePath,
           shortName: targetProj.shortName,
           name: targetProj.rawName || targetProj.name,
           count: loaded.length,
+          ideCount: targetProj.ideCount,
+          agentCount: targetProj.agentCount,
+          groupCounts: targetProj.groupCounts || groupCounts,
+          currentGroupCounts: groupCounts,
           memories: loaded
         });
         return;

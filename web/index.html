@@ -15,9 +15,27 @@
         ⚡ <span class="brand-title-full">Qoder 工业级记忆拓扑管理台</span><span class="brand-title-short">Qoder Memory</span>
       </h1>
       <div class="project-selector-wrap">
-        <label class="project-label">工程：</label>
-        <select id="project-select" class="project-select" title="选择当前要查看或直接维护的 Qoder 记忆文档库">
-          <option value="fmmpay-busi" selected>正在载入项目库...</option>
+        <!-- 1. 版本选择 -->
+        <select id="edition-select" class="selector-dropdown edition-select" title="Qoder 客户端版本 (国内版 / 国际版)">
+          <option value="cn" selected>🇨🇳 国内版</option>
+          <option value="intl">🌐 国际版</option>
+        </select>
+
+        <!-- 2. 账号选择 -->
+        <select id="account-select" class="selector-dropdown account-select" title="选择用户账号 (隔离独立记忆库)">
+          <option value="" disabled selected>正在载入账号...</option>
+        </select>
+
+        <!-- 3. 记忆源轨道 -->
+        <select id="track-select" class="selector-dropdown track-select" title="切换记忆源：🌟 IDE 官方长期记忆 (对齐官方 4 大分类) / 🤖 Agent 任务自治记忆 (Auto-Memory) / 🌐 全量透视">
+          <option value="ide" selected>🌟 IDE 官方记忆</option>
+          <option value="agent">🤖 Agent 任务记忆</option>
+          <option value="all">🌐 全量透视</option>
+        </select>
+
+        <!-- 4. 工程选择 -->
+        <select id="project-select" class="project-select" title="选择当前要查看或直接维护的 Qoder 记忆工程">
+          <option value="fmmpay-dev" selected>正在载入项目库...</option>
         </select>
         <button class="btn-icon-mini" id="btn-rescan-projects" title="重新扫描本地 Qoder 记忆文档 (无需重启服务)">🔄</button>
         <button class="btn-icon-mini" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
@@ -76,10 +94,20 @@
   <main>
     <!-- 左侧分类与标签侧边栏 -->
     <aside id="sidebar-filter">
+      <!-- 官方四大分类体系 (对齐 Qoder 官方 IDE 设置界面) -->
       <div class="sidebar-section">
         <div class="sidebar-section-title">
-          <span>认知分类体系 (Category)</span>
-          <span id="cat-total-count" style="color:#38bdf8;">0</span>
+          <span>官方四大分类体系 (Official)</span>
+          <span id="official-cat-total-count" style="color:#38bdf8;">0</span>
+        </div>
+        <div id="official-category-list"></div>
+      </div>
+
+      <!-- 底层物理子目录细分 -->
+      <div class="sidebar-section" style="max-height: 200px; overflow-y: auto;">
+        <div class="sidebar-section-title">
+          <span>底层细分子目录 (Sub-Dirs)</span>
+          <span id="cat-total-count" style="color:#64748b; font-size:11px;">0</span>
         </div>
         <div id="category-list"></div>
       </div>
@@ -143,6 +171,30 @@
 
       <!-- 视图 2：知识卡片流 -->
       <div id="cards-container" class="hidden">
+        <!-- 官方 4 大分类快捷过滤条 (与 Qoder 原生设置界面完全对齐) -->
+        <div class="official-tabs-bar" id="official-tabs-bar">
+          <button class="official-tab active" data-group="all">
+            <span>全部</span>
+            <span class="tab-badge" id="tab-badge-all">0</span>
+          </button>
+          <button class="official-tab" data-group="spec">
+            <span>🔗 开发规范</span>
+            <span class="tab-badge" id="tab-badge-spec">0</span>
+          </button>
+          <button class="official-tab" data-group="project">
+            <span>📖 项目信息</span>
+            <span class="tab-badge" id="tab-badge-project">0</span>
+          </button>
+          <button class="official-tab" data-group="experience">
+            <span>💡 经验教训</span>
+            <span class="tab-badge" id="tab-badge-experience">0</span>
+          </button>
+          <button class="official-tab" data-group="task">
+            <span>📋 任务总结</span>
+            <span class="tab-badge" id="tab-badge-task">0</span>
+          </button>
+        </div>
+
         <div class="view-control-bar">
           <div class="view-stats" id="view-stats">显示 0 条记忆</div>
           <div class="view-actions">

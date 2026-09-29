@@ -32,9 +32,87 @@ window.QM.constants = (function() {
     reference: { name: "外部规范与参考 (reference)", color: "#8b5cf6", icon: "📖", badgeClass: "type-reference" }
   };
 
+  // Qoder 官方四大分类体系 (国际版与国内版统一 SSOT)
+  const OFFICIAL_CATEGORIES = {
+    spec: {
+      id: "spec",
+      name: "开发规范",
+      icon: "🔗",
+      color: "#0ea5e9",
+      subs: [
+        "development_code_specification",
+        "development_practice_specification",
+        "development_comment_specification",
+        "development_test_specification"
+      ]
+    },
+    project: {
+      id: "project",
+      name: "项目信息",
+      icon: "📖",
+      color: "#6366f1",
+      subs: [
+        "project_architecture",
+        "project_dependency_configuration",
+        "project_environment_configuration",
+        "project_build_configuration",
+        "project_ide_configuration",
+        "project_introduction",
+        "project_rule",
+        "project_scm_configuration",
+        "project_tech_stack"
+      ]
+    },
+    experience: {
+      id: "experience",
+      name: "经验教训",
+      icon: "💡",
+      color: "#f43f5e",
+      subs: [
+        "common_pitfalls_experience",
+        "important_decision_experience",
+        "task_experience",
+        "expert_experience",
+        "learned_skill_experience",
+        "mcp_experience",
+        "skill_experience",
+        "tool_experience",
+        "plan_experience"
+      ]
+    },
+    task: {
+      id: "task",
+      name: "任务总结",
+      icon: "📋",
+      color: "#22c55e",
+      subs: [
+        "task_summary_experience",
+        "task_breakdown_experience",
+        "task_flow_experience",
+        "history_task_reference_files",
+        "history_task_workflow"
+      ]
+    }
+  };
+
+  function mapToOfficialGroup(subCatName) {
+    if (!subCatName) return { id: "experience", name: "经验教训", icon: "💡", color: "#f43f5e" };
+    for (const [key, grp] of Object.entries(OFFICIAL_CATEGORIES)) {
+      if (grp.subs.includes(subCatName)) {
+        return { id: grp.id, name: grp.name, icon: grp.icon, color: grp.color };
+      }
+    }
+    if (subCatName.startsWith("project_")) return { id: "project", name: "项目信息", icon: "📖", color: "#6366f1" };
+    if (subCatName.startsWith("development_")) return { id: "spec", name: "开发规范", icon: "🔗", color: "#0ea5e9" };
+    if (subCatName.startsWith("task_") || subCatName.startsWith("history_")) return { id: "task", name: "任务总结", icon: "📋", color: "#22c55e" };
+    return { id: "experience", name: "经验教训", icon: "💡", color: "#f43f5e" };
+  }
+
   return {
     CATEGORY_MAP,
-    TYPE_MAP
+    TYPE_MAP,
+    OFFICIAL_CATEGORIES,
+    mapToOfficialGroup
   };
 })();
 

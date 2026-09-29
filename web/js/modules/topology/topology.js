@@ -107,6 +107,30 @@ window.QM.topology = (function() {
       }
     });
 
+    window.QM.state.on('official-category-changed', (groupKey) => {
+      if (groupKey === 'all') {
+        deselectFocus();
+      } else {
+        const { OFFICIAL_CATEGORIES } = window.QM.constants;
+        const grp = OFFICIAL_CATEGORIES[groupKey];
+        if (grp) {
+          focusTarget = null;
+          focusRelatedIds.clear();
+          const targetDomains = nodes.filter(n => n.type === 'domain' && grp.subs.includes(n.categoryKey));
+          targetDomains.forEach(d => {
+            focusRelatedIds.add(d.id);
+            nodes.filter(u => u.type === 'unit' && u.parentId === d.id).forEach(u => focusRelatedIds.add(u.id));
+          });
+          const core = nodeMap.get('core-root');
+          if (core) focusRelatedIds.add(core.id);
+
+          const hudText = document.getElementById('hud-text');
+          if (hudText) hudText.innerText = `${grp.icon} 聚焦官方大类：【${grp.name}】 · 共 ${focusRelatedIds.size - 1} 个天体`;
+          requestRender();
+        }
+      }
+    });
+
     if (window.QM.state.state.enableEffects) {
       startGalaxyLoop();
     } else {

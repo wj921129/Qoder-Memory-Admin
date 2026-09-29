@@ -5,11 +5,18 @@ window.QM = window.QM || {};
 
 window.QM.state = (function() {
   const state = {
-    currentProject: 'fmmpay-busi',
+    edition: 'cn',
+    account: null,
+    track: 'ide',
+    officialCategory: 'all',
+    availableEditions: [],
+    availableAccounts: [],
+    groupCounts: { spec: 0, project: 0, experience: 0, task: 0 },
+    currentProject: 'fmmpay-dev',
     currentProjectScope: 'project',
     currentProjectRealPath: '',
     currentProjectWorkspacePath: '',
-    currentDirName: 'fmmpay-busi',
+    currentDirName: 'fmmpay-dev',
     memories: [],
     availableProjects: [],
     isServerMode: false,
@@ -150,6 +157,31 @@ window.QM.state = (function() {
     return lines.join('\n') + '\n';
   }
 
+  function setEdition(ed) {
+    state.edition = ed;
+    emit('edition-changed', ed);
+  }
+
+  function setAccount(acc) {
+    state.account = acc;
+    emit('account-changed', acc);
+  }
+
+  function setTrack(trk) {
+    state.track = trk;
+    emit('track-changed', trk);
+  }
+
+  function setOfficialCategory(cat) {
+    state.officialCategory = cat || 'all';
+    emit('official-category-changed', state.officialCategory);
+  }
+
+  function setGroupCounts(counts) {
+    state.groupCounts = counts || { spec: 0, project: 0, experience: 0, task: 0 };
+    emit('group-counts-changed', state.groupCounts);
+  }
+
   return {
     state,
     on,
@@ -158,6 +190,11 @@ window.QM.state = (function() {
     setEditMode,
     setViewMode,
     setEffectsMode,
+    setEdition,
+    setAccount,
+    setTrack,
+    setOfficialCategory,
+    setGroupCounts,
     generateMemoryIndex
   };
 })();

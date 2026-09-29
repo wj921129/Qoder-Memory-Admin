@@ -14,9 +14,25 @@ window.QM.api = (function() {
     return null;
   }
 
-  async function getProjects() {
+  async function getContext() {
     try {
-      const res = await fetch('/api/projects', { cache: 'no-store' });
+      const res = await fetch('/api/context', { cache: 'no-store' });
+      if (res.ok) return await res.json();
+    } catch (e) {
+      console.warn('[API] 获取上下文元信息失败:', e.message);
+    }
+    return null;
+  }
+
+  async function getProjects(params = {}) {
+    try {
+      const query = new URLSearchParams();
+      if (params.edition) query.set('edition', params.edition);
+      if (params.account) query.set('account', params.account);
+      if (params.track) query.set('track', params.track);
+
+      const url = `/api/projects${query.toString() ? '?' + query.toString() : ''}`;
+      const res = await fetch(url, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         return data.projects || [];
@@ -27,12 +43,16 @@ window.QM.api = (function() {
     return [];
   }
 
-  async function getMemories(project) {
+  async function getMemories(project, params = {}) {
     try {
-      const res = await fetch(`/api/memories?project=${encodeURIComponent(project)}`, { cache: 'no-store' });
+      const query = new URLSearchParams({ project });
+      if (params.edition) query.set('edition', params.edition);
+      if (params.account) query.set('account', params.account);
+      if (params.track) query.set('track', params.track);
+
+      const res = await fetch(`/api/memories?${query.toString()}`, { cache: 'no-store' });
       if (res.ok) {
-        const data = await res.json();
-        return data.memories || [];
+        return await res.json();
       }
     } catch (e) {
       console.error(`[API] 读取项目 [${project}] 记忆切片失败:`, e.message);
@@ -101,6 +121,7 @@ window.QM.api = (function() {
 
   return {
     checkStatus,
+    getContext,
     getProjects,
     getMemories,
     saveMemories,

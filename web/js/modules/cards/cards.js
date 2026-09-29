@@ -6,11 +6,20 @@ window.QM = window.QM || {};
 
 window.QM.cards = (function() {
   function getFilteredMemories() {
-    const { memories, activeCategory, activeTag, searchQuery, sortBy } = window.QM.state.state;
+    const { memories, officialCategory, activeCategory, activeTag, searchQuery, sortBy } = window.QM.state.state;
+    const { mapToOfficialGroup } = window.QM.constants;
 
     let filtered = memories.filter(m => {
+      // 1. 官方 4 大分类过滤 (对齐 Qoder 原生)
+      if (officialCategory && officialCategory !== 'all') {
+        const gid = (m.officialGroup && m.officialGroup.id) || mapToOfficialGroup(m.category).id;
+        if (gid !== officialCategory) return false;
+      }
+      // 2. 底层细分子目录过滤
       if (activeCategory !== 'all' && m.category !== activeCategory) return false;
+      // 3. 标签过滤
       if (activeTag && !(m.keywords || []).includes(activeTag)) return false;
+      // 4. 搜索框过滤
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         const matchName = (m.name || '').toLowerCase().includes(q);
@@ -30,6 +39,29 @@ window.QM.cards = (function() {
     });
 
     return filtered;
+  }
+
+  function updateOfficialTabs() {
+    const { memories, officialCategory } = window.QM.state.state;
+    const { mapToOfficialGroup } = window.QM.constants;
+    const counts = { all: memories.length, spec: 0, project: 0, experience: 0, task: 0 };
+    memories.forEach(m => {
+      const gid = (m.officialGroup && m.officialGroup.id) || mapToOfficialGroup(m.category).id;
+      counts[gid] = (counts[gid] || 0) + 1;
+    });
+
+    ['all', 'spec', 'project', 'experience', 'task'].forEach(gid => {
+      const badge = document.getElementById(`tab-badge-${gid}`);
+      if (badge) badge.innerText = counts[gid] || 0;
+    });
+
+    const tabsBar = document.getElementById('official-tabs-bar');
+    if (tabsBar) {
+      tabsBar.querySelectorAll('.official-tab').forEach(tab => {
+        const g = tab.getAttribute('data-group');
+        tab.classList.toggle('active', g === (officialCategory || 'all'));
+      });
+    }
   }
 
   const PAGE_SIZE = 36;
@@ -80,10 +112,18 @@ window.QM.cards = (function() {
       const typeInfo = (TYPE_MAP && TYPE_MAP[m.type]) || { name: m.type || 'project', icon: '🏛️', badgeClass: 'type-project' };
       const typeHtml = `<span class="badge-tag badge-type ${typeInfo.badgeClass}" title="Qoder 官方规范类型: ${escapeHtml(typeInfo.name)}">${typeInfo.icon} ${escapeHtml(m.type || 'project')}</span>`;
 
+      const officialGrp = m.officialGroup || window.QM.constants.mapToOfficialGroup(m.category);
+      const officialHtml = `<span class="badge-tag" style="border-color:${officialGrp.color || '#38bdf8'}; color:${officialGrp.color || '#38bdf8'}; background:rgba(30,41,59,0.5);">${officialGrp.icon} ${escapeHtml(officialGrp.name)}</span>`;
+      const trackBadge = m.storeType === 'agent'
+        ? `<span class="badge-tag" style="background:#3730a3; color:#c7d2fe; border-color:#4f46e5;">🤖 Agent</span>`
+        : `<span class="badge-tag" style="background:#065f46; color:#a7f3d0; border-color:#059669;">🌟 IDE</span>`;
+
       return `
         <div class="memory-card" id="card-${escapeHtml(m.id)}">
           <div class="card-title" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
           <div class="card-badges">
+            ${officialHtml}
+            ${trackBadge}
             ${typeHtml}
             <span class="badge-tag badge-cat">${escapeHtml(catLabel)}</span>
             <span class="badge-tag badge-source">${escapeHtml(m.source || 'auto')}</span>
@@ -138,6 +178,9 @@ window.QM.cards = (function() {
     const viewStatsEl = document.getElementById('view-stats');
     if (viewStatsEl) viewStatsEl.innerText = `显示 ${filtered.length} / ${memories.length} 条记忆`;
 
+    // 刷新官方四大分类选项卡计数与高亮
+    updateOfficialTabs();
+
     // 渲染侧边栏
     window.QM.sidebar?.render();
 
@@ -148,6 +191,20 @@ window.QM.cards = (function() {
 
     window.QM.topology?.buildGalaxyGraph();
   }
+
+  // 挂载官方四大分类选项卡点击事件
+  document.addEventListener('DOMContentLoaded', () => {
+    const tabsBar = document.getElementById('official-tabs-bar');
+    if (tabsBar) {
+      tabsBar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.official-tab');
+        if (btn) {
+          const group = btn.getAttribute('data-group') || 'all';
+          window.QM.sidebar?.selectOfficialCategory(group);
+        }
+      });
+    }
+  });
 
   // 监听视图切换事件，若切换到卡片模式则按需渲染卡片，若切换到拓扑模式则联动聚焦
   window.QM.state.on('view-changed', (mode) => {

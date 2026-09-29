@@ -10,7 +10,39 @@ window.QM.sidebar = (function() {
     const { CATEGORY_MAP } = window.QM.constants;
     const { escapeHtml } = window.QM.utils;
 
-    // 1. 分类统计与列表
+    // 0. 官方四大分类统计与渲染 (对齐 Qoder 原生)
+    const { OFFICIAL_CATEGORIES, mapToOfficialGroup } = window.QM.constants;
+    const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+    memories.forEach(m => {
+      const gid = (m.officialGroup && m.officialGroup.id) || mapToOfficialGroup(m.category).id;
+      groupCounts[gid] = (groupCounts[gid] || 0) + 1;
+    });
+
+    const officialListEl = document.getElementById('official-category-list');
+    if (officialListEl) {
+      const currOfficial = window.QM.state.state.officialCategory || 'all';
+      let officialHtml = `
+        <div class="official-cat-item ${currOfficial === 'all' ? 'active' : ''}" data-group="all" onclick="window.QM.sidebar.selectOfficialCategory('all')">
+          <span>🌟 全部记忆</span>
+          <span class="official-cat-badge">${memories.length}</span>
+        </div>
+      `;
+
+      for (const [gid, grp] of Object.entries(OFFICIAL_CATEGORIES)) {
+        const count = groupCounts[gid] || 0;
+        officialHtml += `
+          <div class="official-cat-item ${currOfficial === gid ? 'active' : ''}" data-group="${gid}" onclick="window.QM.sidebar.selectOfficialCategory('${gid}')">
+            <span>${grp.icon} ${grp.name}</span>
+            <span class="official-cat-badge">${count}</span>
+          </div>
+        `;
+      }
+      officialListEl.innerHTML = officialHtml;
+    }
+    const officialTotalEl = document.getElementById('official-cat-total-count');
+    if (officialTotalEl) officialTotalEl.innerText = memories.length;
+
+    // 1. 底层子目录细分统计与列表
     const catCounts = {};
     memories.forEach(m => {
       const c = m.category || 'other';
@@ -19,12 +51,7 @@ window.QM.sidebar = (function() {
 
     const catListEl = document.getElementById('category-list');
     if (catListEl) {
-      let catHtml = `
-        <div class="cat-item ${activeCategory === 'all' ? 'active' : ''}" data-category="all" onclick="window.QM.sidebar.selectCategory('all')">
-          <span>🌟 全部记忆集群</span>
-          <span class="cat-count">${memories.length}</span>
-        </div>
-      `;
+      let catHtml = '';
       Object.keys(catCounts).sort().forEach(cat => {
         const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
         catHtml += `
@@ -95,6 +122,34 @@ window.QM.sidebar = (function() {
     }
   }
 
+  function selectOfficialCategory(groupKey = 'all') {
+    const state = window.QM.state.state;
+    state.officialCategory = groupKey || 'all';
+    state.activeCategory = 'all'; // 选中官方大类时重置细分子类
+
+    // 刷新侧边栏大类高亮
+    const officialListEl = document.getElementById('official-category-list');
+    if (officialListEl) {
+      officialListEl.querySelectorAll('.official-cat-item').forEach(item => {
+        item.classList.toggle('active', item.getAttribute('data-group') === state.officialCategory);
+      });
+    }
+
+    // 同步卡片流顶部 tabs 高亮
+    const tabsBar = document.getElementById('official-tabs-bar');
+    if (tabsBar) {
+      tabsBar.querySelectorAll('.official-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.getAttribute('data-group') === state.officialCategory);
+      });
+    }
+
+    // 刷新卡片列表或拓扑
+    if (window.QM.cards) {
+      window.QM.cards.renderUI();
+    }
+    window.QM.state.emit('official-category-changed', state.officialCategory);
+  }
+
   function selectCategory(cat = 'all') {
     highlightCategory(cat, false);
 
@@ -129,6 +184,7 @@ window.QM.sidebar = (function() {
 
   return {
     render,
+    selectOfficialCategory,
     selectCategory,
     highlightCategory,
     toggleTag
