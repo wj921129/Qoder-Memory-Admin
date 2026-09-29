@@ -400,6 +400,14 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     document.getElementById('edit-name').focus();
   }
 
+  // 改名后同步磁盘定位，避免写回旧文件名
+  function retargetDiskPath(item, newFilename) {
+    if (!item.diskPath) return;
+    const sep = item.diskPath.includes('\\') ? '\\' : '/';
+    const dir = item.diskPath.slice(0, item.diskPath.lastIndexOf(sep) + 1);
+    item.diskPath = dir + newFilename;
+  }
+
   function saveCurrentDrawer() {
     const state = window.QM.state.state;
     if (!state.isEditMode) {
@@ -418,7 +426,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (!filename.endsWith('.md')) filename += '.md';
 
     const typeEl = document.getElementById('edit-type');
-    const type = (typeEl && typeEl.value) || 'project';
+    let type = (typeEl && typeEl.value) || 'project';
 
     let category = document.getElementById('edit-category-select').value;
     if (category === 'custom') {
@@ -435,6 +443,18 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (id) {
       const item = state.memories.find(m => m.id === id);
       if (item) {
+        // IDE 原生库的分类由物理子目录承载，改类等于搬家文件，本节暂不支持，回滚避免静默失效
+        if (item.storeType === 'ide' && category !== item.category) {
+          window.QM.utils?.showToast('⚠️ IDE 记忆库的分类等同物理子目录，本轮不支持在此改类，已保留原分类');
+          category = item.category;
+        }
+        if (item.storeType === 'ide' && item.rawFormat === 'ide' && type !== item.type) {
+          window.QM.utils?.showToast('⚠️ 该切片的认知域由目录名决定，官方无 type 字段，已保留原分类推导');
+          type = item.type;
+        }
+
+        if (item.filename !== filename) retargetDiskPath(item, filename);
+
         item.name = name;
         item.filename = filename;
         item.type = type;
@@ -447,8 +467,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
           item.chains = item.chains || [];
           item.chains.push(selectedChain);
         }
+        item.dirty = true;
       }
-      window.QM.utils?.showToast('记忆切片已成功更新');
+      window.QM.utils?.showToast('记忆切片已更新， Ctrl + S 落盘');
     } else {
       const newId = 'mem-' + Date.now();
       state.memories.unshift({
@@ -461,7 +482,8 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         description,
         keywords,
         chains: selectedChain ? [selectedChain] : [],
-        body
+        body,
+        dirty: true
       });
       window.QM.utils?.showToast('记忆切片已成功创建！');
     }

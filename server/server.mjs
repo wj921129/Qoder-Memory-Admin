@@ -418,8 +418,40 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon'
 };
 
+// 去除 YAML 标量两端的引号
+function stripYamlQuotes(raw) {
+  return String(raw).trim().replace(/^["']|["']$/g, '').trim();
+}
+
+// 解析 frontmatter 列表字段：兼容官方三种写法
+// 1) 内联 `keywords: [a, b]`  2) 块列表 `keywords:\n    - "a"`  3) 平铺 `keywords: a, b`
+function extractListField(fmText, key) {
+  const inline = fmText.match(new RegExp(key + ':\\s*\\[([^\\]]*)\\]', 'm'));
+  if (inline) {
+    return inline[1].split(/[,，]/).map(stripYamlQuotes).filter(Boolean);
+  }
+  const block = fmText.match(new RegExp('^' + key + ':[ \\t]*\\r?\\n((?:[ \\t]+-[^\\r\\n]*\\r?\\n?)+)', 'm'));
+  if (block) {
+    return block[1].split(/\r?\n/)
+      .map(l => stripYamlQuotes(l.replace(/^[ \t]*-[ \t]*/, '')))
+      .filter(Boolean);
+  }
+  const flat = fmText.match(new RegExp('^' + key + ':[ \\t]*([^\\r\\n]+)$', 'm'));
+  if (flat) {
+    return flat[1].split(/[,，]/).map(stripYamlQuotes).filter(Boolean);
+  }
+  return [];
+}
+
+// 读取 frontmatter 单值字段，并回传该键是否真实存在（用于落盘时判定是否原样保留）
+function readScalarField(fmText, keyRegex, keyName) {
+  const m = fmText.match(new RegExp('^' + keyRegex + ':\\s*["\']?([^"\'\\r\\n]+)["\']?', 'm'));
+  return { present: !!m, value: m ? m[1].trim() : '' };
+}
+
 // 解析 Markdown Frontmatter
-export function parseMarkdownFile(text, filename, subDirCategory = null) {
+// storeKind: 'agent' (Auto-Memory 平铺库) | 'ide' (IDE 分类子目录库)，用于决定落盘时采用哪套官方字段模板
+export function parseMarkdownFile(text, filename, subDirCategory = null, storeKind = null) {
   const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   let name = filename.replace(/\.md$/, '');
   let category = subDirCategory || '';
@@ -428,51 +460,71 @@ export function parseMarkdownFile(text, filename, subDirCategory = null) {
   let description = '';
   let keywords = [];
   let chains = [];
+  let usageScenario = [];
   let body = text;
+
+  // 记录原文件真实存在的字段（仅供展示与诊断参考，回写判定以 original 快照为准）
+  const presentFields = [];
+  let nameKey = null;
 
   if (fmMatch) {
     const fmText = fmMatch[1];
     body = fmMatch[2].trim();
 
-    const nameMatch = fmText.match(/^(?:name|title):\s*["']?([^"'\r\n]+)["']?/m);
-    if (nameMatch) name = nameMatch[1].trim();
-
-    const catMatch = fmText.match(/category:\s*["']?([^"'\r\n]+)["']?/m);
-    if (catMatch) category = catMatch[1].trim();
-
-    const srcMatch = fmText.match(/source:\s*["']?([^"'\r\n]+)["']?/m);
-    if (srcMatch) source = srcMatch[1].trim();
-
-    const typeMatch = fmText.match(/type:\s*["']?([^"'\r\n]+)["']?/m);
-    if (typeMatch) type = typeMatch[1].trim();
-
-    const descMatch = fmText.match(/description:\s*["']?([^"'\r\n]+)["']?/m);
-    if (descMatch) description = descMatch[1].trim();
-
-    // 兼容 IDE 记忆格式：从 usage_scenario 列表提取为 description
-    if (!description) {
-      const scenarioMatch = fmText.match(/usage_scenario:\s*\r?\n((?:\s*-[^\r\n]+\r?\n?)+)/m);
-      if (scenarioMatch) {
-        const lines = scenarioMatch[1].split(/\r?\n/)
-          .map(l => l.replace(/^\s*-\s*["']?/, '').replace(/["']?\s*$/, '').trim())
-          .filter(Boolean);
-        if (lines.length > 0) description = lines.join('; ');
-      }
+    // 官方 IDE 记忆用 title，Auto-Memory 用 name，两者取其一且需原样回写
+    const titleField = readScalarField(fmText, 'title', 'title');
+    const nameField = readScalarField(fmText, 'name', 'name');
+    if (titleField.present) {
+      nameKey = 'title';
+      name = titleField.value;
+      presentFields.push('title');
+    } else if (nameField.present) {
+      nameKey = 'name';
+      name = nameField.value;
+      presentFields.push('name');
     }
 
-    const kwMatch = fmText.match(/keywords:\s*\[(.*?)\]/m) || fmText.match(/keywords:\s*([^\r\n]+)/m);
-    if (kwMatch) {
-      keywords = kwMatch[1].split(/[,，]/).map(s => s.replace(/["']/g, '').trim()).filter(Boolean);
+    const catField = readScalarField(fmText, 'category', 'category');
+    if (catField.present) {
+      category = catField.value;
+      presentFields.push('category');
     }
 
-    const chainMatch = fmText.match(/chains:\s*\[(.*?)\]/m);
-    if (chainMatch) {
-      chains = chainMatch[1].split(/[,，]/).map(s => s.replace(/["']/g, '').trim()).filter(Boolean);
+    const srcField = readScalarField(fmText, 'source', 'source');
+    if (srcField.present) {
+      source = srcField.value;
+      presentFields.push('source');
     }
+
+    const typeField = readScalarField(fmText, 'type', 'type');
+    if (typeField.present) {
+      type = typeField.value;
+      presentFields.push('type');
+    }
+
+    const descField = readScalarField(fmText, 'description', 'description');
+    if (descField.present) {
+      description = descField.value;
+      presentFields.push('description');
+    }
+
+    // IDE 格式：usage_scenario 为列表，聚合展示为 description
+    usageScenario = extractListField(fmText, 'usage_scenario');
+    if (usageScenario.length > 0) {
+      presentFields.push('usage_scenario');
+      if (!description) description = usageScenario.join('; ');
+    }
+
+    keywords = extractListField(fmText, 'keywords');
+    if (keywords.length > 0) presentFields.push('keywords');
+
+    chains = extractListField(fmText, 'chains');
+    if (chains.length > 0) presentFields.push('chains');
   }
 
-  // 智能分类与类型双向推导 (消除孤儿 common)
-  if (!category || category === 'common') {
+  // 分类与类型仅用于展示推导（不落盘）：typeDerived / categoryDerived 标记来源，防止污染官方 schema
+  const categoryDerived = !category || category === 'common';
+  if (categoryDerived) {
     if (subDirCategory) {
       category = subDirCategory;
     } else if (type === 'feedback') {
@@ -488,13 +540,31 @@ export function parseMarkdownFile(text, filename, subDirCategory = null) {
     }
   }
 
-  // 规范化官方 type 字段 (user / feedback / project / reference)
-  if (!['user', 'feedback', 'project', 'reference'].includes(type)) {
+  const typeDerived = !['user', 'feedback', 'project', 'reference'].includes(type);
+  if (typeDerived) {
     if (category.startsWith('user_')) type = 'user';
     else if (category.includes('pitfalls') || category.includes('feedback')) type = 'feedback';
     else if (category.startsWith('project_') || category.includes('decision')) type = 'project';
     else type = 'reference';
   }
+
+  // 原始格式指纹：决定保存时回写 title/usage_scenario 还是 name/description/metadata
+  const rawFormat = (nameKey === 'title' || presentFields.includes('usage_scenario') || storeKind === 'ide')
+    ? 'ide'
+    : 'auto';
+
+  // 原始快照：以“展示态有效值”为基准，只有被用户真正改动的键才会被回写，杜绝默认值/推导值污染官方文件
+  const original = {
+    name,
+    description,
+    category,
+    type,
+    source,
+    keywords: keywords.slice(),
+    chains: chains.slice(),
+    usageScenario: usageScenario.slice(),
+    body
+  };
 
   return {
     id: filename.replace(/\.md$/, ''),
@@ -506,30 +576,262 @@ export function parseMarkdownFile(text, filename, subDirCategory = null) {
     description,
     keywords,
     chains,
-    body
+    body,
+    usageScenario,
+    rawFormat,
+    typeDerived,
+    categoryDerived,
+    frontmatterRaw: fmMatch ? fmMatch[1] : null,
+    original
   };
 }
 
-// 序列化为 Qoder 规范 Markdown
+// YAML 双引号标量转义
+function yamlStr(val) {
+  return `"${String(val == null ? '' : val).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+// 未加引号的裸量仅在不破坏 YAML 解析时保留（原文件风格优先）
+function safeBare(val) {
+  const s = String(val == null ? '' : val);
+  if (s !== s.trim()) return null;
+  if (/^[-?#:]/.test(s) || /[:#\[\]{}&*!|>'"%@`]/.test(s) || s === '') return null;
+  return s;
+}
+
+// 按原文件 quoting 风格输出标量值
+function styleScalar(rawSample, value) {
+  const s = String(value == null ? '' : value);
+  const wasQuoted = /^["']/.test(String(rawSample == null ? '' : rawSample).trim());
+  const bare = safeBare(s);
+  if (!wasQuoted && bare !== null) return s;
+  return yamlStr(s);
+}
+
+// 列表项统一输出（沿用原块缩进与 quoting 风格）
+function renderListItems(items, indent, quoted) {
+  return items.map(v => {
+    const bare = safeBare(v);
+    return `${indent}- ${quoted || bare === null ? yamlStr(v) : v}`;
+  });
+}
+
+// 将展示用的 description 反拆回 IDE 官方 usage_scenario 列表
+function resolveScenarioList(item, origList) {
+  const original = Array.isArray(origList) && origList.length > 0
+    ? origList
+    : (Array.isArray(item.usageScenario) ? item.usageScenario : []);
+  const desc = (item.description || '').trim();
+  if (original.length > 0 && original.join('; ') === desc) return original;
+  if (!desc) return original;
+  return desc.split(/[;；\r\n]+/).map(s => s.trim()).filter(Boolean);
+}
+
+// 标量键就地替换：值未变则一个字节也不改
+function syncScalar(fm, key, nextVal, origVal, eol) {
+  const re = new RegExp('^([ \\t]*)' + key + ':[ \\t]*([^\\r\\n]+?)[ \\t]*$', 'm');
+  const m = fm.match(re);
+  const nextStr = String(nextVal == null ? '' : nextVal);
+  const origStr = String(origVal == null ? '' : origVal);
+  if (m) {
+    if (origStr === nextStr) return fm;
+    return fm.replace(re, `${m[1]}${key}: ${styleScalar(m[2], nextVal)}`);
+  }
+  if (!nextStr || origStr === nextStr) return fm;
+  return fm.replace(/\s*$/, '') + eol + `${key}: ${styleScalar('', nextVal)}`;
+}
+
+// 块列表键就地替换（usage_scenario 等官方多行写法）
+function syncBlockList(fm, key, nextItems, origItems, eol) {
+  const items = (nextItems || []).filter(Boolean);
+  const blockRe = new RegExp('^([ \\t]*)' + key + ':[ \\t]*\\r?\\n([ \\t]+-[^\\r\\n]*(?:\\r?\\n[ \\t]+-[^\\r\\n]*)*)', 'm');
+  const m = fm.match(blockRe);
+  if (m) {
+    const prev = origItems || [];
+    const same = prev.length === items.length && prev.every((v, i) => v === items[i]);
+    if (same) return fm;
+    const itemIndent = m[2].match(/^([ \t]*)/)[1];
+    const quoted = /^[ \t]+-[ \t]*["']/.test(m[2]);
+    const rebuilt = `${m[1]}${key}:${eol}${renderListItems(items, itemIndent, quoted).join(eol)}`;
+    return fm.split(m[0]).join(rebuilt);
+  }
+  if (items.length === 0) return fm;
+  return fm.replace(/\s*$/, '') + eol + `${key}:${eol}` + renderListItems(items, '    ', true).join(eol);
+}
+
+// 内联/平铺列表键就地替换（Auto-Memory 库常见的 keywords: [a, b] 与 keywords: a, b）
+function syncFlatList(fm, key, nextItems, origItems, eol) {
+  const items = (nextItems || []).filter(Boolean);
+  const re = new RegExp('^([ \\t]*)' + key + ':[ \\t]*([^\\r\\n]+?)[ \\t]*$', 'm');
+  const m = fm.match(re);
+  if (m) {
+    const prev = origItems || [];
+    const same = prev.length === items.length && prev.every((v, i) => v === items[i]);
+    if (same) return fm;
+    const inlineForm = /^\[.*\]$/.test(m[2].trim());
+    const quoted = /["']/.test(m[2]);
+    const body = items.map(v => {
+      const bare = safeBare(v);
+      return (quoted || inlineForm || bare === null) ? yamlStr(v) : v;
+    }).join(', ');
+    return fm.replace(re, `${m[1]}${key}: ${inlineForm ? `[${body}]` : body}`);
+  }
+  if (items.length === 0) return fm;
+  return fm.replace(/\s*$/, '') + eol + `${key}: [${items.map(yamlStr).join(', ')}]`;
+}
+
+// 列表键统一入口：根据原文件形式分派（块列表 / 内联数组 / 平铺逗号），避免形式错配导致重复键
+function syncAnyList(fm, key, nextItems, origItems, eol) {
+  const blockHeader = new RegExp('^[ \\t]*' + key + ':[ \\t]*\\r?\\n[ \\t]+-', 'm');
+  if (blockHeader.test(fm)) return syncBlockList(fm, key, nextItems, origItems, eol);
+  return syncFlatList(fm, key, nextItems, origItems, eol);
+}
+
+// 将行插入 metadata: 块内（保持原有缩进层级），无块则新建
+function insertMetaLine(fm, line, eol) {
+  const metaRe = new RegExp('^([ \\t]*)metadata:[ \\t]*\\r?\\n(?:[ \\t]+[^\\r\\n]*(?:\\r?\\n[ \\t]+[^\\r\\n]*)*)?', 'm');
+  const m = fm.match(metaRe);
+  if (m) {
+    const baseIndent = m[1] || '';
+    return fm.split(m[0]).join(`${m[0]}${eol}${baseIndent}  ${line}`);
+  }
+  return fm.replace(/\s*$/, '') + eol + `metadata:${eol}  ${line}`;
+}
+
+// 记忆切片落盘序列化：基于原文件做外科手术式就地改写
+// 原则：1) 未改动的键字节不变 2) 绝不向官方文件注入推导值 3) 保留原文件 quoting / 缩进 / 列表形式
 export function serializeToMarkdown(item) {
-  const kwStr = (item.keywords || []).map(k => `"${k.replace(/"/g, '\\"')}"`).join(', ');
-  const chainStr = (item.chains || []).map(c => `"${c.replace(/"/g, '\\"')}"`).join(', ');
-  const safeName = (item.name || '').replace(/"/g, '\\"');
-  const safeDesc = (item.description || '').replace(/"/g, '\\"');
+  const rawFm = item.frontmatterRaw;
+  const orig = item.original;
 
-  return `---
-name: "${safeName}"
-description: "${safeDesc}"
-metadata:
-  type: ${item.type || 'feedback'}
-  category: ${item.category || 'common'}
-  source: ${item.source || 'auto'}
-  keywords: [${kwStr}]
-  chains: [${chainStr}]
----
+  // 抽屉新建切片（无原文件）：按官方 Auto-Memory schema 输出
+  if (typeof rawFm !== 'string' || !orig) {
+    const eol = '\r\n';
+    const lines = ['---', `name: ${yamlStr(item.name || item.id || '')}`];
+    if (item.description) lines.push(`description: ${yamlStr(item.description)}`);
+    const meta = [];
+    if (item.type) meta.push(`  type: ${item.type}`);
+    if (item.category) meta.push(`  category: ${item.category}`);
+    if (item.source) meta.push(`  source: ${item.source}`);
+    if ((item.keywords || []).length) meta.push(`  keywords: [${item.keywords.map(yamlStr).join(', ')}]`);
+    if ((item.chains || []).length) meta.push(`  chains: [${item.chains.map(yamlStr).join(', ')}]`);
+    if (meta.length) {
+      lines.push('metadata:');
+      lines.push(...meta);
+    }
+    lines.push('---');
+    return lines.join(eol) + eol + eol + String(item.body || '').trim() + eol;
+  }
 
-${item.body || ''}
-`;
+  const eol = rawFm.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+  let fm = rawFm;
+  // 新建条目（无原文件）已在上方分支处理；存量条目只动被显式改过的键
+  if (item.rawFormat === 'ide') {
+    // IDE 原生记忆库官方字段集：只允许碰 title(或遗留 name) / usage_scenario / keywords / source
+    // 认知分类由物理子目录承载，绝不往文件里追加 category / type / chains
+    const nameKey = /(^|[\r\n])[ \t]*title:/.test(fm) ? 'title' : 'name';
+    fm = syncScalar(fm, nameKey, item.name, orig.name, eol);
+    // usage_scenario 仅在原文件已有该块时才维护，不从 description 反向凭空造键
+    if (orig.usageScenario && orig.usageScenario.length > 0) {
+      fm = syncAnyList(fm, 'usage_scenario', resolveScenarioList(item, orig.usageScenario), orig.usageScenario, eol);
+    }
+    fm = syncAnyList(fm, 'keywords', item.keywords, orig.keywords, eol);
+    fm = syncScalar(fm, 'source', item.source, orig.source, eol);
+  } else {
+    fm = syncScalar(fm, 'name', item.name, orig.name, eol);
+    fm = syncScalar(fm, 'description', item.description, orig.description, eol);
+
+    for (const key of ['type', 'category', 'source']) {
+      const prevVal = String(orig[key] == null ? '' : orig[key]);
+      const nextVal = String(item[key] == null ? '' : item[key]);
+      if (prevVal === nextVal) continue;
+
+      const re = new RegExp('^([ \\t]*)' + key + ':[ \\t]*([^\\r\\n]+?)[ \\t]*$', 'm');
+      const hit = fm.match(re);
+      if (hit) {
+        // 已存在该键：就地换值，沿用原行缩进与 quoting 风格
+        fm = fm.split(hit[0]).join(`${hit[1]}${key}: ${styleScalar(hit[2], item[key])}`);
+      } else if (nextVal) {
+        // 原文件没有该键且属用户显式改动：追加到 metadata 块内
+        fm = insertMetaLine(fm, `${key}: ${styleScalar('', item[key])}`, eol);
+      }
+    }
+
+    if (/(^|[\r\n])[ \t]*keywords:/.test(fm)) {
+      fm = syncAnyList(fm, 'keywords', item.keywords, orig.keywords, eol);
+    } else if ((item.keywords || []).length) {
+      fm = insertMetaLine(fm, `keywords: [${item.keywords.map(yamlStr).join(', ')}]`, eol);
+    }
+
+    if (/(^|[\r\n])[ \t]*chains:/.test(fm)) {
+      fm = syncAnyList(fm, 'chains', item.chains, orig.chains, eol);
+    } else if ((item.chains || []).length) {
+      fm = insertMetaLine(fm, `chains: [${item.chains.map(yamlStr).join(', ')}]`, eol);
+    }
+  }
+
+  const body = String(item.body == null ? '' : item.body).trim();
+  const origBody = String(orig.body == null ? '' : orig.body).trim();
+  const finalBody = body === origBody ? String(orig.body).replace(/\s+$/, '') : body;
+
+  return `---${eol}${fm}${eol}---${eol}${eol}${finalBody}${eol}`;
+}
+
+// 仅用于内容比对：统一换行符，避免纯 EOL 差异触发无谓重写
+function normalizeEol(text) {
+  return String(text).replace(/\r\n/g, '\n').replace(/\s+$/, '');
+}
+
+function normEndsWithMd(absPath) {
+  return path.resolve(absPath).toLowerCase().endsWith('.md');
+}
+
+// 原子落盘：先写同目录临时文件再 rename，避免半截文件被 Qoder 读到
+async function atomicWriteFile(filePath, content) {
+  const tmpPath = `${filePath}.${process.pid}.tmp`;
+  await fs.writeFile(tmpPath, content, 'utf-8');
+  await fs.rename(tmpPath, filePath);
+}
+
+// 物理路径同形化比对（Windows 大小写不敏感）
+function normalizePathKey(absPath) {
+  return path.resolve(absPath).toLowerCase();
+}
+
+// 判断绝对路径是否落在该记忆库已探测到的物理根目录内
+function withinAllowedRoots(project, absPath) {
+  const norm = path.resolve(absPath).toLowerCase();
+  return [project.realPath, ...(project.ideMemoryDirs || [])]
+    .filter(Boolean)
+    .some(root => norm.startsWith(path.resolve(root).toLowerCase() + path.sep));
+}
+
+// 校验落盘目标必须落在该记忆库已探测到的物理根目录内，杜绝路径穿越
+function resolveWriteTarget(project, item) {
+  const withinRoot = absPath => withinAllowedRoots(project, absPath) && normEndsWithMd(absPath);
+
+  const baseName = path.basename(item.filename || '');
+  if (!baseName || baseName === 'MEMORY.md') return null;
+
+  // 读取阶段已定位到精确物理文件，直接复用（修正多账号库写回 ideMemoryDirs[0] 的串库问题）
+  if (item.diskPath) {
+    const abs = path.isAbsolute(item.diskPath)
+      ? path.resolve(item.diskPath)
+      : path.resolve(project.realPath, item.diskPath);
+    if (withinRoot(abs)) return abs;
+  }
+
+  // 兼容旧客户端：IDE 切片按 subDir 回到对应来源目录
+  if (item.storeType === 'ide' && item.subDir) {
+    const fallbackRoot = project.ideMemoryDirs && project.ideMemoryDirs.length > 0 ? project.ideMemoryDirs[0] : project.realPath;
+    if (fallbackRoot) {
+      const abs = path.resolve(fallbackRoot, item.subDir, baseName);
+      if (withinRoot(abs)) return abs;
+    }
+  }
+
+  const flat = path.resolve(project.realPath, baseName);
+  return withinRoot(flat) ? flat : null;
 }
 
 // 生成 MEMORY.md 索引
@@ -540,6 +842,27 @@ export function generateMemoryIndex(memories) {
     lines.push(`- [${m.name}](${m.filename})${desc}`);
   });
   return lines.join('\n') + '\n';
+}
+
+// 重扫 Auto-Memory 平铺目录重建 MEMORY.md
+// 官方约束：MEMORY.md 是每个记忆根目录的纯导航索引，不得指向子目录外的 IDE 切片文件
+async function rebuildMemoryIndex(agentDir) {
+  if (!agentDir || !fsSync.existsSync(agentDir)) return false;
+  const files = await fs.readdir(agentDir);
+  const remaining = [];
+  for (const f of files.filter(x => x.endsWith('.md') && x !== 'MEMORY.md')) {
+    try {
+      const stat = await fs.stat(path.join(agentDir, f));
+      if (!stat.isFile()) continue;
+      const text = await fs.readFile(path.join(agentDir, f), 'utf-8');
+      remaining.push(parseMarkdownFile(text, f, null, 'agent'));
+    } catch (e) {
+      console.warn(`[Index] 解析记忆文件失败: ${f}`, e.message);
+    }
+  }
+  remaining.sort((a, b) => (a.name || a.filename).localeCompare(b.name || b.filename));
+  await atomicWriteFile(path.join(agentDir, 'MEMORY.md'), generateMemoryIndex(remaining));
+  return true;
 }
 
 // 读取 Request Body
@@ -654,9 +977,11 @@ export function createServer() {
               try {
                 const filePath = path.join(targetProj.realPath, fname);
                 const content = await fs.readFile(filePath, 'utf-8');
-                const item = parseMarkdownFile(content, fname);
+                const item = parseMarkdownFile(content, fname, null, 'agent');
                 item.storeType = 'agent';
                 item.relPath = fname;
+                item.diskPath = filePath;
+                item.originPath = filePath;
                 loaded.push(item);
                 loadedNames.add((item.name || fname).trim().toLowerCase());
               } catch (err) {
@@ -682,10 +1007,13 @@ export function createServer() {
                 try {
                   const filePath = path.join(catDir, fname);
                   const content = await fs.readFile(filePath, 'utf-8');
-                  const item = parseMarkdownFile(content, fname, sub.name);
+                  const item = parseMarkdownFile(content, fname, sub.name, 'ide');
                   item.storeType = 'ide';
                   item.relPath = `${sub.name}/${fname}`;
                   item.subDir = sub.name;
+                  item.ideDir = ideDir;
+                  item.diskPath = filePath;
+                  item.originPath = filePath;
                   item.category = sub.name; // 显式匹配目录名
 
                   // 避免同名切片重复展示（若 Agent 库中已有相同标题，以 Agent 优先）
@@ -741,27 +1069,79 @@ export function createServer() {
           await fs.mkdir(projPath, { recursive: true });
         }
 
+        // 只重写真正有差异的内容：未编辑的切片字节级不动，避免往返破坏官方字段
+        const written = [];
+        const skipped = [];
+        const rejected = [];
+
         for (const m of memories) {
           if (!m.filename) continue;
-          if (m.storeType === 'ide' && m.subDir && targetProj.ideMemoryDirs && targetProj.ideMemoryDirs[0]) {
-            const ideCatDir = path.join(targetProj.ideMemoryDirs[0], m.subDir);
-            await fs.mkdir(ideCatDir, { recursive: true });
-            const filePath = path.join(ideCatDir, path.basename(m.filename));
-            await fs.writeFile(filePath, serializeToMarkdown(m), 'utf-8');
-          } else {
-            const filePath = path.join(projPath, path.basename(m.filename));
-            await fs.writeFile(filePath, serializeToMarkdown(m), 'utf-8');
+
+          const filePath = resolveWriteTarget(targetProj, m);
+          if (!filePath) {
+            rejected.push(m.filename);
+            console.warn(`[Save] 拒绝越界落盘: ${m.filename}`);
+            continue;
+          }
+
+          const nextText = serializeToMarkdown(m);
+          let prevText = null;
+          try {
+            prevText = await fs.readFile(filePath, 'utf-8');
+          } catch (e) {
+            prevText = null; // 新文件
+          }
+
+          // 区分两种“磁盘上没这个文件”：抽屉新建卡片（无 originPath）→ 按官方 schema 新建；
+          // 存量切片但 frontmatterRaw 缺失（旧版缓存客户端）→ 拒绝，避免写出无 name 的残缺卡片
+          const isNewCard = !m.originPath && !m.frontmatterRaw;
+          if (prevText === null && m.frontmatterRaw === null && !isNewCard) {
+            rejected.push(m.filename);
+            console.warn(`[Save] 无原文件指纹且非新建卡片，拒绝盲写: ${m.filename}`);
+            continue;
+          }
+          if (prevText === null && isNewCard && !m.name) {
+            rejected.push(m.filename);
+            continue;
+          }
+
+          if (prevText !== null && normalizeEol(prevText) === normalizeEol(nextText)) {
+            skipped.push(path.basename(filePath));
+            continue;
+          }
+
+          await fs.mkdir(path.dirname(filePath), { recursive: true });
+          await atomicWriteFile(filePath, nextText);
+          written.push(path.basename(filePath));
+
+          // 改名场景：新文件落盘后清理旧路径，避免同一记忆两份副本
+          if (m.originPath) {
+            const oldPath = path.resolve(m.originPath);
+            if (!withinAllowedRoots(targetProj, oldPath)) {
+              console.warn(`[Save] 忽略越界的旧路径清理: ${oldPath}`);
+            } else if (normalizePathKey(oldPath) !== normalizePathKey(filePath) && fsSync.existsSync(oldPath)) {
+              await fs.unlink(oldPath);
+            }
           }
         }
 
-        if (!targetProj.isIdeStore || fsSync.existsSync(path.join(projPath, 'MEMORY.md'))) {
-          const indexPath = path.join(projPath, 'MEMORY.md');
-          await fs.writeFile(indexPath, generateMemoryIndex(memories), 'utf-8');
+        // MEMORY.md 只在确实有文件写入时才重建，且只索引本平铺目录内的 Auto-Memory 切片
+        // （零写入时不重写，避免覆盖用户人工维护的索引标题；删除场景由 /api/delete 自行重建）
+        let indexRefreshed = false;
+        if (!targetProj.isIdeStore && written.length > 0 && fsSync.existsSync(path.join(projPath, 'MEMORY.md'))) {
+          indexRefreshed = await rebuildMemoryIndex(projPath);
         }
 
-        targetProj.count = memories.length;
-
-        sendJson(res, 200, { ok: true, count: memories.length, realPath: projPath });
+        sendJson(res, 200, {
+          ok: true,
+          written: written.length,
+          writtenFiles: written,
+          unchanged: skipped.length,
+          rejected,
+          indexRefreshed,
+          count: memories.length,
+          realPath: projPath
+        });
         return;
       }
 
@@ -823,15 +1203,7 @@ export function createServer() {
 
         // 重新统计并更新 MEMORY.md (如果有)
         if (!targetProj.isIdeStore && fsSync.existsSync(path.join(targetProj.realPath, 'MEMORY.md'))) {
-          const files = await fs.readdir(targetProj.realPath);
-          const remaining = [];
-          for (const f of files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md')) {
-            try {
-              const text = await fs.readFile(path.join(targetProj.realPath, f), 'utf-8');
-              remaining.push(parseMarkdownFile(text, f));
-            } catch (e) {}
-          }
-          await fs.writeFile(path.join(targetProj.realPath, 'MEMORY.md'), generateMemoryIndex(remaining), 'utf-8');
+          await rebuildMemoryIndex(targetProj.realPath);
         }
 
         // 刷新内存中的项目列表与计数

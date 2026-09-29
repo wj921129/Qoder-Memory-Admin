@@ -168,14 +168,28 @@ window.QM.app = (function() {
     }
 
     if (s.isServerMode) {
+      // 增量落盘：只提交抽屉里真正改过/新建的切片，未动过的官方文件字节级不重写
+      const dirtyItems = s.memories.filter(m => m.dirty);
+      if (dirtyItems.length === 0) {
+        if (stateCenter?.setDirty) {
+          stateCenter.setDirty(false);
+        }
+        if (utils?.showToast) {
+          utils.showToast('本轮无待落盘的修改');
+        }
+        return;
+      }
+
       try {
-        const res = await api.saveMemories(s.currentProject, s.memories);
+        const res = await api.saveMemories(s.currentProject, dirtyItems);
         if (res && res.ok) {
+          s.memories.forEach(m => { delete m.dirty; });
           if (stateCenter?.setDirty) {
             stateCenter.setDirty(false);
           }
           if (utils?.showToast) {
-            utils.showToast(`已全部保存落盘至 ${s.currentProject}！真实 .md 与 MEMORY.md 索引已同步！`);
+            const unchangedNote = res.unchanged ? `，${res.unchanged} 篇无差异未动` : '';
+            utils.showToast(`已落盘 ${res.written} 篇至 ${s.currentProject}${unchangedNote}，MEMORY.md 索引已同步！`);
           }
           return;
         }
