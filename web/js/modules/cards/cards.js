@@ -118,10 +118,13 @@ window.QM.cards = (function() {
         ? `<span class="badge-tag" style="background:#3730a3; color:#c7d2fe; border-color:#4f46e5;">🤖 Agent</span>`
         : `<span class="badge-tag" style="background:#065f46; color:#a7f3d0; border-color:#059669;">🌟 IDE</span>`;
 
+      const projBadge = m.projectName ? `<span class="badge-tag" style="background:#1e293b; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🪐 ${escapeHtml(m.projectName)}</span>` : '';
+
       return `
         <div class="memory-card" id="card-${escapeHtml(m.id)}">
           <div class="card-title" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
           <div class="card-badges">
+            ${projBadge}
             ${officialHtml}
             ${trackBadge}
             ${typeHtml}

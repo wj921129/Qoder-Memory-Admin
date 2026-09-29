@@ -16,8 +16,12 @@ window.QM.state = (function() {
     currentProjectScope: 'project',
     currentProjectRealPath: '',
     currentProjectWorkspacePath: '',
-    currentDirName: 'fmmpay-dev',
+    currentDirName: '宏观全宇宙',
     memories: [],
+    galaxies: [],
+    activeGalaxyId: null,
+    selectedPlanet: null,
+    planetSpacingMap: {},
     availableProjects: [],
     isServerMode: false,
     isEditMode: false,
@@ -182,6 +186,28 @@ window.QM.state = (function() {
     emit('group-counts-changed', state.groupCounts);
   }
 
+  function setSelectedPlanet(planetNode) {
+    state.selectedPlanet = planetNode;
+    emit('selected-planet-changed', planetNode);
+  }
+
+  function setPlanetSpacing(planetId, scale) {
+    if (!planetId) return;
+    const clampedScale = Math.max(0.4, Math.min(3.0, parseFloat(scale) || 1.0));
+    state.planetSpacingMap[planetId] = clampedScale;
+    emit('planet-spacing-changed', { planetId, scale: clampedScale });
+  }
+
+  function getPlanetSpacing(planetId) {
+    if (!planetId) return 1.0;
+    return state.planetSpacingMap[planetId] || 1.0;
+  }
+
+  function setGalaxies(galaxies) {
+    state.galaxies = galaxies || [];
+    emit('galaxies-changed', state.galaxies);
+  }
+
   return {
     state,
     on,
@@ -195,6 +221,10 @@ window.QM.state = (function() {
     setTrack,
     setOfficialCategory,
     setGroupCounts,
+    setSelectedPlanet,
+    setPlanetSpacing,
+    getPlanetSpacing,
+    setGalaxies,
     generateMemoryIndex
   };
 })();

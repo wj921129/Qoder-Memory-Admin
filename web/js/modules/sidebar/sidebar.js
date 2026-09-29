@@ -184,6 +184,7 @@ window.QM.sidebar = (function() {
 
   return {
     render,
+    renderUI: render,
     selectOfficialCategory,
     selectCategory,
     highlightCategory,

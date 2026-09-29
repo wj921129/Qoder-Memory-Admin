@@ -1,6 +1,6 @@
 /**
- * Qoder Memory Visualizer - 卫星模块 (Unit Satellite System)
- * 职责：记忆切片卫星天体的开普勒层级分布、平滑扩散、3D透视闭式反解、全量标题渲染及0像素瞬移重算
+ * Qoder Memory Visualizer - 拟真卫星模块 (Realistic Satellite System)
+ * 职责：记忆切片卫星天体的开普勒层级分布、平滑扩散、支持选中情况下动态卫星间距调节、微型天体光影渲染
  */
 window.QM = window.QM || {};
 
@@ -63,6 +63,8 @@ window.QM.satellite = (function() {
       filename: m.filename,
       type: "unit",
       parentId: parentDomain.id,
+      galaxyId: parentDomain.galaxyId || 'global',
+      projectId: m.projectId || parentDomain.galaxyId || 'global',
       radius: 14,
       x: 0, y: 0, z: 0,
       screenX: 0, screenY: 0, screenRadius: 14,
@@ -95,16 +97,20 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 卫星每帧动力学模拟（受父行星扩散因子动态平滑舒展）
+   * 卫星每帧动力学模拟：
+   * 结合母行星的 expansionProgress 与 satelliteSpacingScale 动态控制卫星间距！
    */
   function simulateSatellite(node, parentNode, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true) {
     if (!node || node.type !== 'unit' || !node.celestial) return;
     if (isBeingDragged) return;
 
     const c = node.celestial;
-    const parent = parentNode || { x: 0, y: 0, z: 0, expansionProgress: 0 };
+    const parent = parentNode || { x: 0, y: 0, z: 0, expansionProgress: 0, satelliteSpacingScale: 1.0 };
     const expansion = parent.expansionProgress || 0;
-    const expansionMult = 1.0 + expansion * 0.48;
+    const spacingScale = (parent.satelliteSpacingScale !== undefined) ? parent.satelliteSpacingScale : 1.0;
+
+    // 选中状态下：间距倍率 spacingScale 深度作用于展开幅度
+    const expansionMult = 1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4);
 
     if (enableEffects) {
       c.theta = (c.theta + c.omega) % (Math.PI * 2);
@@ -127,37 +133,62 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 绘制记忆切片卫星本体及标题标签 (支持无选中全量显示、选中关联高亮展示)
+   * 绘制记忆切片卫星本体及标题标签 (拟真微型星体，柔和微光)
    */
   function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, hasFocus = false) {
     const r = node.screenRadius;
     const isHighlightedTag = Boolean(activeTag && isTagHit);
-    const isImportant = isFocus || isHover || isHighlightedTag;
 
-    // 1. 焦点与悬停高亮外环
+    // 1. 焦点与悬停高亮柔和外光环
     if (isFocus || isHover) {
       ctx.beginPath();
       ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = isFocus ? '#ffffff' : '#38bdf8';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.7)' : 'rgba(56, 189, 248, 0.55)';
+      ctx.lineWidth = isFocus ? 1.5 : 1;
       ctx.stroke();
     }
 
-    // 2. 视觉特效全量统一：一律使用所属认知域主题色 (node.parentColor)
+    // 2. 拟真外圈淡淡光晕 (Ethereal Micro-Glow)
+    const glowR = r * 1.35;
+    const glowGrad = ctx.createRadialGradient(0, 0, r * 0.7, 0, 0, glowR);
+    const basePColor = node.parentColor || '#38bdf8';
+    if (isDimmed) {
+      glowGrad.addColorStop(0, 'rgba(71, 85, 105, 0.15)');
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else {
+      glowGrad.addColorStop(0, basePColor + (isFocus ? '44' : '22'));
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    }
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = isDimmed ? 'rgba(71, 85, 105, 0.55)' : (node.parentColor || '#64748b');
+    ctx.arc(0, 0, glowR, 0, Math.PI * 2);
+    ctx.fillStyle = glowGrad;
     ctx.fill();
 
-    // 统一边框轮廓线 (无阴影、干净利落)
-    ctx.strokeStyle = isFocus ? '#ffffff' : (isDimmed ? 'rgba(148, 163, 184, 0.25)' : 'rgba(255, 255, 255, 0.4)');
-    ctx.lineWidth = isFocus ? 2 : 1;
+    // 3. 拟真微型球体表面 (消除平面纯色填充，采用立体漫反射渐变)
+    const sphereGrad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 0.5, 0, 0, r);
+    if (isDimmed) {
+      sphereGrad.addColorStop(0, '#64748b');
+      sphereGrad.addColorStop(0.5, '#334155');
+      sphereGrad.addColorStop(1, '#0f172a');
+    } else {
+      sphereGrad.addColorStop(0, '#ffffff');
+      sphereGrad.addColorStop(0.25, node.core || '#f1f5f9');
+      sphereGrad.addColorStop(0.65, node.parentColor || '#0284c7');
+      sphereGrad.addColorStop(1, '#061a35');
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = sphereGrad;
+    ctx.fill();
+
+    // 4. 柔和边缘轮廓散射线 (消除粗糙硬边)
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.65)' : (isDimmed ? 'rgba(148, 163, 184, 0.18)' : 'rgba(255, 255, 255, 0.35)');
+    ctx.lineWidth = isFocus ? 1.2 : 0.6;
     ctx.stroke();
 
-    // 3. 文字标题展示规则：
-    // ① 无选中状态下 (!hasFocus)：全量显示所有星体名称；
-    // ② 存在选中状态下 (hasFocus)：选中的星体及其所有关联星体、悬停或高亮命中的星体正常显示标题；
-    // ③ 选中的关联网络之外的星体静默置灰。
+    // 5. 文字标题展示规则：
     const shouldShowText = !hasFocus || isFocus || isRelated || isHover || isHighlightedTag;
     if (shouldShowText) {
       const title = node.name || '';
@@ -196,7 +227,7 @@ window.QM.satellite = (function() {
   function recalculateSatelliteOrbit(node, parentNode, dropX, dropY, SYSTEM_TILT_X, CAMERA_DISTANCE) {
     if (!node || !node.celestial) return;
     const c = node.celestial;
-    const parent = parentNode || { x: 0, y: 0, z: 0, screenX: 0, screenY: 0, radius: 26, expansionProgress: 0 };
+    const parent = parentNode || { x: 0, y: 0, z: 0, screenX: 0, screenY: 0, radius: 26, expansionProgress: 0, satelliteSpacingScale: 1.0 };
 
     const deltaWx = dropX - parent.screenX;
     const deltaWy = dropY - parent.screenY;
@@ -209,10 +240,11 @@ window.QM.satellite = (function() {
     const oneMinusEcc2 = Math.max(0.01, 1 - ecc * ecc);
 
     const expansion = parent.expansionProgress || 0;
-    const expansionMult = 1.0 + expansion * 0.48;
+    const spacingScale = (parent.satelliteSpacingScale !== undefined) ? parent.satelliteSpacingScale : 1.0;
+    const expansionMult = 1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4);
 
     let newSemiMajor = (Math.sqrt(localX * localX + (localY * localY) / oneMinusEcc2)) / (expansionMult || 1);
-    newSemiMajor = Math.max((parent.radius || 26) + 16, Math.min(420, newSemiMajor));
+    newSemiMajor = Math.max((parent.radius || 26) + 16, Math.min(480, newSemiMajor));
     const newSemiMinor = newSemiMajor * Math.sqrt(oneMinusEcc2);
 
     let newTheta = Math.atan2(localY / (newSemiMinor || 1), localX / (newSemiMajor || 1));

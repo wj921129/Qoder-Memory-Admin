@@ -1,12 +1,12 @@
 /**
- * Qoder Memory Visualizer - 应用主入口与事件中枢 (Application Bootstrap)
- * 职责：系统初始化、全局事件总线协调、项目切换与磁盘落盘同步
+ * Qoder Memory Visualizer - 宏观宇宙应用主入口与事件中枢 (Application Bootstrap)
+ * 职责：宏观全宇宙数据聚合初始化、星系定位穿梭、多星系数据流协调与增量原子落盘
  */
 window.QM = window.QM || {};
 
 window.QM.app = (function() {
   async function initApp() {
-    // 1. 初始化 3D 引力拓扑引擎
+    // 1. 初始化 3D 宏观宇宙引力拓扑引擎
     if (window.QM.topology?.init) {
       window.QM.topology.init();
     }
@@ -24,7 +24,7 @@ window.QM.app = (function() {
     // 4. 绑定 UI 事件
     bindUIEvents();
 
-    // 5. 连接 Node 本地服务
+    // 5. 连接 Node 本地服务并载入宏观全宇宙
     await connectServer();
   }
 
@@ -72,31 +72,39 @@ window.QM.app = (function() {
     ).join('');
   }
 
-  function populateProjectSelect(projects, currentVal) {
+  /**
+   * 填充顶部宏观星系导航下拉框 (直观呈现各星系规模)
+   */
+  function populateGalaxySelect(galaxies, currentVal = 'all') {
     const sel = document.getElementById('project-select');
-    if (!sel || !projects) return;
+    if (!sel || !galaxies) return;
 
     const escapeHtml = window.QM.utils?.escapeHtml || (s => s);
+    const totalAllCount = galaxies.reduce((acc, g) => acc + (g.count || 0), 0);
 
-    const globalGroup = projects.filter(p => p.scope === 'global');
-    const projectGroup = projects.filter(p => p.scope !== 'global');
+    let html = `<option value="all" ${currentVal === 'all' ? 'selected' : ''}>🌌 宏观全宇宙视角 (全部 ${galaxies.length} 个星系 · 共 ${totalAllCount} 篇切片)</option>`;
 
-    let html = '';
+    // 区分全局智库星系与工程星系
+    const globalGroup = galaxies.filter(p => p.scope === 'global');
+    const projectGroup = galaxies.filter(p => p.scope !== 'global');
+
     if (globalGroup.length > 0) {
-      html += '<optgroup label="🌐 全局记忆库 (Global Scope)">';
-      globalGroup.forEach(p => {
-        const isSel = p.id === currentVal ? 'selected' : '';
-        html += `<option value="${escapeHtml(p.id)}" ${isSel}>${escapeHtml(p.name)}</option>`;
+      html += '<optgroup label="🌐 全局智库星系 (Global Scope)">';
+      globalGroup.forEach(g => {
+        const isSel = g.id === currentVal ? 'selected' : '';
+        const scaleBadge = `${g.count || 0} 篇切片`;
+        html += `<option value="${escapeHtml(g.id)}" ${isSel}>${escapeHtml(g.name)} [${scaleBadge}]</option>`;
       });
       html += '</optgroup>';
     }
 
     if (projectGroup.length > 0) {
-      html += '<optgroup label="📁 本地工程记忆库 (Project Scope - 自动识别)">';
-      projectGroup.forEach(p => {
-        const isSel = p.id === currentVal ? 'selected' : '';
-        const titleTip = p.workspacePath ? `源码工程: ${p.workspacePath}` : `物理目录: ${p.realPath}`;
-        html += `<option value="${escapeHtml(p.id)}" title="${escapeHtml(titleTip)}" ${isSel}>${escapeHtml(p.name)}</option>`;
+      html += '<optgroup label="🪐 本地工程星系 (Project Scope - 依规模排序)">';
+      projectGroup.forEach(g => {
+        const isSel = g.id === currentVal ? 'selected' : '';
+        const scaleBadge = `${g.count || 0} 篇切片`;
+        const titleTip = g.workspacePath ? `源码工程: ${g.workspacePath}` : `物理目录: ${g.realPath}`;
+        html += `<option value="${escapeHtml(g.id)}" title="${escapeHtml(titleTip)}" ${isSel}>${escapeHtml(g.name)} [${scaleBadge}]</option>`;
       });
       html += '</optgroup>';
     }
@@ -107,24 +115,29 @@ window.QM.app = (function() {
     }
   }
 
-  function updateScopeBadge(scope, projId, meta) {
+  function updateScopeBadge(scope, projId) {
     const scopeBadge = document.getElementById('scope-badge');
     const scopeText = document.getElementById('scope-badge-text');
     const isGlobal = scope === 'global';
+    const isAll = !projId || projId === 'all';
 
     if (scopeBadge && scopeText) {
-      scopeBadge.className = isGlobal ? 'badge-scope global' : 'badge-scope project';
-      scopeText.innerText = isGlobal ? '🌐 全局' : '📁 工程';
-      scopeBadge.title = isGlobal
-        ? '全局作用范围 (Global Scope)：开发者个人习惯与跨工程通用规约 (~/.qoder-cn/memory)'
-        : `工程作用范围 (Project Scope)：当前工程专属规约与避坑经验 (${(meta && (meta.workspacePath || meta.realPath)) || ''})`;
+      if (isAll) {
+        scopeBadge.className = 'badge-scope global';
+        scopeText.innerText = '🌌 宏观全宇宙';
+        scopeBadge.title = '宏观宇宙全貌视角：全宇宙多星系统一拓扑';
+      } else {
+        scopeBadge.className = isGlobal ? 'badge-scope global' : 'badge-scope project';
+        scopeText.innerText = isGlobal ? '🌐 全局星系' : '📁 工程星系';
+        scopeBadge.title = `当前聚焦星系：${projId}`;
+      }
     }
 
     const drawerScopeSub = document.getElementById('drawer-scope-sub');
     if (drawerScopeSub) {
-      drawerScopeSub.innerText = isGlobal
-        ? '作用范围：🌐 全局 (Global Scope)'
-        : `作用范围：📁 当前工程 (${projId})`;
+      drawerScopeSub.innerText = isAll
+        ? '作用范围：🌌 宏观全宇宙 (Multi-Galaxy)'
+        : `作用范围：${isGlobal ? '🌐 全局星系' : '📁 工程星系'} (${projId})`;
     }
   }
 
@@ -150,8 +163,8 @@ window.QM.app = (function() {
         populateEditionAndAccountSelect(ctx);
       }
 
-      // 2. 加载项目列表
-      await refreshProjectList('fmmpay-dev');
+      // 2. 载入全宇宙宏观多星系数据
+      await loadUniverseData('all');
     } else {
       state.isServerMode = false;
       if (sBadge) sBadge.style.display = 'none';
@@ -163,79 +176,109 @@ window.QM.app = (function() {
     }
   }
 
-  async function refreshProjectList(preferredProj = null) {
-    const { api, state: stateCenter } = window.QM;
-    const state = stateCenter.state;
-
-    const projects = await api.getProjects({
-      edition: state.edition,
-      account: state.account,
-      track: state.track
-    });
-    state.availableProjects = projects;
-
-    let targetProj = preferredProj;
-    if (!targetProj || !projects.some(p => p.id === targetProj)) {
-      targetProj = projects.find(p => p.id === 'fmmpay-dev') 
-        ? 'fmmpay-dev' 
-        : (projects.find(p => p.id === 'fmmpay-busi') ? 'fmmpay-busi' : (projects[0] ? projects[0].id : 'global'));
-    }
-
-    populateProjectSelect(projects, targetProj);
-    await switchProject(targetProj);
-  }
-
-  async function switchProject(projKey) {
-    const { api, state: stateCenter, cards, topology, utils } = window.QM;
+  /**
+   * 一次性加载全宇宙所有星系数据 (需求 3 核心)
+   */
+  async function loadUniverseData(preferredFocus = 'all') {
+    const { api, state: stateCenter, cards, topology, utils, sidebar } = window.QM;
     const s = stateCenter.state;
 
-    if (s.isServerMode) {
-      try {
-        const res = await api.getMemories(projKey, {
-          edition: s.edition,
-          account: s.account,
-          track: s.track
+    if (!s.isServerMode) return;
+
+    try {
+      const res = await api.getAllMemories({
+        edition: s.edition,
+        account: s.account,
+        track: s.track
+      });
+
+      if (res && res.galaxies) {
+        s.galaxies = res.galaxies;
+        s.availableProjects = res.galaxies;
+
+        // 汇聚全宇宙所有星系的记忆切片
+        const allMemories = [];
+        const totalGroupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+
+        res.galaxies.forEach(g => {
+          (g.memories || []).forEach(m => {
+            allMemories.push(m);
+            const gid = m.officialGroup?.id || 'experience';
+            totalGroupCounts[gid] = (totalGroupCounts[gid] || 0) + 1;
+          });
         });
 
-        if (res && res.memories) {
-          s.currentProject = projKey;
-          const meta = s.availableProjects.find(p => p.id === projKey) || {};
-          s.currentProjectScope = meta.scope || res.scope || (projKey === 'global' ? 'global' : 'project');
-          s.currentProjectRealPath = res.realPath || meta.realPath || '';
-          s.currentProjectWorkspacePath = res.workspacePath || meta.workspacePath || '';
-          s.currentDirName = meta.rawName || meta.name || projKey;
-          s.memories = res.memories;
-          s.groupCounts = res.groupCounts || res.currentGroupCounts || { spec: 0, project: 0, experience: 0, task: 0 };
+        s.memories = allMemories;
+        s.groupCounts = totalGroupCounts;
+        s.currentDirName = '宏观全宇宙';
 
-          updateScopeBadge(s.currentProjectScope, projKey, meta);
+        // 填充星系导航下拉框
+        populateGalaxySelect(res.galaxies, preferredFocus);
+        updateScopeBadge('all', preferredFocus);
 
-          if (topology?.clearCelestialStore) {
-            topology.clearCelestialStore();
-          }
-          if (stateCenter?.setDirty) {
-            stateCenter.setDirty(false);
-          }
-          if (cards?.renderUI) {
-            cards.renderUI();
-          }
-          if (topology?.fitGalaxyView) {
-            topology.fitGalaxyView();
-          }
-          if (utils?.showToast) {
-            const trackNote = s.track === 'agent' ? '🤖 Agent 任务库' : (s.track === 'all' ? '🌐 全量透视' : '🌟 IDE 官方记忆');
-            utils.showToast(`已载入 [${trackNote}] ${s.currentProjectScope === 'global' ? '全局智库' : '工程智库'}：${projKey} (${s.memories.length} 篇切片)`);
-          }
-          return;
+        // 构建宏观全宇宙多星系网络
+        if (topology?.clearCelestialStore) {
+          topology.clearCelestialStore();
         }
-      } catch (err) {
-        console.error('切换项目异常:', err);
+        if (topology?.buildGalaxyGraph) {
+          topology.buildGalaxyGraph();
+        }
+
+        // 刷新卡片列表与侧边栏统计
+        if (stateCenter?.setDirty) stateCenter.setDirty(false);
+        if (cards?.renderUI) cards.renderUI();
+        if (sidebar?.renderUI) sidebar.renderUI();
+
+        // 视角对齐
+        if (preferredFocus === 'all') {
+          if (topology?.fitGalaxyView) topology.fitGalaxyView();
+        } else {
+          if (topology?.focusOnGalaxy) topology.focusOnGalaxy(preferredFocus);
+        }
+
         if (utils?.showToast) {
-          utils.showToast(`读取磁盘项目失败: ${err.message}`);
+          const trackNote = s.track === 'agent' ? '🤖 Agent 任务库' : (s.track === 'all' ? '🌐 全量透视' : '🌟 IDE 官方记忆');
+          utils.showToast(`🌌 宏观全宇宙已载入 [${trackNote}]：共 ${res.galaxies.length} 个星系，${allMemories.length} 篇切片`);
         }
+      }
+    } catch (err) {
+      console.error('载入全宇宙多星系数据异常:', err);
+      if (utils?.showToast) {
+        utils.showToast(`载入宏观宇宙异常: ${err.message}`);
       }
     }
   }
 
+  /**
+   * 顶部星系导航器切换：支持全景俯瞰或平滑运镜飞入具体星系
+   */
+  function switchGalaxy(targetKey) {
+    const { state: stateCenter, topology, utils } = window.QM;
+    const s = stateCenter.state;
+
+    if (targetKey === 'all') {
+      s.activeGalaxyId = null;
+      s.currentProject = 'all';
+      updateScopeBadge('all', 'all');
+      if (topology?.fitGalaxyView) topology.fitGalaxyView();
+      if (utils?.showToast) {
+        utils.showToast('🌌 摄像机已拉远至宏观全宇宙视野');
+      }
+    } else {
+      s.activeGalaxyId = targetKey;
+      s.currentProject = targetKey;
+      const targetGalaxy = (s.galaxies || []).find(g => g.id === targetKey);
+      updateScopeBadge(targetGalaxy?.scope || 'project', targetKey);
+      if (topology?.focusOnGalaxy) topology.focusOnGalaxy(targetKey);
+      if (utils?.showToast && targetGalaxy) {
+        utils.showToast(`🚀 镜头已穿梭聚焦至星系：【${targetGalaxy.rawName || targetGalaxy.name}】(${targetGalaxy.count || 0} 篇切片)`);
+      }
+    }
+  }
+
+  /**
+   * 全宇宙增量安全原子落盘 (自动归类到各自所属星系物理目录)
+   */
   async function saveAllToDisk() {
     const { api, state: stateCenter, utils } = window.QM;
     const s = stateCenter.state;
@@ -248,36 +291,44 @@ window.QM.app = (function() {
     }
 
     if (s.isServerMode) {
-      // 增量落盘：只提交抽屉里真正改过/新建的切片，未动过的官方文件字节级不重写
       const dirtyItems = s.memories.filter(m => m.dirty);
       if (dirtyItems.length === 0) {
-        if (stateCenter?.setDirty) {
-          stateCenter.setDirty(false);
-        }
-        if (utils?.showToast) {
-          utils.showToast('本轮无待落盘的修改');
-        }
+        if (stateCenter?.setDirty) stateCenter.setDirty(false);
+        if (utils?.showToast) utils.showToast('本轮无待落盘的修改');
         return;
       }
 
+      // 按所属星系工程分组落盘
+      const projMap = new Map();
+      dirtyItems.forEach(m => {
+        const pId = m.projectId || s.currentProject || 'fmmpay-dev';
+        if (!projMap.has(pId)) projMap.set(pId, []);
+        projMap.get(pId).push(m);
+      });
+
+      let totalWritten = 0;
+      let totalUnchanged = 0;
+
       try {
-        const res = await api.saveMemories(s.currentProject, dirtyItems);
-        if (res && res.ok) {
-          s.memories.forEach(m => { delete m.dirty; });
-          if (stateCenter?.setDirty) {
-            stateCenter.setDirty(false);
+        for (const [projId, items] of projMap.entries()) {
+          const res = await api.saveMemories(projId, items);
+          if (res && res.ok) {
+            totalWritten += (res.written || 0);
+            totalUnchanged += (res.unchanged || 0);
           }
-          if (utils?.showToast) {
-            const unchangedNote = res.unchanged ? `，${res.unchanged} 篇无差异未动` : '';
-            utils.showToast(`已落盘 ${res.written} 篇至 ${s.currentProject}${unchangedNote}，MEMORY.md 索引已同步！`);
-          }
-          return;
+        }
+
+        dirtyItems.forEach(m => { delete m.dirty; });
+        if (stateCenter?.setDirty) stateCenter.setDirty(false);
+
+        if (utils?.showToast) {
+          const unchangedNote = totalUnchanged > 0 ? `，${totalUnchanged} 篇无差异保持原样` : '';
+          utils.showToast(`💾 已成功原子落盘 ${totalWritten} 篇切片至对应星系${unchangedNote}，索引已同步！`);
         }
       } catch (err) {
         if (utils?.showToast) {
           utils.showToast(`落盘失败: ${err.message}`);
         }
-        return;
       }
     } else {
       if (utils?.showToast) {
@@ -298,7 +349,7 @@ window.QM.app = (function() {
         if (serverContextCache) {
           updateAccountOptions(serverContextCache, newEdition, null);
         }
-        await refreshProjectList();
+        await loadUniverseData('all');
         if (utils?.showToast) {
           utils.showToast(`已切换至版本：${newEdition === 'cn' ? '🇨🇳 国内版 (Qoder CN)' : '🌐 国际版 (Qoder Global)'}`);
         }
@@ -311,7 +362,7 @@ window.QM.app = (function() {
       selAccount.addEventListener('change', async e => {
         const newAcc = e.target.value;
         stateCenter.state.account = newAcc;
-        await refreshProjectList();
+        await loadUniverseData('all');
         if (utils?.showToast) {
           utils.showToast(`已切换至账号：${newAcc}`);
         }
@@ -324,7 +375,7 @@ window.QM.app = (function() {
       selTrack.addEventListener('change', async e => {
         const newTrack = e.target.value;
         stateCenter.state.track = newTrack;
-        await refreshProjectList(stateCenter.state.currentProject);
+        await loadUniverseData('all');
       });
     }
 
@@ -350,7 +401,7 @@ window.QM.app = (function() {
       btnModeCards.addEventListener('click', () => stateCenter.setViewMode('cards'));
     }
 
-    // 2.1 动态特效与静止节能切换 (Header 按钮 + 下拉菜单双通道)
+    // 2.1 动态特效与静止节能切换
     const btnEffects = document.getElementById('btn-effects-toggle');
     if (btnEffects) {
       btnEffects.addEventListener('click', () => {
@@ -367,25 +418,18 @@ window.QM.app = (function() {
       });
     }
 
-    // 3. 项目选择器与刷新/定位
-    const selProject = document.getElementById('project-select');
-    if (selProject) {
-      selProject.addEventListener('change', e => switchProject(e.target.value));
+    // 3. 星系视界导航器
+    const selGalaxy = document.getElementById('project-select');
+    if (selGalaxy) {
+      selGalaxy.addEventListener('change', e => switchGalaxy(e.target.value));
     }
 
     const btnRescan = document.getElementById('btn-rescan-projects');
     if (btnRescan) {
       btnRescan.addEventListener('click', async () => {
         btnRescan.style.transform = 'rotate(180deg)';
-        const projects = await api.rescanProjects();
+        await loadUniverseData('all');
         setTimeout(() => { btnRescan.style.transform = ''; }, 350);
-        if (projects && projects.length > 0) {
-          stateCenter.state.availableProjects = projects;
-          populateProjectSelect(projects, stateCenter.state.currentProject);
-          if (utils?.showToast) {
-            utils.showToast(`已自动刷新探测：识别到 ${projects.length} 个本地 Qoder 知识库`);
-          }
-        }
       });
     }
 
@@ -393,8 +437,9 @@ window.QM.app = (function() {
     if (btnOpenFolder) {
       btnOpenFolder.addEventListener('click', async () => {
         const s = stateCenter.state;
+        const targetProj = s.activeGalaxyId || (s.galaxies && s.galaxies[0] ? s.galaxies[0].id : 'fmmpay-dev');
         try {
-          const res = await api.openFolder(s.currentProject, 'memory');
+          const res = await api.openFolder(targetProj, 'memory');
           if (res && res.ok && utils?.showToast) {
             utils.showToast(`已在系统资源管理器打开目录：${res.opened}`);
           }
@@ -412,6 +457,7 @@ window.QM.app = (function() {
       searchBox.addEventListener('input', e => {
         stateCenter.state.searchQuery = e.target.value.trim();
         if (cards?.renderUI) cards.renderUI();
+        if (topology?.requestRender) topology.requestRender();
       });
     }
 
@@ -498,7 +544,8 @@ window.QM.app = (function() {
 
   return {
     initApp,
-    switchProject,
+    loadUniverseData,
+    switchGalaxy,
     saveAllToDisk
   };
 })();

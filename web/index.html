@@ -33,9 +33,9 @@
           <option value="all">🌐 全量透视</option>
         </select>
 
-        <!-- 4. 工程选择 -->
-        <select id="project-select" class="project-select" title="选择当前要查看或直接维护的 Qoder 记忆工程">
-          <option value="fmmpay-dev" selected>正在载入项目库...</option>
+        <!-- 4. 星系视界与定位导航器 (宏观全宇宙 vs 定向星系穿梭) -->
+        <select id="project-select" class="project-select" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
+          <option value="all" selected>🌌 宏观全宇宙 (All Galaxies)</option>
         </select>
         <button class="btn-icon-mini" id="btn-rescan-projects" title="重新扫描本地 Qoder 记忆文档 (无需重启服务)">🔄</button>
         <button class="btn-icon-mini" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
@@ -166,6 +166,22 @@
             <button class="btn btn-danger btn-sm" id="c-card-delete-btn" style="display:none;" title="彻底删除此记忆切片">🗑️ 删除</button>
             <button class="btn btn-sm" id="c-card-open-btn" style="background:#0284c7;" title="在侧边栏查阅完整 Markdown 正文或编辑">📖 详细规约</button>
           </div>
+        </div>
+
+        <!-- 宇宙背景页面右下角：当前选中行星的卫星间距控制面板 -->
+        <div class="satellite-spacing-controller" id="satellite-spacing-controller">
+          <div class="spacing-header">
+            <span class="spacing-title">🪐 卫星间距控制</span>
+            <span class="spacing-target" id="spacing-target-name">未选中行星</span>
+          </div>
+          <div class="spacing-controls">
+            <button class="spacing-btn" id="btn-spacing-dec" title="缩小当前选中行星的卫星公转间距" disabled>-</button>
+            <input type="range" class="spacing-slider" id="spacing-slider" min="0.4" max="2.6" step="0.05" value="1.0" disabled title="滑动微调各卫星公转间距">
+            <button class="spacing-btn" id="btn-spacing-inc" title="扩大当前选中行星的卫星公转间距" disabled>+</button>
+            <span class="spacing-val" id="spacing-val">1.0x</span>
+            <button class="spacing-reset-btn" id="btn-spacing-reset" title="恢复默认间距" disabled>↺</button>
+          </div>
+          <div class="spacing-tip" id="spacing-tip">💡 选中行星后，可在此自由扩展或聚拢各卫星的环绕间距</div>
         </div>
       </div>
 

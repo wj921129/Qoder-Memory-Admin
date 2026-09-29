@@ -471,9 +471,14 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
       }
       window.QM.utils?.showToast('记忆切片已更新， Ctrl + S 落盘');
     } else {
+      const targetProjId = state.activeGalaxyId || (state.galaxies && state.galaxies[0] ? state.galaxies[0].id : state.currentProject) || 'fmmpay-dev';
+      const targetGalaxy = (state.galaxies || []).find(g => g.id === targetProjId);
       const newId = 'mem-' + Date.now();
       state.memories.unshift({
         id: newId,
+        projectId: targetProjId,
+        projectName: targetGalaxy ? (targetGalaxy.rawName || targetGalaxy.name) : targetProjId,
+        galaxyId: targetProjId,
         name,
         filename,
         type,
@@ -503,7 +508,8 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
 
     if (isServerMode && window.QM.api) {
       try {
-        await window.QM.api.deleteMemory(currentProject, id, item.filename);
+        const targetProj = item.projectId || currentProject || 'fmmpay-dev';
+        await window.QM.api.deleteMemory(targetProj, id, item.filename);
         window.QM.state.state.memories = memories.filter(m => m.id !== id);
         window.QM.state.setDirty(false);
         closeDrawer();

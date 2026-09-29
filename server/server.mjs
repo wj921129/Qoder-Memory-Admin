@@ -929,6 +929,87 @@ async function rebuildMemoryIndex(agentDir) {
   return true;
 }
 
+// 读取指定工程全部记忆切片 (精准聚合 IDE 原生长期记忆与 Agent 任务记忆)
+async function loadMemoriesForProject(targetProj, track = 'ide') {
+  if (!targetProj) return [];
+  const loaded = [];
+  const loadedKeys = new Set();
+
+  // 1. 官方 IDE 原生会话长期记忆轨道
+  if ((track === 'ide' || track === 'all') && targetProj.idePath && fsSync.existsSync(targetProj.idePath)) {
+    try {
+      const subEntries = await fs.readdir(targetProj.idePath, { withFileTypes: true });
+      for (const sub of subEntries) {
+        if (!sub.isDirectory()) continue;
+        const catDir = path.join(targetProj.idePath, sub.name);
+        const catFiles = await fs.readdir(catDir);
+        const officialGroup = mapToOfficialGroup(sub.name);
+
+        for (const fname of catFiles.filter(f => f.endsWith('.md') && f !== 'MEMORY.md')) {
+          try {
+            const filePath = path.join(catDir, fname);
+            const content = await fs.readFile(filePath, 'utf-8');
+            const item = parseMarkdownFile(content, fname, sub.name, 'ide');
+            item.storeType = 'ide';
+            item.track = 'ide';
+            item.relPath = `${sub.name}/${fname}`;
+            item.subDir = sub.name;
+            item.ideDir = targetProj.idePath;
+            item.diskPath = filePath;
+            item.originPath = filePath;
+            item.category = sub.name;
+            item.officialGroup = officialGroup;
+
+            const normKey = (item.name || fname).trim().toLowerCase();
+            if (!loadedKeys.has(normKey)) {
+              loaded.push(item);
+              loadedKeys.add(normKey);
+            }
+          } catch (err) {
+            console.error(`解析 IDE 记忆文件失败: ${fname}`, err.message);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`读取 IDE 记忆目录失败: ${targetProj.idePath}`, e.message);
+    }
+  }
+
+  // 2. Agent 任务自治记忆轨道
+  if ((track === 'agent' || track === 'all') && targetProj.agentPath && fsSync.existsSync(targetProj.agentPath)) {
+    try {
+      const files = await fs.readdir(targetProj.agentPath);
+      const mdFiles = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md');
+      for (const fname of mdFiles) {
+        try {
+          const filePath = path.join(targetProj.agentPath, fname);
+          const content = await fs.readFile(filePath, 'utf-8');
+          const item = parseMarkdownFile(content, fname, null, 'agent');
+          item.storeType = 'agent';
+          item.track = 'agent';
+          item.relPath = fname;
+          item.diskPath = filePath;
+          item.originPath = filePath;
+          item.officialGroup = mapToOfficialGroup(item.category);
+
+          const normKey = (item.name || fname).trim().toLowerCase();
+          if (track === 'agent' || !loadedKeys.has(normKey)) {
+            loaded.push(item);
+            loadedKeys.add(normKey);
+          }
+        } catch (err) {
+          console.error(`解析 Agent 记忆文件失败: ${fname}`, err.message);
+        }
+      }
+    } catch (e) {
+      console.error(`读取 Agent 记忆目录失败: ${targetProj.agentPath}`, e.message);
+    }
+  }
+
+  loaded.sort((a, b) => (a.name || a.filename).localeCompare(b.name || b.filename));
+  return loaded;
+}
+
 // 读取 Request Body
 async function readRequestBody(req) {
   return new Promise((resolve, reject) => {
@@ -1057,6 +1138,78 @@ export function createServer() {
         return;
       }
 
+      // 2.5 读取全宇宙宏观星系记忆 (宏观多星系架构核心 API)
+      if ((pathname === '/api/all-memories' || (pathname === '/api/memories' && parsedUrl.searchParams.get('project') === 'all')) && req.method === 'GET') {
+        const edition = parsedUrl.searchParams.get('edition') || 'cn';
+        const account = parsedUrl.searchParams.get('account') || null;
+        const track = parsedUrl.searchParams.get('track') || 'ide';
+
+        const projects = await scanAllProjects({ edition, account, track });
+        const galaxyMap = new Map();
+
+        for (const p of projects) {
+          const loaded = await loadMemoriesForProject(p, track);
+          loaded.forEach(m => {
+            m.projectId = p.id;
+            m.projectName = p.rawName || p.name;
+            m.projectScope = p.scope;
+          });
+
+          if (galaxyMap.has(p.id)) {
+            const existing = galaxyMap.get(p.id);
+            for (const m of loaded) {
+              if (!existing.memories.some(em => em.filename === m.filename && em.name === m.name)) {
+                existing.memories.push(m);
+              }
+            }
+            existing.count = existing.memories.length;
+            const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+            for (const m of existing.memories) {
+              const gid = m.officialGroup?.id || 'experience';
+              groupCounts[gid] = (groupCounts[gid] || 0) + 1;
+            }
+            existing.groupCounts = groupCounts;
+            continue;
+          }
+
+          const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
+          for (const m of loaded) {
+            const gid = m.officialGroup?.id || 'experience';
+            groupCounts[gid] = (groupCounts[gid] || 0) + 1;
+          }
+
+          p.count = loaded.length;
+
+          galaxyMap.set(p.id, {
+            id: p.id,
+            name: p.name,
+            rawName: p.rawName || p.name,
+            shortName: p.shortName,
+            scope: p.scope,
+            icon: p.icon || '📁',
+            count: loaded.length,
+            realPath: p.realPath,
+            workspacePath: p.workspacePath,
+            groupCounts,
+            memories: loaded
+          });
+        }
+
+        const galaxies = Array.from(galaxyMap.values());
+        const totalMemories = galaxies.reduce((sum, g) => sum + g.count, 0);
+
+        sendJson(res, 200, {
+          ok: true,
+          edition,
+          account,
+          track,
+          totalProjects: galaxies.length,
+          totalMemories,
+          galaxies
+        });
+        return;
+      }
+
       // 3. 读取指定项目/全局的全部记忆切片 (精准支持 IDE 原生记忆 vs Agent 任务自治记忆)
       if (pathname === '/api/memories' && req.method === 'GET') {
         const projKey = parsedUrl.searchParams.get('project') || 'fmmpay-dev';
@@ -1071,82 +1224,12 @@ export function createServer() {
           return;
         }
 
-        const loaded = [];
-        const loadedKeys = new Set();
-
-        // 3.1 官方 IDE 原生会话长期记忆轨道 (分类子目录结构：<category>/*.md)
-        if ((track === 'ide' || track === 'all') && targetProj.idePath && fsSync.existsSync(targetProj.idePath)) {
-          try {
-            const subEntries = await fs.readdir(targetProj.idePath, { withFileTypes: true });
-            for (const sub of subEntries) {
-              if (!sub.isDirectory()) continue;
-              const catDir = path.join(targetProj.idePath, sub.name);
-              const catFiles = await fs.readdir(catDir);
-              const officialGroup = mapToOfficialGroup(sub.name);
-
-              for (const fname of catFiles.filter(f => f.endsWith('.md') && f !== 'MEMORY.md')) {
-                try {
-                  const filePath = path.join(catDir, fname);
-                  const content = await fs.readFile(filePath, 'utf-8');
-                  const item = parseMarkdownFile(content, fname, sub.name, 'ide');
-                  item.storeType = 'ide';
-                  item.track = 'ide';
-                  item.relPath = `${sub.name}/${fname}`;
-                  item.subDir = sub.name;
-                  item.ideDir = targetProj.idePath;
-                  item.diskPath = filePath;
-                  item.originPath = filePath;
-                  item.category = sub.name;
-                  item.officialGroup = officialGroup;
-
-                  const normKey = (item.name || fname).trim().toLowerCase();
-                  if (!loadedKeys.has(normKey)) {
-                    loaded.push(item);
-                    loadedKeys.add(normKey);
-                  }
-                } catch (err) {
-                  console.error(`解析 IDE 记忆文件失败: ${fname}`, err.message);
-                }
-              }
-            }
-          } catch (e) {
-            console.error(`读取 IDE 记忆目录失败: ${targetProj.idePath}`, e.message);
-          }
-        }
-
-        // 3.2 Agent 任务自治记忆轨道 (projects/<slug>/memory/ 平铺 .md，含 MEMORY.md 索引)
-        if ((track === 'agent' || track === 'all') && targetProj.agentPath && fsSync.existsSync(targetProj.agentPath)) {
-          try {
-            const files = await fs.readdir(targetProj.agentPath);
-            const mdFiles = files.filter(f => f.endsWith('.md') && f !== 'MEMORY.md');
-            for (const fname of mdFiles) {
-              try {
-                const filePath = path.join(targetProj.agentPath, fname);
-                const content = await fs.readFile(filePath, 'utf-8');
-                const item = parseMarkdownFile(content, fname, null, 'agent');
-                item.storeType = 'agent';
-                item.track = 'agent';
-                item.relPath = fname;
-                item.diskPath = filePath;
-                item.originPath = filePath;
-                item.officialGroup = mapToOfficialGroup(item.category);
-
-                const normKey = (item.name || fname).trim().toLowerCase();
-                if (track === 'agent' || !loadedKeys.has(normKey)) {
-                  loaded.push(item);
-                  loadedKeys.add(normKey);
-                }
-              } catch (err) {
-                console.error(`解析 Agent 记忆文件失败: ${fname}`, err.message);
-              }
-            }
-          } catch (e) {
-            console.error(`读取 Agent 记忆目录失败: ${targetProj.agentPath}`, e.message);
-          }
-        }
-
-        // 按标题或文件名自然排序
-        loaded.sort((a, b) => (a.name || a.filename).localeCompare(b.name || b.filename));
+        const loaded = await loadMemoriesForProject(targetProj, track);
+        loaded.forEach(m => {
+          m.projectId = targetProj.id;
+          m.projectName = targetProj.rawName || targetProj.name;
+          m.projectScope = targetProj.scope;
+        });
 
         // 动态计算本次记忆集的官方 4 大分类计数
         const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };

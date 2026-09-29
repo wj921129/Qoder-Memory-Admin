@@ -1,6 +1,6 @@
 /**
- * Qoder Memory Visualizer - 行星模块 (Domain Planet System)
- * 职责：业务主题认知域天体的开普勒椭圆轨道动力学、大气层光晕、3D球体渲染、标签及拖拽重算
+ * Qoder Memory Visualizer - 拟真行星模块 (Realistic Planet System)
+ * 职责：开普勒椭圆轨道动力学、天文观测级拟真行星渲染（外圈淡淡大气辉光、受光漫射与晨昏明暗线、卫星间距调节支撑）
  */
 window.QM = window.QM || {};
 
@@ -39,24 +39,27 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 构造行星节点数据结构
+   * 构造行星节点数据结构 (支持所属星系绑定与卫星间距控制)
    */
-  function createPlanetNode(cat, catCfg, cardCount, pStore) {
+  function createPlanetNode(cat, catCfg, cardCount, pStore, galaxyId = 'global') {
     return {
-      id: "domain-" + cat,
+      id: `domain-${galaxyId}-${cat}`,
+      galaxyId,
       name: catCfg.name,
       categoryKey: cat,
       type: "domain",
       radius: 26,
       x: 0, y: 0, z: 0,
       screenX: 0, screenY: 0, screenRadius: 26,
+      starScreenX: 0, starScreenY: 0,
       scale: 1,
       color: catCfg.color,
       border: catCfg.border,
       core: catCfg.core,
       cardCount,
       celestial: pStore,
-      expansionProgress: 0
+      expansionProgress: 0,
+      satelliteSpacingScale: 1.0 // 默认卫星间距倍率
     };
   }
 
@@ -76,14 +79,20 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 行星动力学模拟更新（每帧）
+   * 行星动力学模拟更新（每帧）- 围绕所属星系恒星中心公转
    */
-  function simulatePlanet(node, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true) {
+  function simulatePlanet(node, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true, parentStar = null) {
     if (!node || node.type !== 'domain' || !node.celestial) return;
 
     // 动态平滑扩散系数过渡 (未选中 0.0，选中 1.0)
     const targetExpansion = (node.id === activeDomainId) ? 1.0 : 0.0;
     node.expansionProgress = (node.expansionProgress || 0) + (targetExpansion - (node.expansionProgress || 0)) * 0.08;
+
+    // 记录星系中心恒星坐标
+    const starX = parentStar ? parentStar.x : 0;
+    const starY = parentStar ? parentStar.y : 0;
+    node.starScreenX = parentStar ? parentStar.screenX : 0;
+    node.starScreenY = parentStar ? parentStar.screenY : 0;
 
     // 拖拽期间动力学让路
     if (isBeingDragged) return;
@@ -96,8 +105,8 @@ window.QM.planet = (function() {
     const localY = c.semiMinor * Math.sin(c.theta);
     const totalTilt = SYSTEM_TILT_X + (c.inclination || 0);
 
-    node.x = localX;
-    node.y = localY * Math.cos(totalTilt);
+    node.x = starX + localX;
+    node.y = starY + localY * Math.cos(totalTilt);
     node.z = localY * Math.sin(totalTilt);
 
     const depthScale = CAMERA_DISTANCE / (CAMERA_DISTANCE - node.z);
@@ -108,36 +117,40 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 绘制行星引力轨道 (精致科技天体力场设计)
+   * 绘制行星引力轨道 (精致微弱力场环)
    */
-  function drawPlanetOrbit(ctx, node, isRelated, SYSTEM_TILT_X, isDimmed = false) {
+  function drawPlanetOrbit(ctx, node, isRelated, SYSTEM_TILT_X, isDimmed = false, parentStar = null) {
     if (!node || !node.celestial) return;
     const c = node.celestial;
+    const cx = parentStar ? parentStar.x : 0;
+    const cy = parentStar ? parentStar.y : 0;
+
     ctx.save();
+    ctx.translate(cx, cy);
     ctx.scale(1, Math.cos(SYSTEM_TILT_X + (c.inclination || 0)));
     ctx.beginPath();
     ctx.ellipse(0, 0, c.semiMajor, c.semiMinor, 0, 0, Math.PI * 2);
 
     if (isRelated) {
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
-      ctx.lineWidth = 3.6;
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
+      ctx.lineWidth = 2.4;
       ctx.stroke();
 
       ctx.beginPath();
       ctx.ellipse(0, 0, c.semiMajor, c.semiMinor, 0, 0, Math.PI * 2);
       ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 1.6;
-      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([4, 4]);
       ctx.stroke();
     } else if (isDimmed) {
-      ctx.strokeStyle = 'rgba(51, 65, 85, 0.12)';
-      ctx.lineWidth = 0.6;
+      ctx.strokeStyle = 'rgba(51, 65, 85, 0.10)';
+      ctx.lineWidth = 0.5;
       ctx.stroke();
     } else {
       const planetColor = node.color || '#38bdf8';
-      ctx.strokeStyle = planetColor + '22';
-      ctx.lineWidth = 1.0;
-      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = planetColor + '18';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([3, 6]);
       ctx.stroke();
     }
 
@@ -145,54 +158,93 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 绘制行星天体本体、大气散射层与文字信息 (保留真实主题色)
+   * 绘制行星天体本体 (天文观测级拟真效果)：
+   * 1. 消除生硬纯白高光与硬描边；
+   * 2. 外圈增加淡淡的大气层漫射光芒 (Atmospheric Limb Glow)；
+   * 3. 真实面向恒星的漫反射球体立体受光与深邃晨昏明暗线；
+   * 4. 微妙的行星纹理带，更加接近真实星体。
    */
   function drawPlanet(ctx, node, isFocus, isHover, isRelated, isDimmed = false) {
     const r = node.screenRadius;
 
-    // 焦点 / 悬浮高亮外光环
+    // 1. 外圈淡淡的大气层漫射光芒 (Atmospheric Glow - 模拟天文望远镜观测真实行星时边缘的薄层气体辉光)
+    const atmoGlowR = r * (isFocus ? 1.55 : (isHover ? 1.45 : 1.35));
+    const atmoGrad = ctx.createRadialGradient(0, 0, r * 0.82, 0, 0, atmoGlowR);
+    const pColor = node.color || '#38bdf8';
+    const pCore = node.core || '#7dd3fc';
+
+    if (isDimmed) {
+      atmoGrad.addColorStop(0, 'rgba(71, 85, 105, 0.12)');
+      atmoGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else {
+      const baseAlpha = isFocus ? '44' : (isHover ? '33' : '22');
+      const outerAlpha = isFocus ? '18' : '08';
+      atmoGrad.addColorStop(0, pCore + baseAlpha);
+      atmoGrad.addColorStop(0.5, pColor + outerAlpha);
+      atmoGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    }
+
+    ctx.beginPath();
+    ctx.arc(0, 0, atmoGlowR, 0, Math.PI * 2);
+    ctx.fillStyle = atmoGrad;
+    ctx.fill();
+
+    // 2. 焦点/悬停状态下的柔和引力波环 (极细柔光，消除粗硬白边)
     if (isFocus || isHover) {
       ctx.beginPath();
-      ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
-      ctx.strokeStyle = isFocus ? '#ffffff' : '#38bdf8';
-      ctx.lineWidth = 2;
+      ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.65)' : 'rgba(56, 189, 248, 0.45)';
+      ctx.lineWidth = isFocus ? 1.2 : 0.8;
       ctx.stroke();
     }
 
-    // 恒星向外投射的入射光向量 (球体立体受光阴影)
-    const distToCore = Math.hypot(node.screenX, node.screenY) || 1;
-    const lx = -node.screenX / distToCore;
-    const ly = -node.screenY / distToCore;
-    const hx = lx * r * 0.38;
-    const hy = ly * r * 0.38;
+    // 3. 恒星入射光矢量 (球体受光面朝向星系恒星)
+    const relX = (node.screenX || 0) - (node.starScreenX || 0);
+    const relY = (node.screenY || 0) - (node.starScreenY || 0);
+    const distToStar = Math.hypot(relX, relY) || 1;
+    const lx = -relX / distToStar;
+    const ly = -relY / distToStar;
+    const hx = lx * r * 0.42;
+    const hy = ly * r * 0.42;
 
-    // 行星表面质感球体 (保留真实主题色彩)
-    const sphereGrad = ctx.createRadialGradient(hx, hy, 1.5, 0, 0, r);
-    sphereGrad.addColorStop(0, '#ffffff');
-    sphereGrad.addColorStop(0.18, node.core || '#7dd3fc');
-    sphereGrad.addColorStop(0.65, node.color || '#0284c7');
-    sphereGrad.addColorStop(0.9, node.border || '#0369a1');
-    sphereGrad.addColorStop(1, '#051329');
+    // 4. 行星真实表面球体渐变 (自然漫反射曲面受光 + 渐变至夜半球深空阴影)
+    const sphereGrad = ctx.createRadialGradient(hx, hy, r * 0.08, 0, 0, r);
+    if (isDimmed) {
+      sphereGrad.addColorStop(0, '#64748b');
+      sphereGrad.addColorStop(0.5, '#334155');
+      sphereGrad.addColorStop(1, '#0f172a');
+    } else {
+      sphereGrad.addColorStop(0, node.core || '#bae6fd');
+      sphereGrad.addColorStop(0.35, node.color || '#0284c7');
+      sphereGrad.addColorStop(0.75, node.border || '#0369a1');
+      sphereGrad.addColorStop(0.95, '#041021');
+      sphereGrad.addColorStop(1, '#020617'); // 深邃夜面
+    }
 
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fillStyle = sphereGrad;
     ctx.fill();
 
-    ctx.strokeStyle = isFocus ? '#ffffff' : (node.border || '#334155');
-    ctx.lineWidth = isFocus ? 2 : 1;
+    // 5. 微妙的大气边缘轮廓反光 (Limb Rim Light - 极微弱半透明散射，消除生硬实线描边)
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.strokeStyle = isFocus 
+      ? 'rgba(255, 255, 255, 0.55)' 
+      : (isDimmed ? 'rgba(51, 65, 85, 0.3)' : (pColor + '30'));
+    ctx.lineWidth = isFocus ? 1.0 : 0.6;
     ctx.stroke();
 
-    // 行星名称与包含切片计数文字 (去除昂贵 CPU 模糊阴影，改用清爽抗锯齿直绘)
+    // 6. 行星名称与切片计数文字
     ctx.save();
-    ctx.font = '600 12px sans-serif';
+    ctx.font = '600 11.5px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = isDimmed ? '#94a3b8' : '#f0f9ff';
-    ctx.fillText(node.name, 0, r + 15);
+    ctx.fillText(node.name, 0, r + 14);
     if (node.cardCount) {
-      ctx.font = '9.5px sans-serif';
-      ctx.fillStyle = isDimmed ? '#64748b' : '#94a3b8';
-      ctx.fillText(`${node.cardCount} 记忆切片`, 0, r + 27);
+      ctx.font = '9px sans-serif';
+      ctx.fillStyle = isDimmed ? '#64748b' : '#7dd3fc';
+      ctx.fillText(`${node.cardCount} 记忆切片`, 0, r + 25);
     }
     ctx.restore();
   }
@@ -200,11 +252,16 @@ window.QM.planet = (function() {
   /**
    * 拖拽释放后自适应开普勒轨道重算
    */
-  function recalculatePlanetOrbit(node, dropX, dropY, coreRadius, SYSTEM_TILT_X, CAMERA_DISTANCE, childSatellites) {
+  function recalculatePlanetOrbit(node, dropX, dropY, coreRadius, SYSTEM_TILT_X, CAMERA_DISTANCE, childSatellites, parentStar = null) {
     if (!node || !node.celestial) return;
     const c = node.celestial;
+    const starX = parentStar ? parentStar.screenX : 0;
+    const starY = parentStar ? parentStar.screenY : 0;
 
-    const solved = solvePlanetCoordsFromScreen(dropX, dropY, c.inclination, SYSTEM_TILT_X, CAMERA_DISTANCE);
+    const relDropX = dropX - starX;
+    const relDropY = dropY - starY;
+
+    const solved = solvePlanetCoordsFromScreen(relDropX, relDropY, c.inclination, SYSTEM_TILT_X, CAMERA_DISTANCE);
     const localX = solved.rotX;
     const localY = solved.rotY;
 
@@ -212,7 +269,7 @@ window.QM.planet = (function() {
     const oneMinusEcc2 = Math.max(0.01, 1 - ecc * ecc);
 
     let newSemiMajor = Math.sqrt(localX * localX + (localY * localY) / oneMinusEcc2);
-    newSemiMajor = Math.max((coreRadius || 34) + 40, Math.min(800, newSemiMajor));
+    newSemiMajor = Math.max((coreRadius || 30) + 40, Math.min(800, newSemiMajor));
     const newSemiMinor = newSemiMajor * Math.sqrt(oneMinusEcc2);
 
     let newTheta = Math.atan2(localY / (newSemiMinor || 1), localX / (newSemiMajor || 1));
@@ -225,8 +282,10 @@ window.QM.planet = (function() {
     c.theta = newTheta;
     c.omega = newOmega;
 
-    node.x = localX;
-    node.y = localY * solved.cosTilt;
+    const starWorldX = parentStar ? parentStar.x : 0;
+    const starWorldY = parentStar ? parentStar.y : 0;
+    node.x = starWorldX + localX;
+    node.y = starWorldY + localY * solved.cosTilt;
     node.z = solved.z;
     node.scale = solved.depthScale;
     node.screenX = dropX;

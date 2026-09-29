@@ -1,114 +1,156 @@
 /**
- * Qoder Memory Visualizer - 恒星模块 (Core Star System)
- * 职责：项目全局意图枢纽的几何属性、日冕耀斑、呼吸光晕与活跃微粒动力学模拟及渲染
+ * Qoder Memory Visualizer - 拟真恒星模块 (Realistic Star System)
+ * 职责：天文观测级拟真恒星光效渲染（多层柔和深空日冕光晕、光学衍射星芒、致密炽热日核、星系规模自适应）
  */
 window.QM = window.QM || {};
 
 window.QM.star = (function() {
-  // 活跃微粒系统
-  const semanticCoreParticles = [];
-  for (let i = 0; i < 32; i++) {
-    semanticCoreParticles.push({
-      angle: Math.random() * Math.PI * 2,
-      dist: 28 + Math.random() * 22,
-      speed: 0.006 + Math.random() * 0.012,
-      size: 1.2 + Math.random() * 1.8,
-      alpha: 0.3 + Math.random() * 0.6,
-      phase: Math.random() * Math.PI * 2
-    });
-  }
-
   /**
-   * 创建全局意图核心恒星节点
+   * 创建星系核心恒星节点 (支持多星系统自适应规模)
    */
-  function createStarNode(dirName) {
+  function createStarNode(galaxyMeta = {}, cx = 0, cy = 0) {
+    const id = galaxyMeta.id ? `star-${galaxyMeta.id}` : 'core-root';
+    const name = galaxyMeta.rawName || galaxyMeta.name || '意图核心';
+    const cardCount = typeof galaxyMeta.count === 'number' ? galaxyMeta.count : (galaxyMeta.cardCount || 0);
+
+    // 恒星半径依据星系规模自适应（小星系精巧 28px，特大星系壮丽 42px）
+    const baseRadius = 28;
+    const scaleBonus = Math.min(14, Math.sqrt(Math.max(0, cardCount)) * 1.8);
+    const radius = Math.round(baseRadius + scaleBonus);
+
     return {
-      id: "core-root",
-      name: dirName || "意图核心",
+      id,
+      galaxyId: galaxyMeta.id || 'global',
+      name,
+      shortName: galaxyMeta.shortName || galaxyMeta.id || 'core',
       type: "core",
-      radius: 34,
-      x: 0, y: 0, z: 0,
-      screenX: 0, screenY: 0, screenRadius: 34,
+      radius,
+      cardCount,
+      cx, cy,
+      x: cx, y: cy, z: 0,
+      screenX: cx, screenY: cy, screenRadius: radius,
       scale: 1,
       color: "#f59e0b",
       border: "#d97706",
-      core: "#fef08a"
+      core: "#fef08a",
+      glowColor: "rgba(254, 240, 138, 0.28)",
+      coronaPhase: Math.random() * Math.PI * 2
     };
   }
 
   /**
-   * 恒星微粒动力学每帧更新
+   * 恒星微动态每帧更新 (平滑等离子体呼吸波)
    */
-  function simulateStar(coreNode, enableEffects = true) {
-    if (!coreNode) return;
-    coreNode.x = 0;
-    coreNode.y = 0;
-    coreNode.z = 0;
-    coreNode.screenX = 0;
-    coreNode.screenY = 0;
-    coreNode.scale = 1;
-    coreNode.screenRadius = coreNode.radius;
+  function simulateStar(node, enableEffects = true) {
+    if (!node) return;
+    node.x = node.cx || 0;
+    node.y = node.cy || 0;
+    node.z = 0;
+    node.scale = 1;
+    node.screenX = node.x;
+    node.screenY = node.y;
+    node.screenRadius = node.radius;
 
     if (!enableEffects) return;
-
-    semanticCoreParticles.forEach(p => {
-      p.angle = (p.angle + p.speed) % (Math.PI * 2);
-      p.phase = (p.phase || 0) + 0.035;
-      p.currentDist = p.dist + Math.sin(p.phase) * 6;
-      p.currentAlpha = Math.max(0.15, Math.min(0.9, p.alpha + Math.sin(p.phase * 1.5) * 0.2));
-    });
+    node.coronaPhase = ((node.coronaPhase || 0) + 0.012) % (Math.PI * 2);
   }
 
   /**
-   * 恒星本体、日冕耀斑与日核光辉渲染 (保留真实金黄核质感)
+   * 模拟天文望远镜观测恒星的真实特效：
+   * 1. 消除原有的 6 条机械硬线与生硬塑料球；
+   * 2. 多层柔和深空日冕辉光 (Deep Space Corona Falloff)；
+   * 3. 真实光学衍射星芒 (Diffraction Spikes，极轻淡柔和，两头淡出)；
+   * 4. 炽白至暖金等离子体日核，无硬线边框。
    */
   function drawStar(ctx, node, animationTime, isDimmed = false) {
     const r = node.screenRadius || node.radius;
+    const phase = node.coronaPhase || (animationTime * 0.001);
+    const breath = 1.0 + Math.sin(phase) * 0.035;
 
-    const flareR = r * 1.8;
-
-    // 2. 旋转日冕耀斑射线 (6道轻量微光流)
-    const rayRot = animationTime * 0.008;
-    for (let rayIdx = 0; rayIdx < 6; rayIdx++) {
-      const rayAngle = rayRot + (rayIdx * Math.PI / 3);
-      const rayLen = flareR * (1.05 + Math.sin(animationTime * 0.08 + rayIdx) * 0.15);
-      const rx = Math.cos(rayAngle) * rayLen;
-      const ry = Math.sin(rayAngle) * rayLen;
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(rx, ry);
-      ctx.strokeStyle = 'rgba(254, 240, 138, 0.15)';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
+    // 1. 最外层宏观宇宙深空漫射光晕 (超柔和多重径向衰减，模拟真实深空恒星辐射场)
+    const outerHaloR = r * 3.2 * breath;
+    const outerHalo = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, outerHaloR);
+    if (isDimmed) {
+      outerHalo.addColorStop(0, 'rgba(254, 240, 138, 0.08)');
+      outerHalo.addColorStop(0.35, 'rgba(245, 158, 11, 0.03)');
+      outerHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else {
+      outerHalo.addColorStop(0, 'rgba(254, 240, 138, 0.26)');
+      outerHalo.addColorStop(0.25, 'rgba(251, 191, 36, 0.16)');
+      outerHalo.addColorStop(0.55, 'rgba(245, 158, 11, 0.06)');
+      outerHalo.addColorStop(0.85, 'rgba(217, 119, 6, 0.015)');
+      outerHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
-
-    // 3. 恒星主球体日核质感渐变 (恢复原有金黄暖曜光彩)
-    const coreBody = ctx.createRadialGradient(-r * 0.25, -r * 0.25, 2, 0, 0, r);
-    coreBody.addColorStop(0, '#ffffff');
-    coreBody.addColorStop(0.3, '#fef08a');
-    coreBody.addColorStop(0.65, '#f59e0b');
-    coreBody.addColorStop(1, '#b45309');
     ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = coreBody;
+    ctx.arc(0, 0, outerHaloR, 0, Math.PI * 2);
+    ctx.fillStyle = outerHalo;
     ctx.fill();
 
-    // 4. 环绕语义微粒流
-    semanticCoreParticles.forEach(p => {
-      const curDist = p.currentDist || p.dist;
-      const px = Math.cos(p.angle) * (r + curDist * (r / 34));
-      const py = Math.sin(p.angle) * (r + curDist * (r / 34));
-      ctx.beginPath();
-      ctx.arc(px, py, p.size * (r / 34), 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(254, 240, 138, ${p.currentAlpha || p.alpha})`;
-      ctx.fill();
-    });
+    // 2. 近核高能日冕层 (Medium Corona)
+    const midCoronaR = r * 1.65;
+    const midCorona = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, midCoronaR);
+    midCorona.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
+    midCorona.addColorStop(0.3, 'rgba(254, 240, 138, 0.38)');
+    midCorona.addColorStop(0.7, 'rgba(245, 158, 11, 0.14)');
+    midCorona.addColorStop(1, 'rgba(245, 158, 11, 0)');
+    ctx.beginPath();
+    ctx.arc(0, 0, midCoronaR, 0, Math.PI * 2);
+    ctx.fillStyle = midCorona;
+    ctx.fill();
 
-    // 5. 恒星文字标签
-    ctx.font = 'bold 13px sans-serif';
+    // 3. 天文光学衍射微芒 (Diffraction Spikes - 4道极淡极细的望远镜十字星芒，极度柔和)
+    if (!isDimmed) {
+      const spikeRot = animationTime * 0.0015;
+      const spikeLen = r * 2.8;
+      const spikeWidth = 1.6;
+      ctx.save();
+      for (let i = 0; i < 4; i++) {
+        const angle = spikeRot + (i * Math.PI / 2);
+        ctx.save();
+        ctx.rotate(angle);
+        const grad = ctx.createLinearGradient(-spikeLen, 0, spikeLen, 0);
+        grad.addColorStop(0, 'rgba(254, 240, 138, 0)');
+        grad.addColorStop(0.35, 'rgba(254, 240, 138, 0.08)');
+        grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.35)');
+        grad.addColorStop(0.65, 'rgba(254, 240, 138, 0.08)');
+        grad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(-spikeLen, -spikeWidth / 2, spikeLen * 2, spikeWidth);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    // 4. 炽白高致密恒星本体核 (Plasma Sun Core - 纯白向暖黄自然漫射过渡，消除生硬边缘)
+    const coreGrad = ctx.createRadialGradient(-r * 0.12, -r * 0.12, 1, 0, 0, r);
+    coreGrad.addColorStop(0, '#ffffff');
+    coreGrad.addColorStop(0.25, '#fffbeb');
+    coreGrad.addColorStop(0.55, '#fef08a');
+    coreGrad.addColorStop(0.85, '#f59e0b');
+    coreGrad.addColorStop(1, '#d97706');
+
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = coreGrad;
+    ctx.fill();
+
+    // 5. 恒星文字标签与规模标识 (清晰、高级、直观体现规模)
+    ctx.save();
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#fef08a';
+
+    // 星系名称
+    ctx.font = 'bold 12.5px sans-serif';
+    ctx.fillStyle = isDimmed ? '#94a3b8' : '#fef08a';
     ctx.fillText(node.name, 0, r + 16);
+
+    // 星系规模徽章
+    if (typeof node.cardCount === 'number') {
+      ctx.font = '10px sans-serif';
+      ctx.fillStyle = isDimmed ? '#64748b' : '#fcd34d';
+      const labelText = node.cardCount > 0 ? `🌌 ${node.cardCount} 记忆切片` : `🌌 初始星系`;
+      ctx.fillText(labelText, 0, r + 30);
+    }
+    ctx.restore();
   }
 
   return {

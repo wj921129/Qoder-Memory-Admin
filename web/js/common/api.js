@@ -43,6 +43,23 @@ window.QM.api = (function() {
     return [];
   }
 
+  async function getAllMemories(params = {}) {
+    try {
+      const query = new URLSearchParams();
+      if (params.edition) query.set('edition', params.edition);
+      if (params.account) query.set('account', params.account);
+      if (params.track) query.set('track', params.track);
+
+      const res = await fetch(`/api/all-memories?${query.toString()}`, { cache: 'no-store' });
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.error('[API] 读取全宇宙宏观星系记忆失败:', e.message);
+    }
+    return null;
+  }
+
   async function getMemories(project, params = {}) {
     try {
       const query = new URLSearchParams({ project });
@@ -123,6 +140,7 @@ window.QM.api = (function() {
     checkStatus,
     getContext,
     getProjects,
+    getAllMemories,
     getMemories,
     saveMemories,
     deleteMemory,

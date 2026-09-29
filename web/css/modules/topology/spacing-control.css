@@ -1,0 +1,175 @@
+/* ========================================================
+   Qoder Memory Visualizer - 选中行星卫星间距控制面板 (右下角)
+   ======================================================== */
+
+.satellite-spacing-controller {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  min-width: 290px;
+  background: rgba(10, 16, 30, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 11px;
+  color: #cbd5e1;
+  z-index: 25;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.satellite-spacing-controller:hover {
+  background: rgba(10, 16, 30, 0.96);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 14px rgba(56, 189, 248, 0.18);
+}
+
+.satellite-spacing-controller.is-active {
+  border-color: rgba(56, 189, 248, 0.7);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 18px rgba(56, 189, 248, 0.25);
+}
+
+.spacing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+}
+
+.spacing-title {
+  font-weight: 600;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.spacing-target {
+  font-size: 10.5px;
+  color: #38bdf8;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spacing-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spacing-btn {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #f8fafc;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.spacing-btn:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.25);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.spacing-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.spacing-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #334155;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.spacing-slider:hover:not(:disabled) {
+  background: #475569;
+}
+
+.spacing-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.spacing-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.25);
+}
+
+.spacing-slider:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.spacing-slider:disabled::-webkit-slider-thumb {
+  background: #64748b;
+  box-shadow: none;
+}
+
+.spacing-val {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #38bdf8;
+  min-width: 32px;
+  text-align: right;
+}
+
+.spacing-reset-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: color 0.15s ease;
+}
+
+.spacing-reset-btn:hover:not(:disabled) {
+  color: #38bdf8;
+}
+
+.spacing-reset-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.spacing-tip {
+  font-size: 9.5px;
+  color: #94a3b8;
+  line-height: 1.35;
+}
