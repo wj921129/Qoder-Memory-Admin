@@ -158,15 +158,16 @@ header::after {
   visibility: hidden;
   pointer-events: none;
   transform: translateY(-4px);
-  transition: opacity 0.1s ease, transform 0.1s ease, visibility 0s linear 0.1s;
+  /* 鼠标移出后缓冲 0.5s 再消失，若 0.5s 内重新移入则立刻保持显示 */
+  transition: opacity 0.2s ease 0.5s, transform 0.2s ease 0.5s, visibility 0s linear 0.7s;
 }
-/** 鼠标移入时展开菜单 (移出时自动立即关闭，移除 focus-within 避免焦点粘滞) */
+/** 鼠标移入时瞬间展开菜单 (hover 延时归零，响应敏捷) */
 .nav-dd:hover .nav-dd-menu {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s;
+  transition: opacity 0.15s ease 0s, transform 0.15s ease 0s, visibility 0s 0s;
 }
 /** 下拉选项条目：每一行均采用实体不透光表面，彻底遮蔽底层星系画布透光 */
 .nav-dd-item {

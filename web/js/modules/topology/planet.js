@@ -19,16 +19,16 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 初始化或生成主题认知域行星的开普勒轨道初始参数 (俯视水平视角，轨道倾角归零)
+   * 初始化或生成主题认知域行星的开普勒轨道初始参数 (俯视水平视角，支持随机方位与最近间距)
    */
-  function initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN) {
+  function initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN, basePhase) {
     const tierBaseR = R_MIN + dTier * tierBandWidth;
     let semiMajor;
     if (isStrongAffinity && dTier === 0) {
-      semiMajor = tierBaseR + (Math.random() * 0.2) * tierBandWidth;
+      semiMajor = tierBaseR + (Math.random() * 0.15) * tierBandWidth;
     } else {
       const intraTierOffset = (idxInTier % 2 === 0 ? 1 : -1) * (tierBandWidth * 0.12);
-      semiMajor = tierBaseR + tierBandWidth * 0.40 + intraTierOffset + (Math.random() * 4 - 2);
+      semiMajor = tierBaseR + tierBandWidth * 0.35 + intraTierOffset + (Math.random() * 4 - 2);
     }
 
     const eccentricity = 0.015 + Math.random() * 0.015;
@@ -36,8 +36,12 @@ window.QM.planet = (function() {
     const baseOmega = (2.0 / Math.sqrt(Math.pow(semiMajor, 3))) * (0.95 + Math.random() * 0.1);
     const inclination = 0; // 俯视平角，倾角归零
 
+    // 随机相位基准角：若未传则随机生成，打破固定朝向
+    const randomPhase = (typeof basePhase === 'number') ? basePhase : (Math.random() * Math.PI * 2);
     const tierPhaseOffset = dTier * (Math.PI * 0.61803398875);
-    const initialTheta = ((idxInTier / Math.max(tierCount, 1)) * Math.PI * 2) + tierPhaseOffset;
+    // 适度角度随机微扰，让行星错落更具生机
+    const jitter = (Math.random() - 0.5) * (Math.PI * 2 / Math.max(tierCount, 1) * 0.4);
+    const initialTheta = (((idxInTier / Math.max(tierCount, 1)) * Math.PI * 2) + tierPhaseOffset + randomPhase + jitter) % (Math.PI * 2);
 
     return {
       semiMajor,

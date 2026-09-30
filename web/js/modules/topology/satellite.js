@@ -8,8 +8,9 @@ window.QM.satellite = (function() {
 
   /**
    * 初始化卫星多级黄金分割层级开普勒轨道参数
+   * (支持根据关系连线复杂度排列：连线越少越贴近母行星)
    */
-  function initSatelliteCelestial(m, mIdx, unitCount, parentOmega, tierCapacities) {
+  function initSatelliteCelestial(m, mIdx, unitCount, parentOmega, tierCapacities, relScore = 0) {
     const capacities = tierCapacities || [6, 12, 18, 24, 30, 36, 42];
     let temp = mIdx;
     let myTier = 0, myIndexInTier = 0, myTierCount = capacities[0];
@@ -30,9 +31,11 @@ window.QM.satellite = (function() {
       }
     }
 
-    const baseR = 52 + Math.min(10, unitCount * 0.15);
-    const tierStep = 34;
-    const semiMajor = baseR + myTier * tierStep + (Math.random() * 3 - 1.5);
+    const baseR = 48 + Math.min(8, unitCount * 0.12);
+    const tierStep = 32;
+    // 关系连线越多的卫星向外略微延展，连线越少越紧贴母行星
+    const relOffset = Math.min(12, Math.sqrt(Math.max(0, relScore)) * 2.5);
+    const semiMajor = baseR + myTier * tierStep + relOffset + (Math.random() * 2 - 1);
     const eccentricity = 0.015;
     const semiMinor = semiMajor * Math.sqrt(1 - eccentricity * eccentricity);
     const speedMultiplier = Math.max(1.15, 2.4 - myTier * 0.3) + Math.random() * 0.15;

@@ -482,9 +482,18 @@ window.QM.app = (function() {
       window.addEventListener('click', e => {
         if (!e.target.closest('#more-dropdown')) moreMenu.classList.remove('show');
       });
+      let moreHideTimer = null;
       if (moreDropdown) {
         moreDropdown.addEventListener('mouseleave', () => {
-          moreMenu.classList.remove('show');
+          moreHideTimer = setTimeout(() => {
+            moreMenu.classList.remove('show');
+          }, 500);
+        });
+        moreDropdown.addEventListener('mouseenter', () => {
+          if (moreHideTimer) {
+            clearTimeout(moreHideTimer);
+            moreHideTimer = null;
+          }
         });
       }
     }

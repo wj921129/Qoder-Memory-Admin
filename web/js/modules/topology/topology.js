@@ -373,16 +373,18 @@ window.QM.topology = (function() {
       const numDomains = catList.length;
       const domainNodeMap = new Map();
 
-      // 根据星系规模自适应行星轨道开普勒跨度
-      const R_MIN = totalCards > 30 ? 240 : (totalCards > 10 ? 200 : 160);
+      // 根据星系规模自适应行星轨道开普勒跨度 (需求 2：恒星与行星最近范围缩小，更显紧凑充盈)
+      const R_MIN = totalCards > 30 ? 150 : (totalCards > 10 ? 120 : 95);
       const domainTiers = numDomains > 10 ? 4 : (numDomains > 5 ? 3 : (numDomains > 2 ? 2 : 1));
-      const domainSpread = Math.min(180, Math.log2(Math.max(1, numDomains)) * 50);
-      const cardSpread = Math.min(150, Math.sqrt(Math.max(0, totalCards)) * 12);
-      const R_MAX = Math.min(720, Math.max(R_MIN + 180, R_MIN + domainSpread * 1.2 + cardSpread * 1.2));
+      const domainSpread = Math.min(150, Math.log2(Math.max(1, numDomains)) * 42);
+      const cardSpread = Math.min(130, Math.sqrt(Math.max(0, totalCards)) * 10);
+      const R_MAX = Math.min(580, Math.max(R_MIN + 120, R_MIN + domainSpread * 1.0 + cardSpread * 1.0));
       const tierBandWidth = (R_MAX - R_MIN) / Math.max(domainTiers, 1);
+      // 需求 2：每个星系分配随机基准朝向相位，彻底避免每次刷新全部朝向单一方向
+      const galaxyBasePhase = Math.random() * Math.PI * 2;
 
       // 记录星系引力场边界半径 (用于宏观宇宙星云渲染)
-      const galaxyRadius = R_MAX + 110;
+      const galaxyRadius = R_MAX + 80;
       universeGalaxies.push({
         id: g.id,
         name: g.name,
@@ -411,7 +413,7 @@ window.QM.topology = (function() {
           const storeKey = `domain-${g.id}-${cat}`;
           let pStore = celestialStore.get(storeKey);
           if (!pStore) {
-            pStore = planet.initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN);
+            pStore = planet.initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN, galaxyBasePhase);
             celestialStore.set(storeKey, pStore);
           }
 
@@ -434,7 +436,7 @@ window.QM.topology = (function() {
         });
       });
 
-      // 3.3 构建该星系内的记忆切片卫星
+      // 3.3 构建该星系内的记忆切片卫星 (需求 3：连线越少越贴近母行星，连线复杂向外延展)
       const domainUnitsMap = new Map();
       gMemories.forEach(m => {
         const cat = m.category || 'other';
@@ -442,15 +444,32 @@ window.QM.topology = (function() {
         domainUnitsMap.get(cat).push(m);
       });
 
+      // 计算记忆切片的关系连接复杂度得分 (显式链路 + wiki链接 + md链接 + 关键词)
+      const calcRelationScore = m => {
+        let score = 0;
+        if (Array.isArray(m.chains)) score += m.chains.length * 2;
+        const b = m.body || '';
+        const wikiMatches = b.match(/\[\[[^\]]+\]\]/g);
+        if (wikiMatches) score += wikiMatches.length * 2;
+        const mdMatches = b.match(/\[[^\]]+\]\([^)]+\.md\)/g);
+        if (mdMatches) score += mdMatches.length * 2;
+        if (Array.isArray(m.keywords)) score += Math.min(5, m.keywords.length * 0.6);
+        return score;
+      };
+
       domainUnitsMap.forEach((mList, cat) => {
         const parentDomain = domainNodeMap.get(cat) || starNode;
         const parentOmega = parentDomain.celestial ? parentDomain.celestial.omega : 0.0006;
         const unitCount = mList.length;
 
+        // 核心排序：连线越少的切片排在前面分配至靠近母行星的内圈轨道；关系复杂的排在后面延展至外圈
+        mList.sort((a, b) => calcRelationScore(a) - calcRelationScore(b));
+
         mList.forEach((m, mIdx) => {
           let mStore = celestialStore.get(m.id);
+          const relScore = calcRelationScore(m);
           if (!mStore) {
-            mStore = satellite.initSatelliteCelestial(m, mIdx, unitCount, parentOmega, tierCapacities);
+            mStore = satellite.initSatelliteCelestial(m, mIdx, unitCount, parentOmega, tierCapacities, relScore);
             celestialStore.set(m.id, mStore);
           }
 
@@ -567,6 +586,9 @@ window.QM.topology = (function() {
   /**
    * 焦点关联网络更新
    */
+  /**
+   * 焦点关联网络更新 (需求 4：选择恒星/行星后，其他星系与之有关系的星体也需要展示)
+   */
   function updateFocusRelatedSet() {
     focusRelatedIds.clear();
     const hudText = document.getElementById('hud-text');
@@ -583,29 +605,84 @@ window.QM.topology = (function() {
     }
 
     focusRelatedIds.add(focusTarget.id);
-    edges.forEach(e => {
-      if (e.from === focusTarget.id) focusRelatedIds.add(e.to);
-      if (e.to === focusTarget.id) focusRelatedIds.add(e.from);
-    });
+
+    // 1. 收集当前选中天体的核心直属群组 (primaryGroupIds)
+    const primaryGroupIds = new Set([focusTarget.id]);
 
     if (focusTarget.type === 'core') {
+      // 选中恒星：本星系内所有行星与卫星归入核心群组
       nodes.forEach(n => {
         if (n.type === 'domain' && n.parentStarId === focusTarget.id) {
+          primaryGroupIds.add(n.id);
           focusRelatedIds.add(n.id);
         } else if (n.type === 'unit' && (n.galaxyId === focusTarget.galaxyId || n.projectId === focusTarget.galaxyId)) {
+          primaryGroupIds.add(n.id);
           focusRelatedIds.add(n.id);
         }
       });
-      if (hudText) hudText.innerText = `🌟 聚焦【${focusTarget.name}】星系恒星 · 可调节右下角星系整体间距`;
     } else if (focusTarget.type === 'domain') {
-      if (focusTarget.parentStarId) focusRelatedIds.add(focusTarget.parentStarId);
+      // 选中行星：母恒星与该行星直属的所有卫星归入核心群组
+      if (focusTarget.parentStarId) {
+        primaryGroupIds.add(focusTarget.parentStarId);
+        focusRelatedIds.add(focusTarget.parentStarId);
+      }
       nodes.forEach(n => {
-        if (n.parentId === focusTarget.id) focusRelatedIds.add(n.id);
+        if (n.type === 'unit' && n.parentId === focusTarget.id) {
+          primaryGroupIds.add(n.id);
+          focusRelatedIds.add(n.id);
+        }
       });
-      if (hudText) hudText.innerText = `🪐 聚焦主题认知行星：【${focusTarget.name}】 · 可调节右下角卫星间距`;
     } else {
-      if (focusTarget.parentId) focusRelatedIds.add(focusTarget.parentId);
-      if (hudText) hudText.innerText = `💡 聚焦记忆节点：${focusTarget.name} · 激活脉冲引力`;
+      // 选中卫星：直属母行星及母恒星归入核心群组
+      if (focusTarget.parentId) {
+        primaryGroupIds.add(focusTarget.parentId);
+        focusRelatedIds.add(focusTarget.parentId);
+        const pNode = nodeMap.get(focusTarget.parentId);
+        if (pNode && pNode.parentStarId) {
+          primaryGroupIds.add(pNode.parentStarId);
+          focusRelatedIds.add(pNode.parentStarId);
+        }
+      }
+    }
+
+    // 2. 核心：遍历所有关系连线，查找与 primaryGroup 存在关联的“外部其他星系/其他主题”星体！
+    const externalRelatedIds = new Set();
+    edges.forEach(e => {
+      const fromInGroup = primaryGroupIds.has(e.from);
+      const toInGroup = primaryGroupIds.has(e.to);
+      if (fromInGroup && !toInGroup) {
+        externalRelatedIds.add(e.to);
+      } else if (!fromInGroup && toInGroup) {
+        externalRelatedIds.add(e.from);
+      }
+    });
+
+    // 3. 将外部关联星体及其所属的母行星/母恒星全部纳入关联集合，提供清晰的外部星系脉络
+    externalRelatedIds.forEach(extId => {
+      focusRelatedIds.add(extId);
+      const extNode = nodeMap.get(extId);
+      if (extNode) {
+        if (extNode.type === 'unit' && extNode.parentId) {
+          focusRelatedIds.add(extNode.parentId);
+          const pDomain = nodeMap.get(extNode.parentId);
+          if (pDomain && pDomain.parentStarId) {
+            focusRelatedIds.add(pDomain.parentStarId);
+          }
+        } else if (extNode.type === 'domain' && extNode.parentStarId) {
+          focusRelatedIds.add(extNode.parentStarId);
+        }
+      }
+    });
+
+    const extCount = externalRelatedIds.size;
+    const extNote = extCount > 0 ? ` · 跨星系关联 ${extCount} 个星体` : '';
+
+    if (focusTarget.type === 'core') {
+      if (hudText) hudText.innerText = `🌟 聚焦【${focusTarget.name}】星系恒星${extNote} · 可调节右下角星系整体间距`;
+    } else if (focusTarget.type === 'domain') {
+      if (hudText) hudText.innerText = `🪐 聚焦主题认知行星：【${focusTarget.name}】${extNote} · 可调节右下角卫星间距`;
+    } else {
+      if (hudText) hudText.innerText = `💡 聚焦记忆节点：${focusTarget.name}${extNote} · 激活脉冲引力`;
     }
 
     if (hudIndicator) {
@@ -668,23 +745,11 @@ window.QM.topology = (function() {
       if (!(matchName || matchBody || matchDesc || matchKw)) return true;
     }
 
-    // 3. 画布天体选中聚焦状态
+    // 3. 画布天体选中聚焦状态 (需求 4：选择恒星/行星后，其他星系与之有关系的星体同步清晰展示)
     if (focusTarget) {
       if (node.id === focusTarget.id) return false;
-      if (focusTarget.type === 'domain') {
-        if (node.type === 'unit' && node.parentId === focusTarget.id) return false;
-        if (node.id === focusTarget.parentStarId) return false;
-        return true;
-      } else if (focusTarget.type === 'unit') {
-        if (node.id === focusTarget.parentId) return false;
-        if (focusRelatedIds.has(node.id)) return false;
-        return true;
-      } else if (focusTarget.type === 'core') {
-        // 选中恒星：当前星系全部天体点亮（行星 + 卫星不再透明），星系外天体弱化
-        if (node.type === 'domain' && node.parentStarId === focusTarget.id) return false;
-        if (node.type === 'unit' && (node.galaxyId === focusTarget.galaxyId || node.projectId === focusTarget.galaxyId)) return false;
-        return true;
-      }
+      if (focusRelatedIds.has(node.id)) return false;
+      return true;
     }
 
     // 4. 分类过滤模式
@@ -1009,7 +1074,7 @@ window.QM.topology = (function() {
       const isFar = isUniverseZoomedOut();
       const isSatelliteEdge = fromNode.type === 'unit' || toNode.type === 'unit';
       if (isFar && isSatelliteEdge) {
-        const isFocusLink = focusTarget && (e.from === focusTarget.id || e.to === focusTarget.id);
+        const isFocusLink = focusTarget && (e.from === focusTarget.id || e.to === focusTarget.id || (focusRelatedIds.has(e.from) && focusRelatedIds.has(e.to)));
         if (!isFocusLink) return;
       }
 
@@ -1021,18 +1086,14 @@ window.QM.topology = (function() {
         const isToActive = !toDimmed || (hoveredNode && hoveredNode.id === toNode.id);
         if (!isFromActive || !isToActive) return;
 
-        if (focusTarget.type === 'domain') {
-          const isBelongsToCurrentDomain = (e.from === focusTarget.id || e.to === focusTarget.id);
-          const connectsToHover = hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id);
-          if (!isBelongsToCurrentDomain && !connectsToHover) return;
-        } else if (focusTarget.type === 'unit') {
-          const connectsToFocus = (e.from === focusTarget.id || e.to === focusTarget.id);
-          const connectsToHover = hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id);
-          if (!connectsToFocus && !connectsToHover) return;
-        }
+        // 需求 4：两端均在关联集合中，或者连向悬停节点，允许跨星系关联连线畅通无阻
+        const isRelatedEdge = focusRelatedIds.has(e.from) && focusRelatedIds.has(e.to);
+        const connectsToHover = hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id);
+        if (!isRelatedEdge && !connectsToHover) return;
       }
 
-      const isFocusLink = (focusTarget && (e.from === focusTarget.id || e.to === focusTarget.id)) ||
+      const isCrossGalaxy = fromNode.galaxyId && toNode.galaxyId && fromNode.galaxyId !== toNode.galaxyId;
+      const isFocusLink = (focusTarget && (e.from === focusTarget.id || e.to === focusTarget.id || isCrossGalaxy)) ||
                           (hoveredNode && (e.from === hoveredNode.id || e.to === hoveredNode.id));
 
       if (e.isChain) {
@@ -1101,9 +1162,9 @@ window.QM.topology = (function() {
 
     const isFar = isUniverseZoomedOut();
     const visibleNodes = nodes.filter(n => {
-      // 镜头拉远时减少星体展示，默认只显示恒星和行星，大幅提升全宇宙性能
+      // 镜头拉远时减少星体展示，默认只显示恒星和行星，但聚焦时保留所有关联星体 (需求 4)
       if (isFar && n.type === 'unit') {
-        const isFocusedOrRelated = focusTarget && (focusTarget.id === n.id || (focusTarget.type === 'domain' && n.parentId === focusTarget.id));
+        const isFocusedOrRelated = focusTarget && (focusTarget.id === n.id || focusRelatedIds.has(n.id) || (focusTarget.type === 'domain' && n.parentId === focusTarget.id) || (focusTarget.type === 'core' && n.galaxyId === focusTarget.galaxyId));
         if (!isFocusedOrRelated) return false;
       }
       if (!bounds) return true;

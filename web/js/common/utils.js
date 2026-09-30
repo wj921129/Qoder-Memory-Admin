@@ -144,10 +144,19 @@ window.QM.utils = (function() {
       }
     });
 
-    // 鼠标移出容器时，主动清理内部焦点，强制关闭下拉
+    // 鼠标移出容器时，延迟 500ms 清理内部焦点，配合 CSS 0.5s 缓冲平滑关闭
+    let leaveTimer = null;
     dd.addEventListener('mouseleave', () => {
-      if (dd.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
+      leaveTimer = setTimeout(() => {
+        if (dd.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+      }, 500);
+    });
+    dd.addEventListener('mouseenter', () => {
+      if (leaveTimer) {
+        clearTimeout(leaveTimer);
+        leaveTimer = null;
       }
     });
   }
