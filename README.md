@@ -26,6 +26,10 @@ Qoder-Memory-Admin/
 ├── 📋 README.md           # 平台架构、目录规范与使用说明文档
 ├── 📦 package.json        # 项目元信息与轻量 npm 运行脚本声明
 │
+├── 📂 data/                # 【配置与本地数据】本地私有字典与脱敏配置模板
+│   ├── projects.example.json # 模板文件：公开受控的工程元数据与展示配置 (入库受控)
+│   └── projects.local.json   # 本地文件：真实私有工程字典与排序权重 (Git 严格忽略，防云端泄露)
+│
 ├── 🖥️ server/              # 【后端核心子系统】原生 Node.js HTTP 微服务 (零第三方依赖)
 │   └── server.mjs         # 多项目动态扫描、NTFS Junction 解析、原子 Markdown 落盘、MEMORY.md 索引同步
 │
@@ -105,6 +109,10 @@ Qoder-Memory-Admin/
 - **智能 Slug 源码反解**：通过贪心路径匹配算法自动还原工程真实磁盘源码路径，动态提取工程名与开发栈标识，无需手动打软链接；
 - **Scope 作用域分组感知**：下拉菜单以 `<optgroup>` 明确区分 `🌐 全局记忆库 (Global Scope)` 与 `📁 本地工程记忆库 (Project Scope)`，支持一键 🔄 重新探测与 📂 在系统资源管理器中定位打开；
 - **物理原子落盘与索引同步**：直接向本地真实物理路径落盘保存与删除切片，并自动同步维护 `MEMORY.md` 索引文件，立即对 Qoder IDE / CLI 生效。
+
+### 5. 本地敏感数据隔离与零配置自愈
+- **数据物理隔离**：项目私有别名、业务字典与排序权重统一外置于 `data/*.local.json`，并通过 `.gitignore` 彻底防泄露；
+- **优雅自愈保障**：若无本地配置文件，系统自动无缝降级，通过工程内置的 `pom.xml`/`package.json` 原生智能嗅探，开箱即用。
 
 ---
 
