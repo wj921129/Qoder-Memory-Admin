@@ -1308,7 +1308,16 @@ window.QM.topology = (function() {
   }
 
   function onOfficialCategoryChanged(groupKey = 'all') {
-    deselectFocus(false);
+    // 仅清理焦点天体与关联集，镜头保持当前位置不发生任何偏移
+    focusTarget = null;
+    isAutoCameraActive = false;
+    cameraTargetNode = null;
+    cameraTargetPos = null;
+    updateFocusRelatedSet();
+
+    window.QM.drawer?.closeDrawer();
+    hideCelestialCard();
+    resetSpacingControllerUI();
 
     const hudText = document.getElementById('hud-text');
     const hudIndicator = document.getElementById('hud-indicator');
@@ -1327,23 +1336,6 @@ window.QM.topology = (function() {
         hudIndicator.style.boxShadow = `0 0 10px ${grp.color || '#38bdf8'}`;
       }
 
-      // 如果有匹配的行星，平滑运镜使该大类行星群居中展示
-      if (matchedPlanets.length > 0) {
-        let avgX = 0, avgY = 0;
-        matchedPlanets.forEach(p => {
-          avgX += p.screenX;
-          avgY += p.screenY;
-        });
-        avgX /= matchedPlanets.length;
-        avgY /= matchedPlanets.length;
-
-        cameraTargetNode = null;
-        cameraTargetPos = { x: avgX, y: avgY };
-        cameraTargetScale = 0.88;
-        isAutoCameraActive = true;
-        hasDomainExpanding = true;
-        startGalaxyLoop();
-      }
       window.QM.utils?.showToast(`已聚焦官方领域：${grp.icon} ${grp.name}（${matchedPlanets.length} 个认知行星高亮）`);
     } else {
       if (hudText) {
@@ -1353,12 +1345,6 @@ window.QM.topology = (function() {
         hudIndicator.style.background = '#10b981';
         hudIndicator.style.boxShadow = '0 0 10px #10b981';
       }
-      cameraTargetNode = null;
-      cameraTargetPos = { x: 0, y: 0 };
-      cameraTargetScale = 0.78;
-      isAutoCameraActive = true;
-      hasDomainExpanding = true;
-      startGalaxyLoop();
       window.QM.utils?.showToast('已恢复全宇宙宏观全貌');
     }
 
