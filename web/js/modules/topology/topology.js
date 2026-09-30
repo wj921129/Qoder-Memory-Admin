@@ -1423,15 +1423,9 @@ window.QM.topology = (function() {
 
     window.QM.state.setSelectedPlanet(planetNode);
 
-    // 关键修复：静止/节能模式下，选中行星后强制计算卫星动力学展开并即时重绘，确保已调整的卫星间距即刻生效
-    if (!window.QM.state.state.enableEffects) {
-      planetNode.expansionProgress = 1.0;
-      simulateCelestialSystem(true);
-      drawGalaxy();
-    } else {
-      hasDomainExpanding = true;
-      startGalaxyLoop();
-    }
+    // 无论动效/静止模式，均启动动画循环让 lerp 平滑过渡卫星展开，循环在过渡完成后自动停止
+    hasDomainExpanding = true;
+    startGalaxyLoop();
   }
 
   function resetSpacingControllerUI() {
