@@ -141,7 +141,11 @@ window.QM.topology = (function() {
       const pNode = nodeMap.get(planetId);
       if (pNode) {
         pNode.satelliteSpacingScale = scale;
-        requestRender();
+        if (!pNode.expansionProgress || pNode.expansionProgress < 1.0) {
+          pNode.expansionProgress = 1.0;
+        }
+        simulateCelestialSystem(true);
+        drawGalaxy();
       }
     });
 
@@ -658,9 +662,12 @@ window.QM.topology = (function() {
     });
 
     let activeDomainId = null;
+    const selPlanet = window.QM.state?.state?.selectedPlanet;
     if (focusTarget) {
       if (focusTarget.type === 'domain') activeDomainId = focusTarget.id;
       else if (focusTarget.type === 'unit' && focusTarget.parentId) activeDomainId = focusTarget.parentId;
+    } else if (selPlanet) {
+      activeDomainId = selPlanet.id;
     }
 
     hasDomainExpanding = false;
@@ -1368,7 +1375,13 @@ window.QM.topology = (function() {
     ctrl.classList.add('is-active');
     if (targetName) targetName.innerText = `【${planetNode.name}】`;
 
-    const currentSpacing = planetNode.satelliteSpacingScale || 1.0;
+    const currentSpacing = window.QM.state.getPlanetSpacing(planetNode.id) || planetNode.satelliteSpacingScale || 1.0;
+    planetNode.satelliteSpacingScale = currentSpacing;
+    if (!planetNode.expansionProgress || planetNode.expansionProgress < 1.0) {
+      if (!window.QM.state.state.enableEffects) {
+        planetNode.expansionProgress = 1.0;
+      }
+    }
     if (slider) {
       slider.disabled = false;
       slider.value = currentSpacing;
@@ -1421,12 +1434,14 @@ window.QM.topology = (function() {
       const selPlanet = window.QM.state.state.selectedPlanet;
       if (selPlanet) {
         selPlanet.satelliteSpacingScale = clamped;
+        if (!selPlanet.expansionProgress || selPlanet.expansionProgress < 1.0) {
+          selPlanet.expansionProgress = 1.0;
+        }
         window.QM.state.setPlanetSpacing(selPlanet.id, clamped);
         if (slider) slider.value = clamped;
         if (valText) valText.innerText = clamped.toFixed(2) + 'x';
-        hasDomainExpanding = true;
-        startGalaxyLoop();
-        requestRender();
+        simulateCelestialSystem(true);
+        drawGalaxy();
       }
     }
 
