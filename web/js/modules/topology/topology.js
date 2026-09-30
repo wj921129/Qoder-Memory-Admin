@@ -618,6 +618,24 @@ window.QM.topology = (function() {
       if (node.type === 'unit' && node.rawItem && node.rawItem.category !== activeCategory) return true;
     }
 
+    // 5. 官方四大分类体系过滤 (spec / project / experience / task)
+    const { officialCategory } = window.QM.state.state;
+    if (officialCategory && officialCategory !== 'all') {
+      const { OFFICIAL_CATEGORIES } = window.QM.constants || {};
+      const targetGroup = OFFICIAL_CATEGORIES?.[officialCategory];
+      const allowedSubs = targetGroup ? new Set(targetGroup.subs || []) : null;
+
+      if (node.type === 'core') return false;
+      if (node.type === 'domain') {
+        const isMatched = allowedSubs ? allowedSubs.has(node.categoryKey) : false;
+        if (!isMatched) return true;
+      } else if (node.type === 'unit' && node.rawItem) {
+        const cat = node.rawItem.category;
+        const isMatched = allowedSubs ? allowedSubs.has(cat) : false;
+        if (!isMatched) return true;
+      }
+    }
+
     return false;
   }
 
@@ -1289,6 +1307,64 @@ window.QM.topology = (function() {
     requestRender();
   }
 
+  function onOfficialCategoryChanged(groupKey = 'all') {
+    deselectFocus(false);
+
+    const hudText = document.getElementById('hud-text');
+    const hudIndicator = document.getElementById('hud-indicator');
+    const { OFFICIAL_CATEGORIES } = window.QM.constants || {};
+
+    if (groupKey && groupKey !== 'all' && OFFICIAL_CATEGORIES?.[groupKey]) {
+      const grp = OFFICIAL_CATEGORIES[groupKey];
+      const allowedSubs = new Set(grp.subs || []);
+      const matchedPlanets = nodes.filter(n => n.type === 'domain' && allowedSubs.has(n.categoryKey));
+
+      if (hudText) {
+        hudText.innerText = `🌌 官方领域聚焦：${grp.icon} 【${grp.name}】 · 高亮 ${matchedPlanets.length} 个主题认知行星`;
+      }
+      if (hudIndicator) {
+        hudIndicator.style.background = grp.color || '#38bdf8';
+        hudIndicator.style.boxShadow = `0 0 10px ${grp.color || '#38bdf8'}`;
+      }
+
+      // 如果有匹配的行星，平滑运镜使该大类行星群居中展示
+      if (matchedPlanets.length > 0) {
+        let avgX = 0, avgY = 0;
+        matchedPlanets.forEach(p => {
+          avgX += p.screenX;
+          avgY += p.screenY;
+        });
+        avgX /= matchedPlanets.length;
+        avgY /= matchedPlanets.length;
+
+        cameraTargetNode = null;
+        cameraTargetPos = { x: avgX, y: avgY };
+        cameraTargetScale = 0.88;
+        isAutoCameraActive = true;
+        hasDomainExpanding = true;
+        startGalaxyLoop();
+      }
+      window.QM.utils?.showToast(`已聚焦官方领域：${grp.icon} ${grp.name}（${matchedPlanets.length} 个认知行星高亮）`);
+    } else {
+      if (hudText) {
+        hudText.innerText = '🌌 认知引力网络待命 · 全局拓扑就绪';
+      }
+      if (hudIndicator) {
+        hudIndicator.style.background = '#10b981';
+        hudIndicator.style.boxShadow = '0 0 10px #10b981';
+      }
+      cameraTargetNode = null;
+      cameraTargetPos = { x: 0, y: 0 };
+      cameraTargetScale = 0.78;
+      isAutoCameraActive = true;
+      hasDomainExpanding = true;
+      startGalaxyLoop();
+      window.QM.utils?.showToast('已恢复全宇宙宏观全貌');
+    }
+
+    requestRender();
+  }
+
   /**
    * 右下角当前选中行星卫星间距控制器 UI 同步逻辑 (需求 1)
    */
@@ -1724,6 +1800,7 @@ window.QM.topology = (function() {
     hideCelestialCard,
     deselectFocus,
     focusOnCategory,
+    onOfficialCategoryChanged,
     updateSpacingControllerUI,
     resetSpacingControllerUI,
     requestRender,

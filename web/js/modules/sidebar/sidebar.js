@@ -42,25 +42,35 @@ window.QM.sidebar = (function() {
     const officialTotalEl = document.getElementById('official-cat-total-count');
     if (officialTotalEl) officialTotalEl.innerText = memories.length;
 
-    // 1. 底层子目录细分统计与列表
+    // 1. 底层子目录细分统计与列表 (随选中的官方大类联动过滤)
     const catCounts = {};
+    const currOfficial = window.QM.state.state.officialCategory || 'all';
+    const targetOfficialGroup = (currOfficial !== 'all' && OFFICIAL_CATEGORIES) ? OFFICIAL_CATEGORIES[currOfficial] : null;
+    const allowedSubs = targetOfficialGroup ? new Set(targetOfficialGroup.subs || []) : null;
+
     memories.forEach(m => {
       const c = m.category || 'other';
+      if (allowedSubs && !allowedSubs.has(c)) return;
       catCounts[c] = (catCounts[c] || 0) + 1;
     });
 
     const catListEl = document.getElementById('category-list');
     if (catListEl) {
       let catHtml = '';
-      Object.keys(catCounts).sort().forEach(cat => {
-        const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
-        catHtml += `
-          <div class="cat-item ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
-            <span>${escapeHtml(label)}</span>
-            <span class="cat-count">${catCounts[cat]}</span>
-          </div>
-        `;
-      });
+      const catKeys = Object.keys(catCounts).sort();
+      if (catKeys.length === 0) {
+        catHtml = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">(该官方体系下暂无切片)</div>`;
+      } else {
+        catKeys.forEach(cat => {
+          const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
+          catHtml += `
+            <div class="cat-item ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
+              <span>${escapeHtml(label)}</span>
+              <span class="cat-count">${catCounts[cat]}</span>
+            </div>
+          `;
+        });
+      }
       catListEl.innerHTML = catHtml;
     }
     const catTotalEl = document.getElementById('cat-total-count');
@@ -127,13 +137,8 @@ window.QM.sidebar = (function() {
     state.officialCategory = groupKey || 'all';
     state.activeCategory = 'all'; // 选中官方大类时重置细分子类
 
-    // 刷新侧边栏大类高亮
-    const officialListEl = document.getElementById('official-category-list');
-    if (officialListEl) {
-      officialListEl.querySelectorAll('.official-cat-item').forEach(item => {
-        item.classList.toggle('active', item.getAttribute('data-group') === state.officialCategory);
-      });
-    }
+    // 重新渲染侧边栏（官方分类高亮 + 子目录过滤联动）
+    render();
 
     // 同步卡片流顶部 tabs 高亮
     const tabsBar = document.getElementById('official-tabs-bar');
@@ -143,10 +148,16 @@ window.QM.sidebar = (function() {
       });
     }
 
-    // 刷新卡片列表或拓扑
+    // 刷新卡片列表
     if (window.QM.cards) {
       window.QM.cards.renderUI();
     }
+
+    // 关键联动：在全宇宙拓扑视图下高亮该大类行星群并运镜聚焦！
+    if (window.QM.topology?.onOfficialCategoryChanged) {
+      window.QM.topology.onOfficialCategoryChanged(state.officialCategory);
+    }
+
     window.QM.state.emit('official-category-changed', state.officialCategory);
   }
 
