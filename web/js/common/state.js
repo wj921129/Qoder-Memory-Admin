@@ -76,14 +76,11 @@ window.QM.state = (function() {
     // 默认模式下强制锁定并切换至 IDE 官方记忆轨道
     if (targetMode === 'default') {
       state.track = 'ide';
-      const trkSel = document.getElementById('track-select');
-      if (trkSel) trkSel.value = 'ide';
+      window.QM.utils?.syncNavDropdown?.('track-dd', 'ide');
     }
 
-    const btnDefault = document.getElementById('btn-mode-default');
-    const btnPro = document.getElementById('btn-mode-pro');
-    if (btnDefault) btnDefault.classList.toggle('active', targetMode === 'default');
-    if (btnPro) btnPro.classList.toggle('active', targetMode === 'pro');
+    // 同步顶部模式悬浮下拉的当前值展示
+    window.QM.utils?.syncNavDropdown?.('mode-dd', targetMode);
 
     const hudModePill = document.getElementById('hud-mode-pill');
     const legendTip = document.querySelector('.legend-tip');
@@ -122,13 +119,12 @@ window.QM.state = (function() {
     state.viewMode = mode;
     document.body.classList.toggle('view-cards', mode === 'cards');
 
-    const btnGalaxy = document.getElementById('btn-mode-galaxy');
-    const btnCards = document.getElementById('btn-mode-cards');
+    // 同步顶部视图悬浮下拉的当前值展示
+    window.QM.utils?.syncNavDropdown?.('view-dd', mode);
+
     const galBox = document.getElementById('galaxy-container');
     const cardBox = document.getElementById('cards-container');
 
-    if (btnGalaxy) btnGalaxy.classList.toggle('active', mode === 'galaxy');
-    if (btnCards) btnCards.classList.toggle('active', mode === 'cards');
     if (galBox) galBox.classList.toggle('hidden', mode !== 'galaxy');
     if (cardBox) cardBox.classList.toggle('hidden', mode !== 'cards');
 

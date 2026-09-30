@@ -645,7 +645,9 @@ window.QM.topology = (function() {
         if (focusRelatedIds.has(node.id)) return false;
         return true;
       } else if (focusTarget.type === 'core') {
+        // 选中恒星：当前星系全部天体点亮（行星 + 卫星不再透明），星系外天体弱化
         if (node.type === 'domain' && node.parentStarId === focusTarget.id) return false;
+        if (node.type === 'unit' && (node.galaxyId === focusTarget.galaxyId || node.projectId === focusTarget.galaxyId)) return false;
         return true;
       }
     }
@@ -990,9 +992,10 @@ window.QM.topology = (function() {
       }
     });
 
-    // 1. 合批绘制普通层级连线
-    ctx.strokeStyle = 'rgba(51, 65, 85, 0.20)';
-    ctx.lineWidth = 1;
+    // 1. 合批绘制普通层级连线 (聚焦恒星时本星系层级关系线整体提亮，直观呈现星系内全部关系)
+    const isGalaxyFocus = Boolean(focusTarget && focusTarget.type === 'core');
+    ctx.strokeStyle = isGalaxyFocus ? 'rgba(56, 189, 248, 0.30)' : 'rgba(51, 65, 85, 0.20)';
+    ctx.lineWidth = isGalaxyFocus ? 1.2 : 1;
     ctx.stroke(normalPath);
 
     // 2. 焦点关联层级连线

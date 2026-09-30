@@ -93,11 +93,62 @@ window.QM.utils = (function() {
     });
   }
 
+  /**
+   * 渲染头部悬浮下拉的选项菜单 (支持分组标题行、尾部规模微标与空列表)
+   * items 元素：{ value, label, title?, badge? } 或 { group: '分组标题' }
+   */
+  function renderNavDropdown(id, items = []) {
+    const menu = document.querySelector(`#${id} .nav-dd-menu`);
+    if (!menu) return;
+    menu.innerHTML = items.map(it => {
+      if (it.group) return `<div class="nav-dd-group">${escapeHtml(it.group)}</div>`;
+      const titleAttr = it.title ? ` title="${escapeHtml(it.title)}"` : '';
+      const badgeHtml = it.badge ? `<span class="nav-dd-count">${escapeHtml(it.badge)}</span>` : '';
+      return `<button type="button" class="nav-dd-item" data-value="${escapeHtml(it.value)}" data-label="${escapeHtml(it.label)}"${titleAttr}>${escapeHtml(it.label)}${badgeHtml}</button>`;
+    }).join('');
+  }
+
+  /**
+   * 同步头部悬浮下拉的当前选中项与触发键展示文本
+   */
+  function syncNavDropdown(id, value, labelText) {
+    const dd = document.getElementById(id);
+    if (!dd) return;
+    let matchedLabel = '';
+    dd.querySelectorAll('.nav-dd-item').forEach(item => {
+      const isMatch = item.dataset.value === String(value);
+      item.classList.toggle('active', isMatch);
+      if (isMatch) matchedLabel = item.dataset.label || item.textContent.trim();
+    });
+    const labelEl = dd.querySelector('.nav-dd-label');
+    if (labelEl) labelEl.textContent = (labelText !== undefined) ? labelText : (matchedLabel || value || '');
+  }
+
+  /**
+   * 绑定头部悬浮下拉：点击选项后先同步当前值展示，再回调业务切换逻辑
+   * (展开/收起完全由 CSS :hover 驱动：移入展开、移出自动消失)
+   */
+  function setupNavDropdown(id, onSelect) {
+    const dd = document.getElementById(id);
+    if (!dd) return;
+    const menu = dd.querySelector('.nav-dd-menu');
+    if (!menu) return;
+    menu.addEventListener('click', e => {
+      const item = e.target.closest('.nav-dd-item');
+      if (!item || !menu.contains(item)) return;
+      syncNavDropdown(id, item.dataset.value);
+      if (onSelect) onSelect(item.dataset.value);
+    });
+  }
+
   return {
     escapeHtml,
     renderMarkdown,
     showToast,
-    confirmDialog
+    confirmDialog,
+    renderNavDropdown,
+    syncNavDropdown,
+    setupNavDropdown
   };
 })();
 

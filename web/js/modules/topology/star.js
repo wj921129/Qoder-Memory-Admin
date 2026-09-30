@@ -67,18 +67,18 @@ window.QM.star = (function() {
     const phase = node.coronaPhase || (animationTime * 0.001);
     const breath = 1.0 + Math.sin(phase) * 0.035;
 
-    // 1. 最外层宏观宇宙深空漫射光晕 (超柔和多重径向衰减，模拟真实深空恒星辐射场)
-    const outerHaloR = r * 3.2 * breath;
+    // 1. 最外层宏观宇宙深空漫射光晕 (超柔和多重径向衰减，大幅扩展光芒辐射范围，模拟真实深空恒星辐射场)
+    const outerHaloR = r * 4.5 * breath;
     const outerHalo = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, outerHaloR);
     if (isDimmed) {
       outerHalo.addColorStop(0, 'rgba(254, 240, 138, 0.08)');
       outerHalo.addColorStop(0.35, 'rgba(245, 158, 11, 0.03)');
       outerHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else {
-      outerHalo.addColorStop(0, 'rgba(254, 240, 138, 0.26)');
-      outerHalo.addColorStop(0.25, 'rgba(251, 191, 36, 0.16)');
-      outerHalo.addColorStop(0.55, 'rgba(245, 158, 11, 0.06)');
-      outerHalo.addColorStop(0.85, 'rgba(217, 119, 6, 0.015)');
+      outerHalo.addColorStop(0, 'rgba(254, 240, 138, 0.30)');
+      outerHalo.addColorStop(0.25, 'rgba(251, 191, 36, 0.18)');
+      outerHalo.addColorStop(0.55, 'rgba(245, 158, 11, 0.07)');
+      outerHalo.addColorStop(0.85, 'rgba(217, 119, 6, 0.02)');
       outerHalo.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
     ctx.beginPath();
@@ -87,7 +87,7 @@ window.QM.star = (function() {
     ctx.fill();
 
     // 2. 近核高能日冕层 (Medium Corona)
-    const midCoronaR = r * 1.65;
+    const midCoronaR = r * 1.85;
     const midCorona = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, midCoronaR);
     midCorona.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
     midCorona.addColorStop(0.3, 'rgba(254, 240, 138, 0.38)');
@@ -101,7 +101,7 @@ window.QM.star = (function() {
     // 3. 天文光学衍射微芒 (Diffraction Spikes - 4道极淡极细的望远镜十字星芒，极度柔和)
     if (!isDimmed) {
       const spikeRot = animationTime * 0.0015;
-      const spikeLen = r * 2.8;
+      const spikeLen = r * 3.6;
       const spikeWidth = 1.6;
       ctx.save();
       for (let i = 0; i < 4; i++) {

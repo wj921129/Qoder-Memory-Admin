@@ -190,8 +190,8 @@ window.QM.planet = (function() {
     const pCore = node.core || '#bae6fd';
 
     // 1. 最外层广域柔和漫射光晕 (Outer Atmospheric Halo)
-    // 模拟真实发光星体向四周深空散发的宏观辐射场，清晰可见
-    const outerHaloR = r * (isFocus ? 2.6 : (isHover ? 2.35 : 2.1));
+    // 模拟真实发光星体向四周深空散发的宏观辐射场，大幅扩展光芒辐射范围
+    const outerHaloR = r * (isFocus ? 3.4 : (isHover ? 3.1 : 2.8));
     const outerGrad = ctx.createRadialGradient(0, 0, r * 0.8, 0, 0, outerHaloR);
     if (isDimmed) {
       outerGrad.addColorStop(0, 'rgba(71, 85, 105, 0.20)');

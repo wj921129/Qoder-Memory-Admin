@@ -29,33 +29,29 @@ window.QM.app = (function() {
   }
 
   function populateEditionAndAccountSelect(ctx) {
-    const edSel = document.getElementById('edition-select');
-    const accSel = document.getElementById('account-select');
-    const trkSel = document.getElementById('track-select');
+    const { renderNavDropdown, syncNavDropdown } = window.QM.utils;
     const state = window.QM.state.state;
 
-    if (edSel && ctx.editions) {
-      edSel.innerHTML = ctx.editions.map(e => 
-        `<option value="${e.id}" ${e.id === state.edition ? 'selected' : ''}>${e.name}</option>`
-      ).join('');
+    if (ctx.editions) {
+      renderNavDropdown('edition-dd', ctx.editions.map(e => ({
+        value: e.id,
+        label: e.name,
+        title: e.name
+      })));
+      syncNavDropdown('edition-dd', state.edition);
     }
 
-    if (accSel) {
-      updateAccountOptions(ctx, state.edition, state.account);
-    }
-
-    if (trkSel) {
-      trkSel.value = state.track || 'ide';
-    }
+    updateAccountOptions(ctx, state.edition, state.account);
+    syncNavDropdown('track-dd', state.track || 'ide');
   }
 
   function updateAccountOptions(ctx, edition, currentAcc) {
-    const accSel = document.getElementById('account-select');
-    if (!accSel) return;
+    const { renderNavDropdown, syncNavDropdown } = window.QM.utils;
     const accList = (ctx.accounts && ctx.accounts[edition]) || [];
 
     if (accList.length === 0) {
-      accSel.innerHTML = '<option value="" disabled selected>暂无账号目录</option>';
+      renderNavDropdown('account-dd', []);
+      syncNavDropdown('account-dd', null, '暂无账号目录');
       window.QM.state.state.account = null;
       return;
     }
@@ -67,52 +63,55 @@ window.QM.app = (function() {
     }
     window.QM.state.state.account = defaultAcc;
 
-    accSel.innerHTML = accList.map(a => 
-      `<option value="${a.id}" ${a.id === defaultAcc ? 'selected' : ''}>👤 ${a.name}</option>`
-    ).join('');
+    renderNavDropdown('account-dd', accList.map(a => ({
+      value: a.id,
+      label: `👤 ${a.name}`,
+      title: `👤 ${a.name}`
+    })));
+    syncNavDropdown('account-dd', defaultAcc);
   }
 
   /**
-   * 填充顶部宏观星系导航下拉框 (直观呈现各星系规模)
+   * 填充顶部宏观星系导航悬浮下拉 (直观呈现各星系规模)
    */
   function populateGalaxySelect(galaxies, currentVal = 'all') {
-    const sel = document.getElementById('project-select');
-    if (!sel || !galaxies) return;
+    const { renderNavDropdown, syncNavDropdown } = window.QM.utils;
+    if (!galaxies) return;
 
-    const escapeHtml = window.QM.utils?.escapeHtml || (s => s);
     const totalAllCount = galaxies.reduce((acc, g) => acc + (g.count || 0), 0);
-
-    let html = `<option value="all" ${currentVal === 'all' ? 'selected' : ''}>🌌 宏观全宇宙视角 (全部 ${galaxies.length} 个星系 · 共 ${totalAllCount} 篇切片)</option>`;
+    const items = [{
+      value: 'all',
+      label: '🌌 宏观全宇宙',
+      title: `全部 ${galaxies.length} 个星系 · 共 ${totalAllCount} 篇切片`,
+      badge: `${galaxies.length} 星系 · ${totalAllCount} 切片`
+    }];
 
     // 区分全局智库星系与工程星系
     const globalGroup = galaxies.filter(p => p.scope === 'global');
     const projectGroup = galaxies.filter(p => p.scope !== 'global');
 
     if (globalGroup.length > 0) {
-      html += '<optgroup label="🌐 全局智库星系 (Global Scope)">';
-      globalGroup.forEach(g => {
-        const isSel = g.id === currentVal ? 'selected' : '';
-        const scaleBadge = `${g.count || 0} 篇切片`;
-        html += `<option value="${escapeHtml(g.id)}" ${isSel}>${escapeHtml(g.name)} [${scaleBadge}]</option>`;
-      });
-      html += '</optgroup>';
+      items.push({ group: '🌐 全局智库星系 (Global Scope)' });
+      globalGroup.forEach(g => items.push({
+        value: g.id,
+        label: g.name,
+        badge: `${g.count || 0} 篇切片`,
+        title: g.workspacePath ? `源码工程: ${g.workspacePath}` : `物理目录: ${g.realPath}`
+      }));
     }
 
     if (projectGroup.length > 0) {
-      html += '<optgroup label="🪐 本地工程星系 (Project Scope - 依规模排序)">';
-      projectGroup.forEach(g => {
-        const isSel = g.id === currentVal ? 'selected' : '';
-        const scaleBadge = `${g.count || 0} 篇切片`;
-        const titleTip = g.workspacePath ? `源码工程: ${g.workspacePath}` : `物理目录: ${g.realPath}`;
-        html += `<option value="${escapeHtml(g.id)}" title="${escapeHtml(titleTip)}" ${isSel}>${escapeHtml(g.name)} [${scaleBadge}]</option>`;
-      });
-      html += '</optgroup>';
+      items.push({ group: '🪐 本地工程星系 (Project Scope - 依规模排序)' });
+      projectGroup.forEach(g => items.push({
+        value: g.id,
+        label: g.name,
+        badge: `${g.count || 0} 篇切片`,
+        title: g.workspacePath ? `源码工程: ${g.workspacePath}` : `物理目录: ${g.realPath}`
+      }));
     }
 
-    sel.innerHTML = html;
-    if (currentVal && sel.value !== currentVal) {
-      sel.value = currentVal;
-    }
+    renderNavDropdown('galaxy-dd', items);
+    syncNavDropdown('galaxy-dd', currentVal);
   }
 
   function updateScopeBadge(scope, projId) {
@@ -324,81 +323,49 @@ window.QM.app = (function() {
     const { state: stateCenter, cards, topology, drawer, api, utils } = window.QM;
 
     // 0. 版本切换 (国内版 / 国际版)
-    const selEdition = document.getElementById('edition-select');
-    if (selEdition) {
-      selEdition.addEventListener('change', async e => {
-        const newEdition = e.target.value;
-        stateCenter.state.edition = newEdition;
-        if (serverContextCache) {
-          updateAccountOptions(serverContextCache, newEdition, null);
-        }
-        await loadUniverseData('all');
-        if (utils?.showToast) {
-          utils.showToast(`已切换至版本：${newEdition === 'cn' ? '🇨🇳 国内版 (Qoder CN)' : '🌐 国际版 (Qoder Global)'}`);
-        }
-      });
-    }
+    utils.setupNavDropdown('edition-dd', async newEdition => {
+      if (newEdition === stateCenter.state.edition) return;
+      stateCenter.state.edition = newEdition;
+      if (serverContextCache) {
+        updateAccountOptions(serverContextCache, newEdition, null);
+      }
+      await loadUniverseData('all');
+      utils.showToast(`已切换至版本：${newEdition === 'cn' ? '🇨🇳 国内版 (Qoder CN)' : '🌐 国际版 (Qoder Global)'}`);
+    });
 
     // 0.1 账号切换
-    const selAccount = document.getElementById('account-select');
-    if (selAccount) {
-      selAccount.addEventListener('change', async e => {
-        const newAcc = e.target.value;
-        stateCenter.state.account = newAcc;
-        await loadUniverseData('all');
-        if (utils?.showToast) {
-          utils.showToast(`已切换至账号：${newAcc}`);
-        }
-      });
-    }
+    utils.setupNavDropdown('account-dd', async newAcc => {
+      if (!newAcc || newAcc === stateCenter.state.account) return;
+      stateCenter.state.account = newAcc;
+      await loadUniverseData('all');
+      utils.showToast(`已切换至账号：${newAcc}`);
+    });
 
     // 0.2 记忆源轨道切换 (🌟 IDE 官方长期记忆 / 🤖 Agent 任务记忆 / 🌐 全量透视)
-    const selTrack = document.getElementById('track-select');
-    if (selTrack) {
-      selTrack.addEventListener('change', async e => {
-        const newTrack = e.target.value;
-        stateCenter.state.track = newTrack;
-        await loadUniverseData('all');
-      });
-    }
+    utils.setupNavDropdown('track-dd', async newTrack => {
+      if (newTrack === stateCenter.state.track) return;
+      stateCenter.state.track = newTrack;
+      await loadUniverseData('all');
+    });
 
     // 1. 运行模式切换 (默认模式 vs 专业模式)
-    const btnModeDefault = document.getElementById('btn-mode-default');
-    const btnModePro = document.getElementById('btn-mode-pro');
+    utils.setupNavDropdown('mode-dd', async newMode => {
+      if (stateCenter.state.appMode === newMode) return;
+      stateCenter.setAppMode(newMode);
+      if (cards?.renderUI) cards.renderUI();
+      if (newMode === 'default') {
+        await loadUniverseData('all');
+        utils.showToast('已切换至【默认模式】：仅显示 IDE 官方记忆');
+      } else {
+        utils.showToast('已切换至【专业模式】：已解锁全量功能与编辑修改');
+      }
+    });
 
-    if (btnModeDefault) {
-      btnModeDefault.addEventListener('click', async () => {
-        if (stateCenter.state.appMode !== 'default') {
-          stateCenter.setAppMode('default');
-          if (cards?.renderUI) cards.renderUI();
-          await loadUniverseData('all');
-          if (utils?.showToast) utils.showToast('已切换至【默认模式】：仅显示 IDE 官方记忆');
-        }
-      });
-    }
-
-    if (btnModePro) {
-      btnModePro.addEventListener('click', () => {
-        if (stateCenter.state.appMode !== 'pro') {
-          stateCenter.setAppMode('pro');
-          if (cards?.renderUI) cards.renderUI();
-          if (utils?.showToast) utils.showToast('已切换至【专业模式】：已解锁全量功能与编辑修改');
-        }
-      });
-    }
-
-    // 2. 视图切换
-    const btnModeGalaxy = document.getElementById('btn-mode-galaxy');
-    const btnModeCards = document.getElementById('btn-mode-cards');
-    if (btnModeGalaxy) {
-      btnModeGalaxy.addEventListener('click', () => {
-        stateCenter.setViewMode('galaxy');
-        if (topology?.resizeCanvas) topology.resizeCanvas();
-      });
-    }
-    if (btnModeCards) {
-      btnModeCards.addEventListener('click', () => stateCenter.setViewMode('cards'));
-    }
+    // 2. 视图切换 (🧠 拓扑 / 🗂️ 卡片)
+    utils.setupNavDropdown('view-dd', newMode => {
+      stateCenter.setViewMode(newMode);
+      if (newMode === 'galaxy' && topology?.resizeCanvas) topology.resizeCanvas();
+    });
 
     // 2.1 动态特效与静止节能切换
     const btnEffects = document.getElementById('btn-effects-toggle');
@@ -418,10 +385,7 @@ window.QM.app = (function() {
     }
 
     // 3. 星系视界导航器
-    const selGalaxy = document.getElementById('project-select');
-    if (selGalaxy) {
-      selGalaxy.addEventListener('change', e => switchGalaxy(e.target.value));
-    }
+    utils.setupNavDropdown('galaxy-dd', targetKey => switchGalaxy(targetKey));
 
     const btnRescan = document.getElementById('btn-rescan-projects');
     if (btnRescan) {

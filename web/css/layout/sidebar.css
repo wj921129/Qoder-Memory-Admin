@@ -40,11 +40,6 @@
   padding: 15px;
   border-bottom: 1px solid rgba(56, 189, 248, 0.14);
 }
-/** 物理子目录分区滚动高度限制 */
-.sidebar-section-subdirs {
-  max-height: 200px;
-  overflow-y: auto;
-}
 /** 关键词云标签自适应撑满 */
 .sidebar-section-tags {
   flex: 1;

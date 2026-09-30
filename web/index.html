@@ -15,52 +15,76 @@
         ⚡ <span class="brand-title-full">Qoder 工业级记忆拓扑管理台</span><span class="brand-title-short">Qoder Memory</span>
       </h1>
       <div class="project-selector-wrap">
+        <!-- 运行模式切换 (默认模式 / 专业模式) -->
+        <div class="nav-dd mode-dd" id="mode-dd" title="运行模式：默认模式仅展示官方记忆 / 专业模式解锁全量功能与编辑">
+          <button type="button" class="nav-dd-btn">
+            <span class="nav-dd-label" id="mode-dd-label">🏷️ 默认模式</span>
+            <span class="nav-dd-arrow">▾</span>
+          </button>
+          <div class="nav-dd-menu">
+            <button type="button" class="nav-dd-item" data-value="default" data-label="🏷️ 默认模式">🏷️ 默认模式</button>
+            <button type="button" class="nav-dd-item" data-value="pro" data-label="⚡ 专业模式">⚡ 专业模式</button>
+          </div>
+        </div>
+
         <!-- 版本选择 -->
-        <select id="edition-select" class="selector-dropdown edition-select" title="Qoder 客户端版本 (国内版 / 国际版)">
-          <option value="cn" selected>🇨🇳 国内版</option>
-          <option value="intl">🌐 国际版</option>
-        </select>
+        <div class="nav-dd edition-dd" id="edition-dd" title="Qoder 客户端版本 (国内版 / 国际版)">
+          <button type="button" class="nav-dd-btn">
+            <span class="nav-dd-label" id="edition-dd-label">🇨🇳 国内版</span>
+            <span class="nav-dd-arrow">▾</span>
+          </button>
+          <div class="nav-dd-menu">
+            <button type="button" class="nav-dd-item" data-value="cn" data-label="🇨🇳 国内版">🇨🇳 国内版</button>
+            <button type="button" class="nav-dd-item" data-value="intl" data-label="🌐 国际版">🌐 国际版</button>
+          </div>
+        </div>
 
         <!-- 账号选择 -->
-        <select id="account-select" class="selector-dropdown account-select" title="选择用户账号 (隔离独立记忆库)">
-          <option value="" disabled selected>正在载入账号...</option>
-        </select>
+        <div class="nav-dd account-dd" id="account-dd" title="选择用户账号 (隔离独立记忆库)">
+          <button type="button" class="nav-dd-btn">
+            <span class="nav-dd-label" id="account-dd-label">👤 正在载入账号...</span>
+            <span class="nav-dd-arrow">▾</span>
+          </button>
+          <div class="nav-dd-menu" id="account-dd-menu"></div>
+        </div>
 
         <!-- 记忆源轨道 (专业模式专属) -->
-        <select id="track-select" class="selector-dropdown track-select pro-only" title="切换记忆源：🌟 IDE 官方长期记忆 (对齐官方 4 大分类) / 🤖 Agent 任务自治记忆 (Auto-Memory) / 🌐 全量透视">
-          <option value="ide" selected>🌟 IDE 官方记忆</option>
-          <option value="agent">🤖 Agent 任务记忆</option>
-          <option value="all">🌐 全量透视</option>
-        </select>
+        <div class="nav-dd track-dd pro-only" id="track-dd" title="切换记忆源：🌟 IDE 官方长期记忆 (对齐官方 4 大分类) / 🤖 Agent 任务自治记忆 (Auto-Memory) / 🌐 全量透视">
+          <button type="button" class="nav-dd-btn">
+            <span class="nav-dd-label" id="track-dd-label">🌟 IDE 官方记忆</span>
+            <span class="nav-dd-arrow">▾</span>
+          </button>
+          <div class="nav-dd-menu">
+            <button type="button" class="nav-dd-item" data-value="ide" data-label="🌟 IDE 官方记忆">🌟 IDE 官方记忆</button>
+            <button type="button" class="nav-dd-item" data-value="agent" data-label="🤖 Agent 任务记忆">🤖 Agent 任务记忆</button>
+            <button type="button" class="nav-dd-item" data-value="all" data-label="🌐 全量透视">🌐 全量透视</button>
+          </div>
+        </div>
 
         <!-- 星系视界与定位导航器 (专业模式专属) -->
-        <select id="project-select" class="project-select pro-only" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
-          <option value="all" selected>🌌 宏观全宇宙 (All Galaxies)</option>
-        </select>
+        <div class="nav-dd galaxy-dd pro-only" id="galaxy-dd" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
+          <button type="button" class="nav-dd-btn">
+            <span class="nav-dd-label" id="galaxy-dd-label">🌌 宏观全宇宙</span>
+            <span class="nav-dd-arrow">▾</span>
+          </button>
+          <div class="nav-dd-menu" id="galaxy-dd-menu"></div>
+        </div>
         <button class="btn-icon-mini pro-only" id="btn-rescan-projects" title="重新扫描本地 Qoder 记忆文档 (无需重启服务)">🔄</button>
         <button class="btn-icon-mini pro-only" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
       </div>
     </div>
 
-    <!-- 运行模式分段切换器 -->
-    <div class="mode-switcher" id="mode-switcher">
-      <button class="mode-switcher-btn active" id="btn-mode-default" title="默认模式：仅展示官方记忆与单一删除维护">
-        <span>🏷️ 默认模式</span>
-      </button>
-      <button class="mode-switcher-btn" id="btn-mode-pro" title="专业模式：全量功能，支持星系穿梭、多轨道与高级编辑">
-        <span>⚡ 专业模式</span>
-      </button>
-    </div>
-
     <!-- 视图切换与渲染特效微型控件组 -->
     <div class="view-control-group">
-      <div class="view-switcher">
-        <button class="view-switcher-btn active" id="btn-mode-galaxy" title="切换至语义引力拓扑视界">
-          <span>🧠 拓扑</span>
+      <div class="nav-dd view-dd" id="view-dd" title="切换视图：🧠 语义引力拓扑 / 🗂️ 知识卡片流">
+        <button type="button" class="nav-dd-btn">
+          <span class="nav-dd-label" id="view-dd-label">🧠 拓扑</span>
+          <span class="nav-dd-arrow">▾</span>
         </button>
-        <button class="view-switcher-btn" id="btn-mode-cards" title="切换至知识卡片流列表">
-          <span>🗂️ 卡片</span>
-        </button>
+        <div class="nav-dd-menu">
+          <button type="button" class="nav-dd-item" data-value="galaxy" data-label="🧠 拓扑">🧠 拓扑</button>
+          <button type="button" class="nav-dd-item" data-value="cards" data-label="🗂️ 卡片">🗂️ 卡片</button>
+        </div>
       </div>
       <button class="btn-effects-toggle active" id="btn-effects-toggle" title="动态渲染特效：开启 60fps 轨道物理 / 点击切换至静止节能模式">
         <span id="effects-icon">✨</span>

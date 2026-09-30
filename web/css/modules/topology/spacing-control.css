@@ -19,12 +19,17 @@
   color: #cbd5e1;
   z-index: 25;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.2), 0 0 35px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25);
-  pointer-events: auto;
+  pointer-events: none;
   user-select: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+  /* 默认折叠态：未选中行星时整体隐藏，选中后平滑展开 */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(16px) scale(0.95);
+  transform-origin: 100% 100%;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.3s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
 }
 /** 间距控制器战术瞄准角标 (Top-Left & Bottom-Right) */
 .satellite-spacing-controller::before {
@@ -58,8 +63,13 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   border-color: rgba(56, 189, 248, 0.55);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 25px rgba(56, 189, 248, 0.32), 0 0 50px rgba(168, 85, 247, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.28);
 }
-/** 间距控制器选中激活态高亮 */
+/** 间距控制器选中行星后展开激活态 */
 .satellite-spacing-controller.is-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
   border-color: var(--color-neon-cyan);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.88), 0 0 22px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
