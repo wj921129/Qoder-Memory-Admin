@@ -96,7 +96,7 @@
   color: var(--text-main);
   cursor: pointer;
   margin-bottom: 7px;
-  background: linear-gradient(135deg, rgba(14, 22, 44, 0.40) 0%, rgba(26, 12, 48, 0.28) 100%);
+  background: linear-gradient(135deg, rgba(14, 22, 44, 0.24) 0%, rgba(26, 12, 48, 0.16) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid rgba(56, 189, 248, 0.18);
@@ -138,18 +138,20 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
-/** 细分子目录条目 */
+/** 细分子目录条目：每行独立外框与实体不透光底衬，彻底杜绝底层星系透光干扰 */
 .cat-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 11px;
-  border-radius: var(--rounded-sm);
+  border-radius: var(--rounded-md);
   font-size: 12px;
   color: #cbd5e1;
   cursor: pointer;
-  margin-bottom: 4px;
-  border: 1px solid transparent;
+  margin-bottom: 5px;
+  background: var(--surface-opaque);
+  border: 1px solid var(--surface-opaque-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition: var(--transition-smooth);
   max-width: 100%;
   box-sizing: border-box;
@@ -164,19 +166,22 @@
   margin-right: 8px;
 }
 /** 细分子目录悬停 */
-.cat-item:hover {
-  background: rgba(28, 42, 70, 0.65);
-  border-color: rgba(56, 189, 248, 0.25);
+.cat-item:hover,
+.cat-item.surface-opaque:hover {
+  background: var(--surface-opaque-elevated) !important;
+  border-color: var(--color-neon-cyan);
   color: #fff;
   transform: translateX(2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.25);
 }
 /** 细分子目录选中激活态 */
-.cat-item.active {
-  background: rgba(2, 132, 199, 0.25);
+.cat-item.active,
+.cat-item.surface-opaque.active {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.4) 0%, #0c1a34 100%) !important;
   color: var(--color-neon-cyan);
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-color: var(--color-neon-cyan);
   font-weight: 600;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 /** 细分子目录统计微标 */
 .cat-count {
@@ -199,7 +204,7 @@
 .tag-pill {
   font-size: 11px;
   padding: 4px 10px;
-  background: linear-gradient(135deg, rgba(14, 22, 44, 0.42) 0%, rgba(26, 12, 48, 0.30) 100%);
+  background: linear-gradient(135deg, rgba(14, 22, 44, 0.26) 0%, rgba(26, 12, 48, 0.16) 100%);
   backdrop-filter: var(--glass-blur-xs);
   -webkit-backdrop-filter: var(--glass-blur-xs);
   border: 1px solid rgba(56, 189, 248, 0.2);

@@ -7,17 +7,23 @@
   --bg-main: #050811;
   --bg-canvas: #04060c;
 
-  /* ========== 精密光学毛玻璃系统 (Precision Optical Glass) ========== */
-  /** 统一面板毛玻璃封装：顶部导航 / 左侧边栏 / 主内容抽屉共用同一玻璃基面 */
-  --glass-bg-panel: linear-gradient(180deg, rgba(7, 13, 30, 0.52) 0%, rgba(18, 8, 34, 0.45) 100%);
-  --glass-bg-card: linear-gradient(135deg, rgba(10, 18, 38, 0.36) 0%, rgba(20, 10, 42, 0.26) 100%);
-  --glass-bg-dropdown: linear-gradient(160deg, rgba(15, 24, 48, 0.86) 0%, rgba(10, 15, 32, 0.90) 100%);
-  --glass-bg-modal: linear-gradient(165deg, rgba(16, 26, 50, 0.68) 0%, rgba(10, 15, 32, 0.78) 100%);
-  --glass-blur-xs: blur(10px) saturate(180%) contrast(104%);
-  --glass-blur-sm: blur(18px) saturate(200%) contrast(106%);
-  --glass-blur-md: blur(28px) saturate(220%) contrast(108%);
-  --glass-blur-lg: blur(40px) saturate(235%) contrast(110%);
-  --glass-blur-xl: blur(52px) saturate(250%) contrast(112%);
+  /* ========== 精密光学毛玻璃系统 (Precision Optical Glass - 激进高透光) ========== */
+  /** 统一面板毛玻璃封装：顶部导航 / 左侧边栏 / 主内容抽屉共用高透光玻璃基面 */
+  --glass-bg-panel: linear-gradient(180deg, rgba(7, 13, 30, 0.24) 0%, rgba(18, 8, 34, 0.16) 100%);
+  --glass-bg-card: linear-gradient(135deg, rgba(10, 18, 38, 0.16) 0%, rgba(20, 10, 42, 0.08) 100%);
+  --glass-bg-dropdown: linear-gradient(160deg, rgba(14, 22, 44, 0.68) 0%, rgba(8, 12, 26, 0.72) 100%);
+  --glass-bg-modal: linear-gradient(165deg, rgba(14, 22, 44, 0.48) 0%, rgba(8, 12, 26, 0.58) 100%);
+  --glass-blur-xs: blur(12px) saturate(200%) contrast(106%);
+  --glass-blur-sm: blur(20px) saturate(220%) contrast(108%);
+  --glass-blur-md: blur(32px) saturate(240%) contrast(110%);
+  --glass-blur-lg: blur(48px) saturate(260%) contrast(112%);
+  --glass-blur-xl: blur(64px) saturate(280%) contrast(115%);
+
+  /* ========== 全局通用不透光实体表面体系 (Universal Opaque Surface) ========== */
+  /** 全局复用不透光底衬：彻底遮蔽底层画布/星系透光，提供稳定高清晰度的视觉对比度 */
+  --surface-opaque: #090e1c;
+  --surface-opaque-elevated: #121c35;
+  --surface-opaque-border: rgba(56, 189, 248, 0.22);
 
   /* ========== 聚焦导轨体系 ========== */
   --border-focus: #38bdf8;

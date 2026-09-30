@@ -287,9 +287,9 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(2, 5, 14, 0.55);
-  backdrop-filter: blur(20px) saturate(150%);
-  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  background: rgba(2, 5, 14, 0.42);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -577,3 +577,24 @@
   border-top: none;
   padding-top: 0;
 }
+
+/* ========== 全局通用不透光实体表面体系 (Universal Opaque Surface System) ========== */
+/**
+ * 全局复用不透光样式类：提供高对比度纯净实体底衬，彻底消除背景画布/星系穿透，
+ * 自带科技微光外框与立体层次，支持全局任何卡片、列表项、模态框或控制面板复用。
+ * 严禁在局部随意硬编码内联样式，统一通过此规范全局复用。
+ */
+.surface-opaque,
+.glass-opaque {
+  background: var(--surface-opaque) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--surface-opaque-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.surface-opaque:hover,
+.glass-opaque:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+

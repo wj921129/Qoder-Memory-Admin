@@ -21,7 +21,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(180deg, rgba(8, 16, 36, 0.44) 0%, rgba(18, 9, 36, 0.32) 100%);
+  background: linear-gradient(180deg, rgba(8, 16, 36, 0.22) 0%, rgba(18, 9, 36, 0.14) 100%);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
   border-bottom: 1px solid rgba(56, 189, 248, 0.22);

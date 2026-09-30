@@ -55,7 +55,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(8, 14, 30, 0.48);
+  background: rgba(8, 14, 30, 0.22);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
   box-sizing: border-box;

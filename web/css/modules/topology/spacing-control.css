@@ -9,7 +9,7 @@
   bottom: 18px;
   right: 18px;
   min-width: 296px;
-  background: linear-gradient(135deg, rgba(8, 16, 36, 0.44) 0%, rgba(20, 10, 42, 0.32) 100%);
+  background: linear-gradient(135deg, rgba(8, 16, 36, 0.22) 0%, rgba(20, 10, 42, 0.14) 100%);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
   border: 1px solid rgba(56, 189, 248, 0.35);

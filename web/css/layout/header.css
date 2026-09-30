@@ -67,7 +67,7 @@ header::after {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, rgba(11, 18, 38, 0.42) 0%, rgba(22, 10, 42, 0.30) 100%);
+  background: linear-gradient(135deg, rgba(11, 18, 38, 0.22) 0%, rgba(22, 10, 42, 0.14) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid rgba(56, 189, 248, 0.25);
