@@ -111,50 +111,48 @@ header {
   padding: 4px 8px;
 }
 
-/* 徽章收敛与文本防挤压 */
-#stat-badge {
-  flex-shrink: 1;
-  min-width: 0;
-}
-#stat-info {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#server-badge {
-  flex-shrink: 0;
-}
-
-/* 运行模式单一胶囊切换开关 */
-.mode-toggle-btn {
+/* 模式切换分段开关 (默认模式 vs 专业模式) */
+.mode-switcher {
+  display: flex;
   background: #0f172a;
   border: 1px solid #334155;
-  color: #94a3b8;
-  padding: 5px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
   flex-shrink: 0;
 }
-.mode-toggle-btn:hover {
-  border-color: #475569;
-  color: #f1f5f9;
+.mode-switcher-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
 }
-.mode-toggle-btn.is-edit {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.6);
-  color: #fbbf24;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
+.mode-switcher-btn:hover {
+  color: #fff;
 }
-.mode-toggle-btn.is-edit:hover {
-  background: rgba(245, 158, 11, 0.2);
-  border-color: #f59e0b;
+.mode-switcher-btn.active {
+  background: #0284c7;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.mode-switcher-btn#btn-mode-pro.active {
+  background: #d97706;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(217, 119, 6, 0.4);
+}
+
+/* 默认模式下严格隐藏专业专属控件与后续编辑操作 */
+body.mode-default .pro-only {
+  display: none !important;
 }
 
 /* 视图切换分段器 */
@@ -298,11 +296,8 @@ body.is-readonly #save-all-btn {
   }
 }
 
-/* 1240px 及以下：隐藏统计 Badge（侧边栏已有完整数据）、进一步收窄搜索与下拉 */
+/* 1240px 及以下：收窄星系下拉与搜索输入框 */
 @media (max-width: 1240px) {
-  #stat-badge {
-    display: none !important;
-  }
   .project-select {
     max-width: 130px;
   }
@@ -311,17 +306,8 @@ body.is-readonly #save-all-btn {
   }
 }
 
-/* 1060px 及以下：隐藏作用域 Badge，本地直连精简为仅小圆点 */
+/* 1060px 及以下：进一步紧凑布局 */
 @media (max-width: 1060px) {
-  #scope-badge {
-    display: none !important;
-  }
-  #server-status-text {
-    display: none !important;
-  }
-  #server-badge {
-    padding: 3px 6px;
-  }
   .project-select {
     max-width: 110px;
   }
@@ -330,11 +316,8 @@ body.is-readonly #save-all-btn {
   }
 }
 
-/* 900px 及以下：彻底隐藏辅助直连 Badge，极限压缩 */
+/* 900px 及以下：极限压缩 */
 @media (max-width: 900px) {
-  #server-badge {
-    display: none !important;
-  }
   .toolbar .search-input {
     max-width: 100px;
     font-size: 11px;

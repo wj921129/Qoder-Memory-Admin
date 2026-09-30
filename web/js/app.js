@@ -11,9 +11,9 @@ window.QM.app = (function() {
       window.QM.topology.init();
     }
 
-    // 2. 默认以只读安全模式启动
-    if (window.QM.state?.setEditMode) {
-      window.QM.state.setEditMode(false);
+    // 2. 初始化应用运行模式 (默认模式 / 专业模式)
+    if (window.QM.state?.setAppMode) {
+      window.QM.state.setAppMode(window.QM.state.state.appMode || 'default');
     }
 
     // 3. 初始化特效模式设置 (从持久化缓存静默生效)
@@ -116,22 +116,8 @@ window.QM.app = (function() {
   }
 
   function updateScopeBadge(scope, projId) {
-    const scopeBadge = document.getElementById('scope-badge');
-    const scopeText = document.getElementById('scope-badge-text');
     const isGlobal = scope === 'global';
     const isAll = !projId || projId === 'all';
-
-    if (scopeBadge && scopeText) {
-      if (isAll) {
-        scopeBadge.className = 'badge-scope global';
-        scopeText.innerText = '🌌 宏观全宇宙';
-        scopeBadge.title = '宏观宇宙全貌视角：全宇宙多星系统一拓扑';
-      } else {
-        scopeBadge.className = isGlobal ? 'badge-scope global' : 'badge-scope project';
-        scopeText.innerText = isGlobal ? '🌐 全局星系' : '📁 工程星系';
-        scopeBadge.title = `当前聚焦星系：${projId}`;
-      }
-    }
 
     const drawerScopeSub = document.getElementById('drawer-scope-sub');
     if (drawerScopeSub) {
@@ -144,7 +130,6 @@ window.QM.app = (function() {
   let serverContextCache = null;
 
   async function connectServer() {
-    const sBadge = document.getElementById('server-badge');
     const { api, state: stateCenter, utils, cards, topology } = window.QM;
     const state = stateCenter.state;
 
@@ -152,7 +137,6 @@ window.QM.app = (function() {
 
     if (sStatus && sStatus.ok) {
       state.isServerMode = true;
-      if (sBadge) sBadge.style.display = 'inline-flex';
 
       // 1. 获取国内外版本与账号上下文
       const ctx = await api.getContext();
@@ -167,7 +151,6 @@ window.QM.app = (function() {
       await loadUniverseData('all');
     } else {
       state.isServerMode = false;
-      if (sBadge) sBadge.style.display = 'none';
       if (utils?.showToast) {
         utils.showToast('提示：当前为离线模式，双击 start.bat 可启动本地服务实现免软链接物理直读直写');
       }
@@ -283,9 +266,9 @@ window.QM.app = (function() {
     const { api, state: stateCenter, utils } = window.QM;
     const s = stateCenter.state;
 
-    if (!s.isEditMode) {
+    if (s.appMode !== 'pro') {
       if (utils?.showToast) {
-        utils.showToast('当前处于只读模式。请先在顶部工具栏切换至「✏️ 编辑模式」后再同步落盘！');
+        utils.showToast('当前处于默认模式。请先在顶部导航栏切换至「⚡ 专业模式」后再同步落盘！');
       }
       return;
     }
@@ -379,12 +362,28 @@ window.QM.app = (function() {
       });
     }
 
-    // 1. 运行模式切换
-    const btnAppMode = document.getElementById('btn-app-mode');
-    if (btnAppMode) {
-      btnAppMode.addEventListener('click', () => {
-        stateCenter.setEditMode(!stateCenter.state.isEditMode);
-        if (cards?.renderUI) cards.renderUI();
+    // 1. 运行模式切换 (默认模式 vs 专业模式)
+    const btnModeDefault = document.getElementById('btn-mode-default');
+    const btnModePro = document.getElementById('btn-mode-pro');
+
+    if (btnModeDefault) {
+      btnModeDefault.addEventListener('click', async () => {
+        if (stateCenter.state.appMode !== 'default') {
+          stateCenter.setAppMode('default');
+          if (cards?.renderUI) cards.renderUI();
+          await loadUniverseData('all');
+          if (utils?.showToast) utils.showToast('已切换至【默认模式】：仅显示 IDE 官方记忆');
+        }
+      });
+    }
+
+    if (btnModePro) {
+      btnModePro.addEventListener('click', () => {
+        if (stateCenter.state.appMode !== 'pro') {
+          stateCenter.setAppMode('pro');
+          if (cards?.renderUI) cards.renderUI();
+          if (utils?.showToast) utils.showToast('已切换至【专业模式】：已解锁全量功能与编辑修改');
+        }
       });
     }
 

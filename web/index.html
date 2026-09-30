@@ -27,36 +27,31 @@
         </select>
 
         <!-- 3. 记忆源轨道 -->
-        <select id="track-select" class="selector-dropdown track-select" title="切换记忆源：🌟 IDE 官方长期记忆 (对齐官方 4 大分类) / 🤖 Agent 任务自治记忆 (Auto-Memory) / 🌐 全量透视">
+        <!-- 3. 记忆源轨道 (专业模式专属) -->
+        <select id="track-select" class="selector-dropdown track-select pro-only" title="切换记忆源：🌟 IDE 官方长期记忆 (对齐官方 4 大分类) / 🤖 Agent 任务自治记忆 (Auto-Memory) / 🌐 全量透视">
           <option value="ide" selected>🌟 IDE 官方记忆</option>
           <option value="agent">🤖 Agent 任务记忆</option>
           <option value="all">🌐 全量透视</option>
         </select>
 
-        <!-- 4. 星系视界与定位导航器 (宏观全宇宙 vs 定向星系穿梭) -->
-        <select id="project-select" class="project-select" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
+        <!-- 4. 星系视界与定位导航器 (专业模式专属) -->
+        <select id="project-select" class="project-select pro-only" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
           <option value="all" selected>🌌 宏观全宇宙 (All Galaxies)</option>
         </select>
-        <button class="btn-icon-mini" id="btn-rescan-projects" title="重新扫描本地 Qoder 记忆文档 (无需重启服务)">🔄</button>
-        <button class="btn-icon-mini" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
-      </div>
-      <div class="badge-scope project" id="scope-badge" title="当前记忆库的作用范围 (Scope)">
-        <span id="scope-badge-text">📁 工程</span>
-      </div>
-      <div class="badge" id="stat-badge">
-        <span class="dot" id="dirty-dot"></span>
-        <span id="stat-info">正在连接记忆拓扑...</span>
-      </div>
-      <div class="badge" id="server-badge" style="display:none;" title="Node 本地服务已激活 · 支持本地自愈直读直写与 MEMORY.md 索引同步">
-        <span class="dot" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span>
-        <span id="server-status-text" style="color:#6ee7b7; font-weight:500;">本地直连</span>
+        <button class="btn-icon-mini pro-only" id="btn-rescan-projects" title="重新扫描本地 Qoder 记忆文档 (无需重启服务)">🔄</button>
+        <button class="btn-icon-mini pro-only" id="btn-open-folder" title="在系统资源管理器中打开当前记忆库目录">📂</button>
       </div>
     </div>
 
-    <!-- 运行模式切换：单一胶囊开关 -->
-    <button class="mode-toggle-btn" id="btn-app-mode" title="当前处于只读保护状态 · 点击切换至编辑模式">
-      <span>🔒 只读模式</span>
-    </button>
+    <!-- 模式切换：默认模式 vs 专业模式 -->
+    <div class="mode-switcher" id="mode-switcher">
+      <button class="mode-switcher-btn active" id="btn-mode-default" title="默认模式：仅展示官方记忆与单一删除维护">
+        <span>🏷️ 默认模式</span>
+      </button>
+      <button class="mode-switcher-btn" id="btn-mode-pro" title="专业模式：全量功能，支持星系穿梭、多轨道与高级编辑">
+        <span>⚡ 专业模式</span>
+      </button>
+    </div>
 
     <!-- 视图切换与渲染特效紧凑控件组 -->
     <div class="view-control-group">
@@ -76,11 +71,11 @@
     <!-- 精简工具栏：仅常驻核心业务操作 -->
     <div class="toolbar">
       <input type="text" id="search-box" class="search-input" placeholder="检索认知锚点 / 关键词...">
-      <button class="btn btn-primary" id="new-card-btn" title="新建记忆知识切片">+ 新建</button>
-      <button class="btn" id="save-all-btn" title="保存修改至磁盘 (Ctrl+S)">💾 保存</button>
+      <button class="btn btn-primary pro-only" id="new-card-btn" title="新建记忆知识切片">+ 新建</button>
+      <button class="btn pro-only" id="save-all-btn" title="保存修改至磁盘 (Ctrl+S)">💾 保存</button>
       
-      <!-- 更多辅助工具收敛菜单 -->
-      <div class="dropdown" id="more-dropdown">
+      <!-- 更多辅助工具收敛菜单 (专业模式专属) -->
+      <div class="dropdown pro-only" id="more-dropdown">
         <button class="btn btn-subtle btn-icon" id="more-menu-btn" title="更多辅助工具">⋯</button>
         <div class="dropdown-menu" id="more-menu">
           <button class="dropdown-item" id="menu-toggle-effects">✨ 动态特效切换 (开/关)</button>
@@ -127,7 +122,7 @@
       <div id="galaxy-container">
         <canvas id="galaxy-canvas"></canvas>
         <div class="galaxy-hud" id="galaxy-hud">
-          <span class="hud-mode-pill" id="hud-mode-pill">🔒 只读模式</span>
+          <span class="hud-mode-pill default" id="hud-mode-pill">🏷️ 默认模式</span>
           <span class="hud-focus-indicator" id="hud-indicator"></span>
           <span id="hud-text">🌌 认知引力网络待命 · 全局拓扑就绪</span>
         </div>

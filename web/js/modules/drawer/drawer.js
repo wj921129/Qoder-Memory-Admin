@@ -125,7 +125,9 @@ window.QM.drawer = (function() {
       deleteBtn.innerText = '🗑️ 删除此记忆';
     }
 
-    if (isEditMode) {
+    const isPro = window.QM.state.state.appMode === 'pro';
+
+    if (isPro) {
       if (titleEl) titleEl.innerText = "编辑记忆卡片";
       if (noticeEl) noticeEl.style.display = 'none';
       if (saveBtn) saveBtn.style.display = 'inline-block';
@@ -134,7 +136,7 @@ window.QM.drawer = (function() {
       setDrawerInputsDisabled(false);
     } else {
       if (titleEl) titleEl.innerText = "查阅记忆切片";
-      if (noticeEl) noticeEl.style.display = 'flex';
+      if (noticeEl) noticeEl.style.display = 'none';
       if (saveBtn) saveBtn.style.display = 'none';
       if (cancelBtn) cancelBtn.innerText = "关闭";
       if (drawer) drawer.classList.add('is-readonly');
@@ -347,9 +349,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   function openNewCardDrawer() {
     bindDrawerStaticEvents();
     currentActiveItemId = null;
-    const { isEditMode, memories, currentProject, currentProjectScope } = window.QM.state.state;
-    if (!isEditMode) {
-      window.QM.utils?.showToast('当前处于只读模式。请先在顶部工具栏切换至「✏️ 编辑模式」后再新建记忆！');
+    const { appMode, memories, currentProject, currentProjectScope } = window.QM.state.state;
+    if (appMode !== 'pro') {
+      window.QM.utils?.showToast('当前处于默认模式。请先在顶部导航栏切换至「⚡ 专业模式」后再新建记忆！');
       return;
     }
 
@@ -418,8 +420,8 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
 
   function saveCurrentDrawer() {
     const state = window.QM.state.state;
-    if (!state.isEditMode) {
-      window.QM.utils?.showToast('当前处于只读模式，无法保存修改！');
+    if (state.appMode !== 'pro') {
+      window.QM.utils?.showToast('当前处于默认模式，无法保存修改！');
       return;
     }
 
@@ -529,6 +531,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         }
 
         window.QM.cards?.renderUI();
+        if (window.QM.topology?.buildGalaxyGraph) {
+          window.QM.topology.buildGalaxyGraph();
+        }
         window.QM.utils?.showToast(`🗑️ 已从磁盘彻底删除 ${item.filename} 并刷新索引！`);
         return;
       } catch (err) {
@@ -546,6 +551,9 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
       window.QM.topology.hideCelestialCard();
     }
     window.QM.cards?.renderUI();
+    if (window.QM.topology?.buildGalaxyGraph) {
+      window.QM.topology.buildGalaxyGraph();
+    }
     window.QM.utils?.showToast(`已删除记忆条目 (离线态)`);
   }
 

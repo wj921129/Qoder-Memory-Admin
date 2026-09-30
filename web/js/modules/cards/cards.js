@@ -82,7 +82,7 @@ window.QM.cards = (function() {
   }
 
   function renderCardsGrid(filtered) {
-    const { isEditMode } = window.QM.state.state;
+    const isPro = window.QM.state.state.appMode === 'pro';
     const { CATEGORY_MAP, TYPE_MAP } = window.QM.constants;
     const { escapeHtml, renderMarkdown } = window.QM.utils;
 
@@ -145,7 +145,7 @@ window.QM.cards = (function() {
           <div class="card-footer">
             <div class="card-file" title="${escapeHtml(m.filename)}">📄 ${escapeHtml(m.filename)}</div>
             <div class="card-actions">
-              ${isEditMode ? `
+              ${isPro ? `
                 <button class="btn btn-subtle btn-sm" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">✏️ 编辑</button>
               ` : `
                 <button class="btn btn-subtle btn-sm" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">👁️ 查阅</button>
@@ -174,9 +174,6 @@ window.QM.cards = (function() {
   function renderUI() {
     const { memories, currentDirName, viewMode } = window.QM.state.state;
     const filtered = getFilteredMemories();
-
-    const statInfoEl = document.getElementById('stat-info');
-    if (statInfoEl) statInfoEl.innerText = `${memories.length} 记忆切片`;
 
     const viewStatsEl = document.getElementById('view-stats');
     if (viewStatsEl) viewStatsEl.innerText = `显示 ${filtered.length} / ${memories.length} 条记忆`;

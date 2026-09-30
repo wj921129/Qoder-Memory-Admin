@@ -30,7 +30,8 @@ window.QM.state = (function() {
     })(),
     availableProjects: [],
     isServerMode: false,
-    isEditMode: false,
+    appMode: localStorage.getItem('qm_app_mode') || 'default',
+    get isEditMode() { return this.appMode === 'pro'; },
     isDirty: false,
     activeCategory: 'all',
     activeTag: null,
@@ -62,51 +63,59 @@ window.QM.state = (function() {
 
   function setDirty(val) {
     state.isDirty = !!val;
-    const dot = document.getElementById('dirty-dot');
-    if (dot) dot.classList.toggle('dirty', state.isDirty);
     const saveBtn = document.getElementById('save-all-btn');
     if (saveBtn) saveBtn.classList.toggle('dirty', state.isDirty);
     emit('dirty-changed', state.isDirty);
   }
 
-  function setEditMode(toEdit) {
-    state.isEditMode = !!toEdit;
-    const btnAppMode = document.getElementById('btn-app-mode');
+  function setAppMode(mode) {
+    const targetMode = (mode === 'pro') ? 'pro' : 'default';
+    state.appMode = targetMode;
+    localStorage.setItem('qm_app_mode', targetMode);
+
+    // 默认模式下强制锁定并切换至 IDE 官方记忆轨道
+    if (targetMode === 'default') {
+      state.track = 'ide';
+      const trkSel = document.getElementById('track-select');
+      if (trkSel) trkSel.value = 'ide';
+    }
+
+    const btnDefault = document.getElementById('btn-mode-default');
+    const btnPro = document.getElementById('btn-mode-pro');
+    if (btnDefault) btnDefault.classList.toggle('active', targetMode === 'default');
+    if (btnPro) btnPro.classList.toggle('active', targetMode === 'pro');
+
     const hudModePill = document.getElementById('hud-mode-pill');
     const legendTip = document.querySelector('.legend-tip');
-    const toastFn = window.QM?.utils?.showToast;
 
-    if (btnAppMode) {
-      btnAppMode.classList.toggle('is-edit', state.isEditMode);
-      btnAppMode.innerHTML = state.isEditMode ? '<span>✏️ 编辑模式</span>' : '<span>🔒 只读模式</span>';
-      btnAppMode.title = state.isEditMode ? '当前处于编辑模式 · 点击切换回只读模式' : '当前处于只读保护状态 · 点击切换至编辑模式';
-    }
-
-    if (state.isEditMode) {
-      document.body.classList.remove('is-readonly');
-      document.body.classList.add('is-edit-mode');
+    if (targetMode === 'pro') {
+      document.body.classList.remove('mode-default', 'is-readonly');
+      document.body.classList.add('mode-pro', 'is-edit-mode');
       if (hudModePill) {
-        hudModePill.innerText = "✏️ 编辑模式";
-        hudModePill.className = "hud-mode-pill edit";
+        hudModePill.innerText = "⚡ 专业模式";
+        hudModePill.className = "hud-mode-pill pro edit";
       }
       if (legendTip) {
-        legendTip.innerHTML = "💡 [编辑模式] 拖拽天体可重塑引力轨道并牵引关联 · 点击卡片可修改内容 · 允许新建/删除与落盘";
+        legendTip.innerHTML = "💡 [专业模式] 拖拽天体可重塑引力轨道 · 点击卡片修改与保存 · 开启全量能力与星系穿梭";
       }
-      if (toastFn) toastFn("已切换至【编辑模式】：已解锁记忆内容编辑与落盘同步");
     } else {
-      document.body.classList.remove('is-edit-mode');
-      document.body.classList.add('is-readonly');
+      document.body.classList.remove('mode-pro', 'is-edit-mode');
+      document.body.classList.add('mode-default', 'is-readonly');
       if (hudModePill) {
-        hudModePill.innerText = "🔒 只读模式";
-        hudModePill.className = "hud-mode-pill";
+        hudModePill.innerText = "🏷️ 默认模式";
+        hudModePill.className = "hud-mode-pill default";
       }
       if (legendTip) {
-        legendTip.innerHTML = "💡 [只读模式] 恒星之外的所有天体均可自由拖拽探索 · 知识卡片处于只读保护状态";
+        legendTip.innerHTML = "💡 [默认模式] 仅展示官方记忆规约 · 滚轮以鼠标为中心缩放 · 点击卡片查阅与维护";
       }
-      if (toastFn) toastFn("已切换至【只读模式】：知识库内容已锁定保护");
     }
 
-    emit('mode-changed', state.isEditMode);
+    emit('app-mode-changed', targetMode);
+    emit('mode-changed', targetMode === 'pro');
+  }
+
+  function setEditMode(toEdit) {
+    setAppMode(toEdit ? 'pro' : 'default');
   }
 
   function setViewMode(mode) {
@@ -224,6 +233,7 @@ window.QM.state = (function() {
     on,
     emit,
     setDirty,
+    setAppMode,
     setEditMode,
     setViewMode,
     setEffectsMode,
