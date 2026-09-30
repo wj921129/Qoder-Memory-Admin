@@ -28,6 +28,7 @@
 ### 技能与质量守卫约束
 
 - **严禁触发 `front-code-guard`**：修改本仓库代码时，全场景严禁触发 `front-code-guard` 技能及审查工作流。
+- **强制最高优激活 `ponytail`**：凡涉及任何代码阅读、探查、编写、修改、重构或 Bug 排查，**必须无条件优先遵循并严格执行 `ponytail` 技能**（`.agents/skills/ponytail/SKILL.md`）。严格执行“最小代码梯子（The ladder）”原则：YAGNI > 复用现有 > 原生 API > 依赖库 > 极简一行。严禁过度设计与无意义抽象，优先级压倒常规设计模式与繁复封装。
 
 ---
 
