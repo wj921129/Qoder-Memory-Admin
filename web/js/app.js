@@ -243,6 +243,8 @@ window.QM.app = (function() {
       s.currentProject = 'all';
       updateScopeBadge('all', 'all');
       if (topology?.fitGalaxyView) topology.fitGalaxyView();
+      if (sidebar?.render) sidebar.render();
+      if (cards?.renderUI) cards.renderUI();
       if (utils?.showToast) {
         utils.showToast('🌌 摄像机已拉远至宏观全宇宙视野');
       }
@@ -252,6 +254,8 @@ window.QM.app = (function() {
       const targetGalaxy = (s.galaxies || []).find(g => g.id === targetKey);
       updateScopeBadge(targetGalaxy?.scope || 'project', targetKey);
       if (topology?.focusOnGalaxy) topology.focusOnGalaxy(targetKey);
+      if (sidebar?.render) sidebar.render();
+      if (cards?.renderUI) cards.renderUI();
       if (utils?.showToast && targetGalaxy) {
         utils.showToast(`🚀 镜头已穿梭聚焦至星系：【${targetGalaxy.rawName || targetGalaxy.name}】(${targetGalaxy.count || 0} 篇切片)`);
       }

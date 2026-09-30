@@ -37,7 +37,7 @@ window.QM.satellite = (function() {
     const semiMinor = semiMajor * Math.sqrt(1 - eccentricity * eccentricity);
     const speedMultiplier = Math.max(1.15, 2.4 - myTier * 0.3) + Math.random() * 0.15;
     const omega = (parentOmega || 0.0006) * speedMultiplier;
-    const inclination = (Math.random() - 0.5) * 0.08;
+    const inclination = 0; // 俯视平角，倾角归零
 
     const goldenOffset = myTier * (0.61803398875 * Math.PI * 2);
     const initialTheta = ((myIndexInTier / Math.max(myTierCount, 1)) * Math.PI * 2) + goldenOffset;
@@ -79,27 +79,17 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 精确从 2D 投影屏幕坐标反解卫星在母行星坐标系下的三维相对开普勒坐标 (闭式解析解)
-   * 严格保障松手后下一帧正向透视投影坐标与 drop 坐标 100% 吻合，0 位移跳跃
+   * 从 2D 投影屏幕坐标反解卫星在母行星坐标系下的相对坐标 (俯视正投影解析解)
    */
-  function solveSatelliteCoordsFromScreen(dropX, dropY, parentNode, inclination = 0, SYSTEM_TILT_X = 0.52, CAMERA_DISTANCE = 1200) {
+  function solveSatelliteCoordsFromScreen(dropX, dropY, parentNode) {
     const parent = parentNode || { x: 0, y: 0, z: 0 };
-    const tilt = SYSTEM_TILT_X + (inclination || 0);
-    const cosTilt = Math.cos(tilt) || 1;
-    const sinTilt = Math.sin(tilt);
-    const s = CAMERA_DISTANCE;
-
-    const denom = s * cosTilt + dropY * sinTilt;
-    const mLocalY = (dropY * (s - (parent.z || 0)) - (parent.y || 0) * s) / (denom || 1);
-    const satZ = (parent.z || 0) + mLocalY * sinTilt;
-    const depthScale = s / Math.max(10, s - satZ);
-    const mLocalX = dropX / depthScale - (parent.x || 0);
-
-    return { mLocalX, mLocalY, satZ, depthScale, tilt, cosTilt, sinTilt };
+    const mLocalX = dropX - (parent.x || 0);
+    const mLocalY = dropY - (parent.y || 0);
+    return { mLocalX, mLocalY, satZ: 0, depthScale: 1, tilt: 0, cosTilt: 1, sinTilt: 0 };
   }
 
   /**
-   * 卫星每帧动力学模拟：
+   * 卫星每帧动力学模拟：围绕母行星以俯视角度水平旋转
    * 结合母行星的 expansionProgress 与 satelliteSpacingScale 动态控制卫星间距！
    */
   function simulateSatellite(node, parentNode, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true) {
@@ -122,17 +112,16 @@ window.QM.satellite = (function() {
     const curMinor = c.semiMinor * expansionMult;
     const mLocalX = curMajor * Math.cos(c.theta);
     const mLocalY = curMinor * Math.sin(c.theta);
-    const mTotalTilt = SYSTEM_TILT_X + (c.inclination || 0);
 
+    // 正俯视角：水平旋转，XY 平面平稳公转
     node.x = parent.x + mLocalX;
-    node.y = parent.y + mLocalY * Math.cos(mTotalTilt);
-    node.z = parent.z + mLocalY * Math.sin(mTotalTilt);
+    node.y = parent.y + mLocalY;
+    node.z = 0;
 
-    const depthScale = CAMERA_DISTANCE / Math.max(10, CAMERA_DISTANCE - node.z);
-    node.scale = depthScale;
-    node.screenX = node.x * depthScale;
-    node.screenY = node.y * depthScale;
-    node.screenRadius = node.radius * depthScale;
+    node.scale = 1;
+    node.screenX = node.x;
+    node.screenY = node.y;
+    node.screenRadius = node.radius;
   }
 
   /**
@@ -248,12 +237,12 @@ window.QM.satellite = (function() {
     c.omega = newOmega;
 
     node.x = parent.x + mLocalX;
-    node.y = parent.y + mLocalY * solved.cosTilt;
-    node.z = solved.satZ;
-    node.scale = solved.depthScale;
+    node.y = parent.y + mLocalY;
+    node.z = 0;
+    node.scale = 1;
     node.screenX = dropX;
     node.screenY = dropY;
-    node.screenRadius = node.radius * solved.depthScale;
+    node.screenRadius = node.radius;
   }
 
   return {

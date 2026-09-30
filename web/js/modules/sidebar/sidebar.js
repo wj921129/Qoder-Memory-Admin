@@ -5,15 +5,36 @@
 window.QM = window.QM || {};
 
 window.QM.sidebar = (function() {
-  function render() {
-    const { memories, activeCategory, activeTag } = window.QM.state.state;
-    const { CATEGORY_MAP } = window.QM.constants;
-    const { escapeHtml } = window.QM.utils;
+  /**
+   * 获取当前聚焦/选中的星系所包含的有效记忆切片集合
+   */
+  function getCurrentGalaxyMemories() {
+    const state = window.QM.state.state;
+    const activeGalaxyId = state.activeGalaxyId;
+    if (!activeGalaxyId || activeGalaxyId === 'all') {
+      return state.memories || [];
+    }
+    return (state.memories || []).filter(m => 
+      m.projectId === activeGalaxyId || 
+      m.galaxyId === activeGalaxyId ||
+      (state.galaxies && state.galaxies.find(g => g.id === activeGalaxyId)?.memories?.some(gm => gm.id === m.id))
+    );
+  }
 
-    // 0. 官方四大分类统计与渲染 (对齐 Qoder 原生)
-    const { OFFICIAL_CATEGORIES, mapToOfficialGroup } = window.QM.constants;
+  function render() {
+    const { activeCategory, activeTag } = window.QM.state.state;
+    const { CATEGORY_MAP, OFFICIAL_CATEGORIES, mapToOfficialGroup } = window.QM.constants;
+    const { escapeHtml } = window.QM.utils;
+    const state = window.QM.state.state;
+
+    // 获取当前选中星系的数据集 (全宇宙或特定星系)
+    const targetMemories = getCurrentGalaxyMemories();
+    const targetGalaxy = (state.galaxies || []).find(g => g.id === state.activeGalaxyId);
+    const galaxyName = targetGalaxy ? (targetGalaxy.rawName || targetGalaxy.name) : null;
+
+    // 0. 官方四大分类统计与渲染 (与当前星系联动)
     const groupCounts = { spec: 0, project: 0, experience: 0, task: 0 };
-    memories.forEach(m => {
+    targetMemories.forEach(m => {
       const gid = (m.officialGroup && m.officialGroup.id) || mapToOfficialGroup(m.category).id;
       groupCounts[gid] = (groupCounts[gid] || 0) + 1;
     });
@@ -21,17 +42,18 @@ window.QM.sidebar = (function() {
     const officialListEl = document.getElementById('official-category-list');
     if (officialListEl) {
       const currOfficial = window.QM.state.state.officialCategory || 'all';
+      const allLabel = galaxyName ? `🌟 ${escapeHtml(galaxyName)} 全部` : '🌟 全部记忆';
       let officialHtml = `
-        <div class="official-cat-item ${currOfficial === 'all' ? 'active' : ''}" data-group="all" onclick="window.QM.sidebar.selectOfficialCategory('all')">
-          <span>🌟 全部记忆</span>
-          <span class="official-cat-badge">${memories.length}</span>
+        <div class="official-cat-item ${currOfficial === 'all' ? 'active' : ''}" data-group="all" title="${allLabel}" onclick="window.QM.sidebar.selectOfficialCategory('all')">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${allLabel}</span>
+          <span class="official-cat-badge">${targetMemories.length}</span>
         </div>
       `;
 
       for (const [gid, grp] of Object.entries(OFFICIAL_CATEGORIES)) {
         const count = groupCounts[gid] || 0;
         officialHtml += `
-          <div class="official-cat-item ${currOfficial === gid ? 'active' : ''}" data-group="${gid}" onclick="window.QM.sidebar.selectOfficialCategory('${gid}')">
+          <div class="official-cat-item ${currOfficial === gid ? 'active' : ''}" data-group="${gid}" title="${grp.name}" onclick="window.QM.sidebar.selectOfficialCategory('${gid}')">
             <span>${grp.icon} ${grp.name}</span>
             <span class="official-cat-badge">${count}</span>
           </div>
@@ -40,15 +62,15 @@ window.QM.sidebar = (function() {
       officialListEl.innerHTML = officialHtml;
     }
     const officialTotalEl = document.getElementById('official-cat-total-count');
-    if (officialTotalEl) officialTotalEl.innerText = memories.length;
+    if (officialTotalEl) officialTotalEl.innerText = targetMemories.length;
 
-    // 1. 底层子目录细分统计与列表 (随选中的官方大类联动过滤)
+    // 1. 底层子目录细分统计与列表 (与当前星系与官方大类联动过滤)
     const catCounts = {};
     const currOfficial = window.QM.state.state.officialCategory || 'all';
     const targetOfficialGroup = (currOfficial !== 'all' && OFFICIAL_CATEGORIES) ? OFFICIAL_CATEGORIES[currOfficial] : null;
     const allowedSubs = targetOfficialGroup ? new Set(targetOfficialGroup.subs || []) : null;
 
-    memories.forEach(m => {
+    targetMemories.forEach(m => {
       const c = m.category || 'other';
       if (allowedSubs && !allowedSubs.has(c)) return;
       catCounts[c] = (catCounts[c] || 0) + 1;
@@ -59,12 +81,12 @@ window.QM.sidebar = (function() {
       let catHtml = '';
       const catKeys = Object.keys(catCounts).sort();
       if (catKeys.length === 0) {
-        catHtml = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">(该官方体系下暂无切片)</div>`;
+        catHtml = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">(当前星系分类下暂无切片)</div>`;
       } else {
         catKeys.forEach(cat => {
           const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
           catHtml += `
-            <div class="cat-item ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
+            <div class="cat-item ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" title="${escapeHtml(label)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
               <span>${escapeHtml(label)}</span>
               <span class="cat-count">${catCounts[cat]}</span>
             </div>
@@ -76,19 +98,20 @@ window.QM.sidebar = (function() {
     const catTotalEl = document.getElementById('cat-total-count');
     if (catTotalEl) catTotalEl.innerText = Object.keys(catCounts).length;
 
-    // 2. 标签云统计与渲染
+    // 2. 标签云统计与渲染 (与当前星系联动)
     renderTagCloud();
   }
 
   function renderTagCloud() {
-    const { activeTag, memories } = window.QM.state.state;
+    const { activeTag } = window.QM.state.state;
     const { escapeHtml } = window.QM.utils;
     const topology = window.QM.topology;
 
-    // 当选中星体时，只展示所有关联星体中的标签；未选中时展示全局标签
+    // 当选中特定星体时展示关联星体标签；未选中单一天体时展示当前选中星系下的标签云
     const focusedMemories = topology?.getFocusedRelatedMemories ? topology.getFocusedRelatedMemories() : null;
     const isFocused = focusedMemories !== null;
-    const targetMemories = isFocused ? focusedMemories : (memories || []);
+    const galaxyMemories = getCurrentGalaxyMemories();
+    const targetMemories = isFocused ? focusedMemories : galaxyMemories;
 
     const tagCounts = {};
     targetMemories.forEach(m => {
@@ -102,13 +125,13 @@ window.QM.sidebar = (function() {
     if (tagCloudEl) {
       const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
       if (sortedTags.length === 0) {
-        const emptyTip = isFocused ? '(当前关联星体暂无标签)' : '(暂无高频标签)';
+        const emptyTip = isFocused ? '(当前关联星体暂无标签)' : '(当前星系暂无高频标签)';
         tagCloudEl.innerHTML = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">${emptyTip}</div>`;
       } else {
         let tagHtml = '';
         sortedTags.slice(0, 30).forEach(tag => {
           tagHtml += `
-            <span class="tag-pill ${activeTag === tag ? 'active' : ''}" onclick="window.QM.sidebar.toggleTag('${escapeHtml(tag)}')">
+            <span class="tag-pill ${activeTag === tag ? 'active' : ''}" title="${escapeHtml(tag)} (${tagCounts[tag]})" onclick="window.QM.sidebar.toggleTag('${escapeHtml(tag)}')">
               ${escapeHtml(tag)} <small style="opacity:0.7;">(${tagCounts[tag]})</small>
             </span>
           `;
@@ -119,7 +142,7 @@ window.QM.sidebar = (function() {
     const tagTotalEl = document.getElementById('tag-total-count');
     if (tagTotalEl) {
       tagTotalEl.innerText = Object.keys(tagCounts).length;
-      tagTotalEl.title = isFocused ? '当前所选星体及关联星体包含的独立标签数' : '全局高频语义标签总数';
+      tagTotalEl.title = isFocused ? '当前所选星体及关联星体包含的独立标签数' : '当前星系高频语义标签总数';
     }
   }
 

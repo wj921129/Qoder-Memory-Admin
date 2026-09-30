@@ -7,7 +7,19 @@ window.QM = window.QM || {};
 window.QM.planet = (function() {
 
   /**
-   * 初始化或生成主题认知域行星的开普勒轨道初始参数
+   * 行星大小自适应计算：
+   * 随着卫星数量 (cardCount) 增多而增大，且最大不能超过恒星的 3 倍大小
+   */
+  function calcPlanetRadius(cardCount = 0, starRadius = 30) {
+    const baseRadius = 15;
+    const bonus = Math.sqrt(Math.max(0, cardCount)) * 5.2;
+    const r = Math.round(baseRadius + bonus);
+    const maxR = Math.round((starRadius || 30) * 3);
+    return Math.min(r, maxR);
+  }
+
+  /**
+   * 初始化或生成主题认知域行星的开普勒轨道初始参数 (俯视水平视角，轨道倾角归零)
    */
   function initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN) {
     const tierBaseR = R_MIN + dTier * tierBandWidth;
@@ -22,7 +34,7 @@ window.QM.planet = (function() {
     const eccentricity = 0.015 + Math.random() * 0.015;
     const semiMinor = semiMajor * Math.sqrt(1 - eccentricity * eccentricity);
     const baseOmega = (2.0 / Math.sqrt(Math.pow(semiMajor, 3))) * (0.95 + Math.random() * 0.1);
-    const inclination = (Math.random() - 0.5) * 0.08;
+    const inclination = 0; // 俯视平角，倾角归零
 
     const tierPhaseOffset = dTier * (Math.PI * 0.61803398875);
     const initialTheta = ((idxInTier / Math.max(tierCount, 1)) * Math.PI * 2) + tierPhaseOffset;
@@ -39,18 +51,19 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 构造行星节点数据结构 (支持所属星系绑定与卫星间距控制)
+   * 构造行星节点数据结构 (支持所属星系绑定与卫星间距控制，行星半径依卫星数量自适应)
    */
-  function createPlanetNode(cat, catCfg, cardCount, pStore, galaxyId = 'global') {
+  function createPlanetNode(cat, catCfg, cardCount, pStore, galaxyId = 'global', starRadius = 30) {
+    const r = calcPlanetRadius(cardCount, starRadius);
     return {
       id: `domain-${galaxyId}-${cat}`,
       galaxyId,
       name: catCfg.name,
       categoryKey: cat,
       type: "domain",
-      radius: 26,
+      radius: r,
       x: 0, y: 0, z: 0,
-      screenX: 0, screenY: 0, screenRadius: 26,
+      screenX: 0, screenY: 0, screenRadius: r,
       starScreenX: 0, starScreenY: 0,
       scale: 1,
       color: catCfg.color,
@@ -64,24 +77,12 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 从 2D 投影屏幕坐标反解轨道平面三维坐标（闭式解析解）
-   * 严格保障松手后下一帧正向透视投影坐标与 drop 坐标 100% 吻合，无跳跃
+   * 从 2D 投影屏幕坐标反解轨道平面三维坐标 (俯视正投影解析解)
    */
-  function solvePlanetCoordsFromScreen(dropX, dropY, starX = 0, starY = 0, starZ = 0, inclination = 0, SYSTEM_TILT_X = 0.52, CAMERA_DISTANCE = 1200) {
-    const tilt = SYSTEM_TILT_X + (inclination || 0);
-    const cosTilt = Math.cos(tilt) || 1;
-    const sinTilt = Math.sin(tilt);
-    const s = CAMERA_DISTANCE;
-
-    // 解析几何解 localY
-    const denom = s * cosTilt + dropY * sinTilt;
-    const localY = (dropY * (s - starZ) - starY * s) / (denom || 1);
-    const localZ = localY * sinTilt;
-    const planetZ = starZ + localZ;
-    const depthScale = s / Math.max(10, s - planetZ);
-    const localX = dropX / depthScale - starX;
-
-    return { localX, localY, localZ, planetZ, depthScale, tilt, cosTilt, sinTilt };
+  function solvePlanetCoordsFromScreen(dropX, dropY, starX = 0, starY = 0) {
+    const localX = dropX - starX;
+    const localY = dropY - starY;
+    return { localX, localY, localZ: 0, planetZ: 0, depthScale: 1, tilt: 0, cosTilt: 1, sinTilt: 0 };
   }
 
   /**
@@ -95,7 +96,7 @@ window.QM.planet = (function() {
   }
 
   /**
-   * 行星动力学模拟更新（每帧）- 围绕所属星系恒星中心公转
+   * 行星动力学模拟更新（每帧）- 围绕所属星系恒星中心以俯视角度水平公转
    */
   function simulatePlanet(node, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true, parentStar = null) {
     if (!node || node.type !== 'domain' || !node.celestial) return;
@@ -107,7 +108,6 @@ window.QM.planet = (function() {
     // 记录星系中心恒星世界及屏幕坐标
     const starX = parentStar ? (parentStar.x || 0) : 0;
     const starY = parentStar ? (parentStar.y || 0) : 0;
-    const starZ = parentStar ? (parentStar.z || 0) : 0;
     node.starScreenX = parentStar ? parentStar.screenX : 0;
     node.starScreenY = parentStar ? parentStar.screenY : 0;
 
@@ -121,21 +121,20 @@ window.QM.planet = (function() {
     const galaxyMult = getGalaxySpacingMultiplier(parentStar);
     const localX = c.semiMajor * galaxyMult * Math.cos(c.theta);
     const localY = c.semiMinor * galaxyMult * Math.sin(c.theta);
-    const totalTilt = SYSTEM_TILT_X + (c.inclination || 0);
 
+    // 正俯视角：水平旋转，Z 轴为 0，XY 平面平稳公转
     node.x = starX + localX;
-    node.y = starY + localY * Math.cos(totalTilt);
-    node.z = starZ + localY * Math.sin(totalTilt);
+    node.y = starY + localY;
+    node.z = 0;
 
-    const depthScale = CAMERA_DISTANCE / Math.max(10, CAMERA_DISTANCE - node.z);
-    node.scale = depthScale;
-    node.screenX = node.x * depthScale;
-    node.screenY = node.y * depthScale;
-    node.screenRadius = node.radius * depthScale;
+    node.scale = 1;
+    node.screenX = node.x;
+    node.screenY = node.y;
+    node.screenRadius = node.radius;
   }
 
   /**
-   * 绘制行星引力轨道 (淡雅空灵开普勒力场环，去除繁重杂乱)
+   * 绘制行星引力轨道 (俯视正圆/开普勒椭圆环)
    */
   function drawPlanetOrbit(ctx, node, isRelated, SYSTEM_TILT_X, isDimmed = false, parentStar = null) {
     if (!node || !node.celestial) return;
@@ -145,7 +144,6 @@ window.QM.planet = (function() {
 
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.scale(1, Math.cos(SYSTEM_TILT_X + (c.inclination || 0)));
     const galaxyMult = getGalaxySpacingMultiplier(parentStar);
     ctx.beginPath();
     ctx.ellipse(0, 0, c.semiMajor * galaxyMult, c.semiMinor * galaxyMult, 0, 0, Math.PI * 2);
@@ -331,12 +329,12 @@ window.QM.planet = (function() {
     c.omega = newOmega;
 
     node.x = starX + solved.localX;
-    node.y = starY + solved.localY * solved.cosTilt;
-    node.z = solved.planetZ;
-    node.scale = solved.depthScale;
+    node.y = starY + solved.localY;
+    node.z = 0;
+    node.scale = 1;
     node.screenX = dropX;
     node.screenY = dropY;
-    node.screenRadius = node.radius * solved.depthScale;
+    node.screenRadius = node.radius;
 
     if (childSatellites && childSatellites.length) {
       childSatellites.forEach(other => {
@@ -352,6 +350,7 @@ window.QM.planet = (function() {
 
   return {
     initPlanetCelestial,
+    calcPlanetRadius,
     createPlanetNode,
     solvePlanetCoordsFromScreen,
     simulatePlanet,

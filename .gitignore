@@ -12,6 +12,7 @@ Desktop.ini
 .idea/
 .vscode/
 .qoder
+.qoder-credits/
 *.swp
 *.swo
 *.sublime-workspace

@@ -5,8 +5,16 @@
 window.QM = window.QM || {};
 
 window.QM.topology = (function() {
-  const SYSTEM_TILT_X = 0.44;     // 主俯仰倾角 (立体纵深感)
+  const SYSTEM_TILT_X = 0;        // 正俯视平角 (水平旋转，无斜角俯仰)
   const CAMERA_DISTANCE = 1100;    // 投影焦距
+
+  /**
+   * 判定摄像机当前是否处于全宇宙宏观拉远视野
+   * 镜头拉远时 (scale < 0.68) 默认只展示恒星与行星，极大精简星体并消除卡顿
+   */
+  function isUniverseZoomedOut() {
+    return (transform.scale || 1.0) < 0.68;
+  }
 
   let canvas, ctx, container;
   let nodes = [];
@@ -191,7 +199,7 @@ window.QM.topology = (function() {
       } else if (n.type === 'domain' && n.celestial) {
         const star = nodeMap.get(n.parentStarId) || { x: 0, y: 0 };
         const dX = (n.celestial.semiMajor || 200) + 120;
-        const dY = (n.celestial.semiMinor || 180) * Math.cos(SYSTEM_TILT_X) + 120;
+        const dY = (n.celestial.semiMinor || 180) + 120;
         minX = Math.min(minX, star.x - dX);
         maxX = Math.max(maxX, star.x + dX);
         minY = Math.min(minY, star.y - dY);
@@ -227,10 +235,14 @@ window.QM.topology = (function() {
   }
 
   /**
-   * 运镜飞跃聚焦至指定星系
+   * 运镜飞跃聚焦至指定星系 (深度联动左侧3栏内容)
    */
   function focusOnGalaxy(galaxyId) {
     if (!galaxyId || galaxyId === 'all') {
+      window.QM.state.state.activeGalaxyId = null;
+      window.QM.state.state.currentProject = 'all';
+      window.QM.utils?.syncNavDropdown?.('galaxy-dd', 'all');
+      window.QM.sidebar?.render();
       fitGalaxyView();
       return;
     }
@@ -248,6 +260,11 @@ window.QM.topology = (function() {
       // 默认选中该星系恒星：激活星系间距控制并弹出对应详情抽屉
       updateSpacingControllerUI(starNode);
       window.QM.drawer?.openCoreDrawer(starNode);
+      // 深度联动左侧3栏显示该星系对应内容
+      window.QM.state.state.activeGalaxyId = galaxyId;
+      window.QM.state.state.currentProject = galaxyId;
+      window.QM.utils?.syncNavDropdown?.('galaxy-dd', galaxyId);
+      window.QM.sidebar?.render();
       requestRender();
     }
   }
@@ -303,7 +320,7 @@ window.QM.topology = (function() {
           const baseStep = 1050;
           const dist = baseStep + Math.sqrt(idx) * 780 + (g.count > 15 ? 260 : 0);
           const cx = Math.cos(angle) * dist - 120;
-          const cy = Math.sin(angle) * dist * 0.75; // 银河盘面立体纵深轻微扁平
+          const cy = Math.sin(angle) * dist; // 俯视平角，水平自然展开
           galaxyPositions.push({ cx, cy });
         }
       });
@@ -391,7 +408,8 @@ window.QM.topology = (function() {
             celestialStore.set(storeKey, pStore);
           }
 
-          const domainNode = planet.createPlanetNode(cat, catCfg, cardCount, pStore, g.id);
+          // 行星大小随卫星数量增多而增大，且最大不超过恒星的 3 倍大小
+          const domainNode = planet.createPlanetNode(cat, catCfg, cardCount, pStore, g.id, starNode.radius);
           domainNode.parentStarId = starNode.id;
           // 读取用户自定义的卫星间距配置
           domainNode.satelliteSpacingScale = window.QM.state.getPlanetSpacing(domainNode.id) || 1.0;
@@ -521,7 +539,12 @@ window.QM.topology = (function() {
       const deg = degreeMap.get(n.id) || 0;
       n.degree = deg;
       if (n.type === 'domain') {
-        n.radius = Math.round(24 + Math.min(10, Math.sqrt(deg) * 2.5));
+        const parentStar = nodeMap.get(n.parentStarId);
+        const starR = parentStar ? parentStar.radius : 30;
+        const baseR = planet.calcPlanetRadius ? planet.calcPlanetRadius(n.cardCount || 0, starR) : 24;
+        const degBonus = Math.min(6, Math.sqrt(deg) * 1.2);
+        const maxAllowed = Math.round(starR * 3);
+        n.radius = Math.min(maxAllowed, Math.round(baseR + degBonus));
         n.screenRadius = n.radius;
       } else if (n.type === 'unit') {
         n.radius = Math.round(11 + Math.min(6, Math.sqrt(deg) * 1.5));
@@ -741,8 +764,11 @@ window.QM.topology = (function() {
         planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects, parentStar);
       });
 
+      const isFar = isUniverseZoomedOut();
       nodes.forEach(n => {
         if (n.type !== 'unit') return;
+        // 镜头拉远且无特定聚焦时，跳过隐藏卫星的高频动力学计算，极大提升渲染帧率
+        if (isFar && !focusTarget && !forceFull && n.screenX !== 0) return;
         const isBeingDragged = draggedNode && (draggedNode === n || (draggedNode.type === 'domain' && n.parentId === draggedNode.id));
         const parentDomain = nodeMap.get(n.parentId);
         satellite.simulateSatellite(n, parentDomain, isBeingDragged, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects);
@@ -871,9 +897,9 @@ window.QM.topology = (function() {
       ctx.fillStyle = nebulaGrad;
       ctx.fill();
 
-      // 星系外围引力边界参考环 (极淡微弱虚线环，纯净深邃)
+      // 星系外围引力边界参考环 (俯视正圆，极淡微弱虚线环，纯净深邃)
       ctx.beginPath();
-      ctx.ellipse(cx, cy, nebR * 0.95, nebR * 0.95 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
+      ctx.arc(cx, cy, nebR * 0.95, 0, Math.PI * 2);
       ctx.strokeStyle = (g.colorTheme && g.colorTheme.ring) ? (g.colorTheme.ring + '0a') : 'rgba(56, 189, 248, 0.05)';
       ctx.lineWidth = 0.6;
       ctx.setLineDash([2, 10]);
@@ -964,6 +990,14 @@ window.QM.topology = (function() {
       const fromDimmed = nodeDimmedMap ? Boolean(nodeDimmedMap.get(fromNode.id)) : isNodeDimmed(fromNode);
       const toDimmed = nodeDimmedMap ? Boolean(nodeDimmedMap.get(toNode.id)) : isNodeDimmed(toNode);
 
+      // 镜头拉远时减少连线渲染，默认只保留恒星与行星之间的引力干线，大幅提升全宇宙帧率
+      const isFar = isUniverseZoomedOut();
+      const isSatelliteEdge = fromNode.type === 'unit' || toNode.type === 'unit';
+      if (isFar && isSatelliteEdge) {
+        const isFocusLink = focusTarget && (e.from === focusTarget.id || e.to === focusTarget.id);
+        if (!isFocusLink) return;
+      }
+
       if (isTagFilterActive && (fromDimmed || toDimmed)) return;
       if (isSearchFilterActive && (fromDimmed || toDimmed)) return;
 
@@ -1050,7 +1084,13 @@ window.QM.topology = (function() {
     const { activeTag, memories } = window.QM.state.state;
     const hasFocus = Boolean(focusTarget);
 
+    const isFar = isUniverseZoomedOut();
     const visibleNodes = nodes.filter(n => {
+      // 镜头拉远时减少星体展示，默认只显示恒星和行星，大幅提升全宇宙性能
+      if (isFar && n.type === 'unit') {
+        const isFocusedOrRelated = focusTarget && (focusTarget.id === n.id || (focusTarget.type === 'domain' && n.parentId === focusTarget.id));
+        if (!isFocusedOrRelated) return false;
+      }
       if (!bounds) return true;
       const extraMargin = n.type === 'core' ? 180 : (n.type === 'domain' ? 90 : 35);
       const r = (n.screenRadius || n.radius || 15) + extraMargin;
@@ -1154,7 +1194,12 @@ window.QM.topology = (function() {
       return (b.z || 0) - (a.z || 0);
     });
 
+    const isFar = isUniverseZoomedOut();
     for (const n of sorted) {
+      if (isFar && n.type === 'unit') {
+        const isFocusedOrRelated = focusTarget && (focusTarget.id === n.id || (focusTarget.type === 'domain' && n.parentId === focusTarget.id));
+        if (!isFocusedOrRelated) continue;
+      }
       const hitMargin = n.type === 'unit' ? 8 : (n.type === 'domain' ? 10 : 12);
       const hitR = (n.screenRadius || n.radius) + hitMargin;
       const dist = Math.hypot(worldPos.x - n.screenX, worldPos.y - n.screenY);
@@ -1327,7 +1372,13 @@ window.QM.topology = (function() {
     const indexModal = document.getElementById('index-modal');
     if (indexModal) indexModal.classList.add('hidden');
 
+    // 取消选中焦点时，恢复宏观全宇宙全局星系并联动更新侧边栏与顶部导航
+    window.QM.state.state.activeGalaxyId = null;
+    window.QM.state.state.currentProject = 'all';
+    window.QM.utils?.syncNavDropdown?.('galaxy-dd', 'all');
+
     if (shouldSyncSidebar) {
+      window.QM.sidebar?.render?.();
       window.QM.sidebar?.highlightCategory('all', true);
     }
     requestRender();
@@ -1603,17 +1654,15 @@ window.QM.topology = (function() {
             const parentStar = nodeMap.get(draggedNode.parentStarId) || { x: 0, y: 0, z: 0, screenX: 0, screenY: 0 };
             const solved = planet.solvePlanetCoordsFromScreen(
               targetScreenX, targetScreenY,
-              parentStar.x || 0, parentStar.y || 0, parentStar.z || 0,
-              draggedNode.celestial ? draggedNode.celestial.inclination : 0,
-              SYSTEM_TILT_X, CAMERA_DISTANCE
+              parentStar.x || 0, parentStar.y || 0
             );
             draggedNode.x = (parentStar.x || 0) + solved.localX;
-            draggedNode.y = (parentStar.y || 0) + solved.localY * solved.cosTilt;
-            draggedNode.z = solved.planetZ;
-            draggedNode.scale = solved.depthScale;
+            draggedNode.y = (parentStar.y || 0) + solved.localY;
+            draggedNode.z = 0;
+            draggedNode.scale = 1;
             draggedNode.screenX = targetScreenX;
             draggedNode.screenY = targetScreenY;
-            draggedNode.screenRadius = draggedNode.radius * solved.depthScale;
+            draggedNode.screenRadius = draggedNode.radius;
 
             nodes.forEach(other => {
               if (other.type === 'unit' && other.parentId === draggedNode.id) {
@@ -1621,12 +1670,11 @@ window.QM.topology = (function() {
                 if (snap) {
                   other.x = draggedNode.x + snap.relX;
                   other.y = draggedNode.y + snap.relY;
-                  other.z = draggedNode.z + snap.relZ;
-                  const oDs = CAMERA_DISTANCE / Math.max(10, CAMERA_DISTANCE - other.z);
-                  other.scale = oDs;
-                  other.screenX = other.x * oDs;
-                  other.screenY = other.y * oDs;
-                  other.screenRadius = other.radius * oDs;
+                  other.z = 0;
+                  other.scale = 1;
+                  other.screenX = other.x;
+                  other.screenY = other.y;
+                  other.screenRadius = other.radius;
                 }
               }
             });
@@ -1635,18 +1683,16 @@ window.QM.topology = (function() {
             if (parent) {
               const solved = satellite.solveSatelliteCoordsFromScreen(
                 targetScreenX, targetScreenY,
-                parent,
-                draggedNode.celestial ? draggedNode.celestial.inclination : 0,
-                SYSTEM_TILT_X, CAMERA_DISTANCE
+                parent
               );
 
               draggedNode.x = parent.x + solved.mLocalX;
-              draggedNode.y = parent.y + solved.mLocalY * solved.cosTilt;
-              draggedNode.z = solved.satZ;
-              draggedNode.scale = solved.depthScale;
+              draggedNode.y = parent.y + solved.mLocalY;
+              draggedNode.z = 0;
+              draggedNode.scale = 1;
               draggedNode.screenX = targetScreenX;
               draggedNode.screenY = targetScreenY;
-              draggedNode.screenRadius = draggedNode.radius * solved.depthScale;
+              draggedNode.screenRadius = draggedNode.radius;
             }
           }
         }
@@ -1704,6 +1750,17 @@ window.QM.topology = (function() {
               hasDomainExpanding = true;
               startGalaxyLoop();
               if (drawer) drawer.openDomainDrawer(clicked);
+
+              // 若该行星所属星系与当前不同，同步切换星系状态并更新左侧3栏
+              if (clicked.galaxyId && clicked.galaxyId !== window.QM.state.state.activeGalaxyId) {
+                window.QM.state.state.activeGalaxyId = clicked.galaxyId;
+                window.QM.state.state.currentProject = clicked.galaxyId;
+                window.QM.utils?.syncNavDropdown?.('galaxy-dd', clicked.galaxyId);
+                if (sidebar && typeof sidebar.render === 'function') {
+                  sidebar.render();
+                }
+              }
+
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
                 sidebar.highlightCategory(clicked.categoryKey, true);
               }
@@ -1717,6 +1774,15 @@ window.QM.topology = (function() {
               hasDomainExpanding = true;
               startGalaxyLoop();
               if (drawer) drawer.openCoreDrawer(clicked);
+
+              // 选中恒星：将当前星系与顶部下拉及左侧3栏深度联动
+              const gId = clicked.galaxyId || 'all';
+              window.QM.state.state.activeGalaxyId = gId === 'all' ? null : gId;
+              window.QM.state.state.currentProject = gId;
+              window.QM.utils?.syncNavDropdown?.('galaxy-dd', gId);
+              if (sidebar && typeof sidebar.render === 'function') {
+                sidebar.render();
+              }
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
                 sidebar.highlightCategory('all', true);
               }

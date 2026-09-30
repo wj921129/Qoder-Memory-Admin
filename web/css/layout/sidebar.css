@@ -14,6 +14,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
   user-select: text;
   z-index: 20;
   position: relative;
@@ -131,10 +132,11 @@
 }
 
 /* ========== 物理子目录与细分过滤 ========== */
-/** 细分子目录独立滚动区：限定最大高度收纳，超出后区域内滚动 */
+/** 细分子目录独立滚动区：限定最大高度收纳，超出后区域内滚动，严禁横向滑动栏 */
 .sidebar-section-subdirs #category-list {
   max-height: 360px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 /** 细分子目录条目 */
 .cat-item {
@@ -149,6 +151,17 @@
   margin-bottom: 4px;
   border: 1px solid transparent;
   transition: var(--transition-smooth);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/** 细分子目录文本：超出上限显示省略号 */
+.cat-item span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  margin-right: 8px;
 }
 /** 细分子目录悬停 */
 .cat-item:hover {
@@ -172,6 +185,7 @@
   background: rgba(20, 30, 52, 0.50);
   border-radius: var(--rounded-full);
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* ========== 高频语义关键词云 ========== */
