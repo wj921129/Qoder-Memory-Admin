@@ -14,13 +14,13 @@
 | 模块 | 技术选型 | 架构约束与红线 |
 | :--- | :--- | :--- |
 | **后端服务** (`server/`) | 原生 Node.js 18+ ESM (`server.mjs`) | **零外部 npm 依赖红线**：仅使用 Node.js 内置模块（`node:http`、`node:fs`、`node:path`、`node:os` 等），严禁随意引入第三方 npm 运行时包。 |
-| **前端应用** (`web/`) | 原生 HTML5 + 模块化原生 CSS3 + 原生 ES Modules | **零构建零打包**：纯 Vanilla JS + 模块化 CSS，直接浏览器原生加载运行，禁止引入 Webpack/Vite 等重型打包链破坏便携性；**免除前端守卫**：严禁触发 `front-code-guard`。 |
+| **前端应用** (`web/`) | 原生 HTML5 + 模块化原生 CSS3 + 原生 ES Modules | **零构建零打包**：纯 Vanilla JS + 模块化 CSS，直接浏览器原生加载运行，禁止引入 Webpack/Vite 等重型打包链破坏便携性。 |
 | **核心特性** | 3D 认知引力场拓扑 (Canvas) + 知识卡片流 + 双模抽屉 | 保证 60fps 渲染流畅度、手势缩放拾取稳定性与 HUD 响应速度。 |
 | **数据持久化** | 本地物理文件扫描与 Markdown 原子落盘 | 零软链接依赖，动态路径自愈；落盘时必须保持原子写入并同步重构 `MEMORY.md` 索引。 |
 
-### 质量守卫与技能约束
+### 技能与质量守卫约束
 
-- **严禁触发 `front-code-guard`**：本工程定位为本地研发效能工具与拓扑管理平台（纯原生 HTML5/CSS3/ESM/Canvas，零构建且无 Thymeleaf 模板），属于非商户、非运营业务页面，完全符合 `front-code-guard` 排除边界。编写或修改本工程前端代码时，**全场景严禁触发 `front-code-guard` 技能及其审查工作流**。前端改动遵循本工程原生架构与代码精简原则即可。
+- **严禁触发 `front-code-guard`**：修改本仓库代码时，全场景严禁触发 `front-code-guard` 技能及审查工作流。
 
 ---
 
