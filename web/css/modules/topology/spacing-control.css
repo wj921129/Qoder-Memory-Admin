@@ -22,7 +22,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+
+/* 当右侧抽屉展开时，平滑挤到抽屉左侧 (580px + 18px = 598px)，杜绝遮挡 */
+body.has-drawer-open .satellite-spacing-controller,
+main:has(#editor-drawer.open) .satellite-spacing-controller {
+  right: 598px;
 }
 
 .satellite-spacing-controller:hover {

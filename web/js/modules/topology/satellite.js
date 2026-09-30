@@ -79,21 +79,23 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 精确从相对于父行星的投影屏幕差量 (deltaWx, deltaWy) 反解卫星三维相对坐标
+   * 精确从 2D 投影屏幕坐标反解卫星在母行星坐标系下的三维相对开普勒坐标 (闭式解析解)
+   * 严格保障松手后下一帧正向透视投影坐标与 drop 坐标 100% 吻合，0 位移跳跃
    */
-  function solveSatelliteCoordsFromScreen(deltaWx, deltaWy, inclination, parentZ, SYSTEM_TILT_X, CAMERA_DISTANCE) {
+  function solveSatelliteCoordsFromScreen(dropX, dropY, parentNode, inclination = 0, SYSTEM_TILT_X = 0.52, CAMERA_DISTANCE = 1200) {
+    const parent = parentNode || { x: 0, y: 0, z: 0 };
     const tilt = SYSTEM_TILT_X + (inclination || 0);
     const cosTilt = Math.cos(tilt) || 1;
     const sinTilt = Math.sin(tilt);
-    const camEff = CAMERA_DISTANCE - (parentZ || 0);
+    const s = CAMERA_DISTANCE;
 
-    const denom = cosTilt * CAMERA_DISTANCE + deltaWy * sinTilt;
-    const deltaRotY = (deltaWy * camEff) / (denom || 1);
-    const deltaZ = deltaRotY * sinTilt;
-    const depthScale = CAMERA_DISTANCE / (CAMERA_DISTANCE - (parentZ || 0) - deltaZ);
-    const deltaRotX = deltaWx / (depthScale || 1);
+    const denom = s * cosTilt + dropY * sinTilt;
+    const mLocalY = (dropY * (s - (parent.z || 0)) - (parent.y || 0) * s) / (denom || 1);
+    const satZ = (parent.z || 0) + mLocalY * sinTilt;
+    const depthScale = s / Math.max(10, s - satZ);
+    const mLocalX = dropX / depthScale - (parent.x || 0);
 
-    return { deltaRotX, deltaRotY, deltaZ, depthScale, tilt, cosTilt, sinTilt };
+    return { mLocalX, mLocalY, satZ, depthScale, tilt, cosTilt, sinTilt };
   }
 
   /**
@@ -125,7 +127,7 @@ window.QM.satellite = (function() {
     node.y = parent.y + mLocalY * Math.cos(mTotalTilt);
     node.z = parent.z + mLocalY * Math.sin(mTotalTilt);
 
-    const depthScale = CAMERA_DISTANCE / (CAMERA_DISTANCE - node.z);
+    const depthScale = CAMERA_DISTANCE / Math.max(10, CAMERA_DISTANCE - node.z);
     node.scale = depthScale;
     node.screenX = node.x * depthScale;
     node.screenY = node.y * depthScale;
@@ -133,62 +135,39 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 绘制记忆切片卫星本体及标题标签 (拟真微型星体，柔和微光)
+   * 绘制记忆切片卫星本体及标题标签：
+   * 去除复杂 ui 特效（微光、复杂球体暗面渐变），保持简单颜色圆点，清爽明了
    */
   function drawSatellite(ctx, node, isFocus, isHover, isRelated, activeTag, isTagHit, isDimmed = false, hasFocus = false) {
     const r = node.screenRadius;
     const isHighlightedTag = Boolean(activeTag && isTagHit);
+    const pColor = node.parentColor || '#38bdf8';
 
-    // 1. 焦点与悬停高亮柔和外光环
+    // 1. 焦点与悬停高亮纤细外环
     if (isFocus || isHover) {
       ctx.beginPath();
-      ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
-      ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.7)' : 'rgba(56, 189, 248, 0.55)';
-      ctx.lineWidth = isFocus ? 1.5 : 1;
+      ctx.arc(0, 0, r + 2.5, 0, Math.PI * 2);
+      ctx.strokeStyle = isFocus ? '#ffffff' : pColor;
+      ctx.lineWidth = isFocus ? 1.2 : 0.8;
       ctx.stroke();
     }
 
-    // 2. 拟真外圈淡淡光晕 (Ethereal Micro-Glow)
-    const glowR = r * 1.35;
-    const glowGrad = ctx.createRadialGradient(0, 0, r * 0.7, 0, 0, glowR);
-    const basePColor = node.parentColor || '#38bdf8';
+    // 2. 卫星本体：简单颜色小圆点，干净纯粹
+    let fillColor = pColor;
     if (isDimmed) {
-      glowGrad.addColorStop(0, 'rgba(71, 85, 105, 0.15)');
-      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    } else {
-      glowGrad.addColorStop(0, basePColor + (isFocus ? '44' : '22'));
-      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      fillColor = '#475569';
+    } else if (isHighlightedTag) {
+      fillColor = '#e879f9';
+    } else if (isFocus) {
+      fillColor = '#f0f9ff';
     }
-    ctx.beginPath();
-    ctx.arc(0, 0, glowR, 0, Math.PI * 2);
-    ctx.fillStyle = glowGrad;
-    ctx.fill();
 
-    // 3. 拟真微型球体表面 (消除平面纯色填充，采用立体漫反射渐变)
-    const sphereGrad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 0.5, 0, 0, r);
-    if (isDimmed) {
-      sphereGrad.addColorStop(0, '#64748b');
-      sphereGrad.addColorStop(0.5, '#334155');
-      sphereGrad.addColorStop(1, '#0f172a');
-    } else {
-      sphereGrad.addColorStop(0, '#ffffff');
-      sphereGrad.addColorStop(0.25, node.core || '#f1f5f9');
-      sphereGrad.addColorStop(0.65, node.parentColor || '#0284c7');
-      sphereGrad.addColorStop(1, '#061a35');
-    }
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fillStyle = sphereGrad;
+    ctx.fillStyle = fillColor;
     ctx.fill();
 
-    // 4. 柔和边缘轮廓散射线 (消除粗糙硬边)
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.65)' : (isDimmed ? 'rgba(148, 163, 184, 0.18)' : 'rgba(255, 255, 255, 0.35)');
-    ctx.lineWidth = isFocus ? 1.2 : 0.6;
-    ctx.stroke();
-
-    // 5. 文字标题展示规则：
+    // 3. 文字标题展示规则
     const shouldShowText = !hasFocus || isFocus || isRelated || isHover || isHighlightedTag;
     if (shouldShowText) {
       const title = node.name || '';
@@ -222,19 +201,22 @@ window.QM.satellite = (function() {
   }
 
   /**
-   * 拖拽释放后自适应卫星轨道逆反解与重算
+   * 拖拽释放后自适应卫星轨道逆反解与重算 (闭式精确数学逆解，彻底去掉拖拽限制与跳变)
    */
   function recalculateSatelliteOrbit(node, parentNode, dropX, dropY, SYSTEM_TILT_X, CAMERA_DISTANCE) {
     if (!node || !node.celestial) return;
     const c = node.celestial;
     const parent = parentNode || { x: 0, y: 0, z: 0, screenX: 0, screenY: 0, radius: 26, expansionProgress: 0, satelliteSpacingScale: 1.0 };
 
-    const deltaWx = dropX - parent.screenX;
-    const deltaWy = dropY - parent.screenY;
-
-    const solved = solveSatelliteCoordsFromScreen(deltaWx, deltaWy, c.inclination, parent.z, SYSTEM_TILT_X, CAMERA_DISTANCE);
-    const localX = solved.deltaRotX;
-    const localY = solved.deltaRotY;
+    const solved = solveSatelliteCoordsFromScreen(
+      dropX, dropY,
+      parent,
+      c.inclination,
+      SYSTEM_TILT_X,
+      CAMERA_DISTANCE
+    );
+    const mLocalX = solved.mLocalX;
+    const mLocalY = solved.mLocalY;
 
     const ecc = c.eccentricity || 0.015;
     const oneMinusEcc2 = Math.max(0.01, 1 - ecc * ecc);
@@ -243,15 +225,19 @@ window.QM.satellite = (function() {
     const spacingScale = (parent.satelliteSpacingScale !== undefined) ? parent.satelliteSpacingScale : 1.0;
     const expansionMult = 1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4);
 
-    let newSemiMajor = (Math.sqrt(localX * localX + (localY * localY) / oneMinusEcc2)) / (expansionMult || 1);
-    newSemiMajor = Math.max((parent.radius || 26) + 16, Math.min(480, newSemiMajor));
+    const localX = mLocalX / (expansionMult || 1);
+    const localY = mLocalY / (expansionMult || 1);
+
+    // 解除人为半长轴上限限制，仅保留非负安全保护，支持自由排布
+    let newSemiMajor = Math.sqrt(localX * localX + (localY * localY) / oneMinusEcc2);
+    newSemiMajor = Math.max(10, newSemiMajor);
     const newSemiMinor = newSemiMajor * Math.sqrt(oneMinusEcc2);
 
     let newTheta = Math.atan2(localY / (newSemiMinor || 1), localX / (newSemiMajor || 1));
     if (newTheta < 0) newTheta += Math.PI * 2;
 
     const parentOmega = parent.celestial ? parent.celestial.omega : 0.0006;
-    const speedMultiplier = Math.max(1.1, Math.min(5.0, 1.2 + 75 / newSemiMajor));
+    const speedMultiplier = Math.max(1.1, Math.min(4.0, 1.2 + 60 / newSemiMajor));
     const newOmega = parentOmega * speedMultiplier;
 
     c.semiMajor = newSemiMajor;
@@ -259,9 +245,9 @@ window.QM.satellite = (function() {
     c.theta = newTheta;
     c.omega = newOmega;
 
-    node.x = parent.x + localX;
-    node.y = parent.y + localY * solved.cosTilt;
-    node.z = parent.z + solved.deltaZ;
+    node.x = parent.x + mLocalX;
+    node.y = parent.y + mLocalY * solved.cosTilt;
+    node.z = solved.satZ;
     node.scale = solved.depthScale;
     node.screenX = dropX;
     node.screenY = dropY;

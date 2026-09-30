@@ -797,12 +797,12 @@ window.QM.topology = (function() {
       ctx.fillStyle = nebulaGrad;
       ctx.fill();
 
-      // 星系外围引力边界参考环 (轻质微弱虚线环)
+      // 星系外围引力边界参考环 (极淡微弱虚线环，纯净深邃)
       ctx.beginPath();
       ctx.ellipse(cx, cy, nebR * 0.95, nebR * 0.95 * Math.cos(SYSTEM_TILT_X), 0, 0, Math.PI * 2);
-      ctx.strokeStyle = (g.colorTheme && g.colorTheme.ring) ? (g.colorTheme.ring + '1a') : 'rgba(56, 189, 248, 0.12)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 8]);
+      ctx.strokeStyle = (g.colorTheme && g.colorTheme.ring) ? (g.colorTheme.ring + '0a') : 'rgba(56, 189, 248, 0.05)';
+      ctx.lineWidth = 0.6;
+      ctx.setLineDash([2, 10]);
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -1467,18 +1467,16 @@ window.QM.topology = (function() {
 
         if (draggedNode.type !== "core") {
           if (draggedNode.type === 'domain') {
-            const parentStar = nodeMap.get(draggedNode.parentStarId) || { screenX: 0, screenY: 0 };
-            const relTargetX = targetScreenX - parentStar.screenX;
-            const relTargetY = targetScreenY - parentStar.screenY;
-
+            const parentStar = nodeMap.get(draggedNode.parentStarId) || { x: 0, y: 0, z: 0, screenX: 0, screenY: 0 };
             const solved = planet.solvePlanetCoordsFromScreen(
-              relTargetX, relTargetY,
+              targetScreenX, targetScreenY,
+              parentStar.x || 0, parentStar.y || 0, parentStar.z || 0,
               draggedNode.celestial ? draggedNode.celestial.inclination : 0,
               SYSTEM_TILT_X, CAMERA_DISTANCE
             );
-            draggedNode.x = (parentStar.x || 0) + solved.rotX;
-            draggedNode.y = (parentStar.y || 0) + solved.rotY * solved.cosTilt;
-            draggedNode.z = solved.z;
+            draggedNode.x = (parentStar.x || 0) + solved.localX;
+            draggedNode.y = (parentStar.y || 0) + solved.localY * solved.cosTilt;
+            draggedNode.z = solved.planetZ;
             draggedNode.scale = solved.depthScale;
             draggedNode.screenX = targetScreenX;
             draggedNode.screenY = targetScreenY;
@@ -1491,7 +1489,7 @@ window.QM.topology = (function() {
                   other.x = draggedNode.x + snap.relX;
                   other.y = draggedNode.y + snap.relY;
                   other.z = draggedNode.z + snap.relZ;
-                  const oDs = CAMERA_DISTANCE / (CAMERA_DISTANCE - other.z);
+                  const oDs = CAMERA_DISTANCE / Math.max(10, CAMERA_DISTANCE - other.z);
                   other.scale = oDs;
                   other.screenX = other.x * oDs;
                   other.screenY = other.y * oDs;
@@ -1502,17 +1500,16 @@ window.QM.topology = (function() {
           } else if (draggedNode.type === 'unit') {
             const parent = draggedNode.parentId ? nodeMap.get(draggedNode.parentId) : null;
             if (parent) {
-              const deltaWx = targetScreenX - parent.screenX;
-              const deltaWy = targetScreenY - parent.screenY;
               const solved = satellite.solveSatelliteCoordsFromScreen(
-                deltaWx, deltaWy,
+                targetScreenX, targetScreenY,
+                parent,
                 draggedNode.celestial ? draggedNode.celestial.inclination : 0,
-                parent.z, SYSTEM_TILT_X, CAMERA_DISTANCE
+                SYSTEM_TILT_X, CAMERA_DISTANCE
               );
 
-              draggedNode.x = parent.x + solved.deltaRotX;
-              draggedNode.y = parent.y + solved.deltaRotY * solved.cosTilt;
-              draggedNode.z = parent.z + solved.deltaZ;
+              draggedNode.x = parent.x + solved.mLocalX;
+              draggedNode.y = parent.y + solved.mLocalY * solved.cosTilt;
+              draggedNode.z = solved.satZ;
               draggedNode.scale = solved.depthScale;
               draggedNode.screenX = targetScreenX;
               draggedNode.screenY = targetScreenY;

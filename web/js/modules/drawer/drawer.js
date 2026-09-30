@@ -89,6 +89,14 @@ window.QM.drawer = (function() {
     }
   }
 
+  function setDrawerOpen(isOpen) {
+    const drawer = drawerEl();
+    if (drawer) {
+      drawer.classList.toggle('open', isOpen);
+    }
+    document.body.classList.toggle('has-drawer-open', isOpen);
+  }
+
   function openDrawer(id) {
     bindDrawerStaticEvents();
     const { memories, isEditMode, currentProject, currentProjectScope } = window.QM.state.state;
@@ -182,13 +190,12 @@ window.QM.drawer = (function() {
     updateMetaSummary(item);
     setMetaSectionCollapsed(true);
 
-    if (drawer) drawer.classList.add('open');
+    setDrawerOpen(true);
   }
 
   function closeDrawer() {
     currentActiveItemId = null;
-    const drawer = drawerEl();
-    if (drawer) drawer.classList.remove('open');
+    setDrawerOpen(false);
   }
 
   function openDomainDrawer(node) {
@@ -264,7 +271,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     updateMetaSummary({ category: cat, type: 'domain', keywords: allKeywords });
     setMetaSectionCollapsed(true);
 
-    if (drawer) drawer.classList.add('open');
+    setDrawerOpen(true);
   }
 
   function openCoreDrawer(node) {
@@ -333,7 +340,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     updateMetaSummary({ category: 'core', type: 'anchor', keywords: allKeywords });
     setMetaSectionCollapsed(true);
 
-    if (drawer) drawer.classList.add('open');
+    setDrawerOpen(true);
   }
 
   function openNewCardDrawer() {
@@ -396,7 +403,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     // 新建卡片时允许展开配置以便设定文件名或分类
     setMetaSectionCollapsed(false);
 
-    if (drawer) drawer.classList.add('open');
+    setDrawerOpen(true);
     document.getElementById('edit-name').focus();
   }
 
