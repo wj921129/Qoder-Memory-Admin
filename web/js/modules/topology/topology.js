@@ -66,12 +66,21 @@ window.QM.topology = (function() {
   }
 
   /**
+   * 获取全屏画布舞台尺寸 (视口级渲染域)
+   */
+  function getStageSize() {
+    return {
+      w: (canvas && canvas.clientWidth) || 1200,
+      h: (canvas && canvas.clientHeight) || 800
+    };
+  }
+
+  /**
    * 计算机体世界坐标视口可视范围包围盒 (Viewport Frustum Culling)
    */
   function getViewportBounds(padding = 100) {
     if (!container) return null;
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    const { w, h } = getStageSize();
     const s = transform.scale || 1.0;
     return {
       minX: -transform.x / s - padding,
@@ -167,8 +176,7 @@ window.QM.topology = (function() {
   function resizeCanvas() {
     if (!canvas || !container) return;
     const dpr = window.devicePixelRatio || 1;
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    const { w, h } = getStageSize();
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     if (ctx) ctx.scale(dpr, dpr);
@@ -183,8 +191,7 @@ window.QM.topology = (function() {
    */
   function fitGalaxyView() {
     if (!container || !nodes.length) return;
-    const w = container.clientWidth || 1200;
-    const h = container.clientHeight || 800;
+    const { w, h } = getStageSize();
 
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
@@ -781,9 +788,13 @@ window.QM.topology = (function() {
       const drawerEl = document.getElementById('editor-drawer');
       const isDrawerOpen = drawerEl && drawerEl.classList.contains('open');
       const drawerW = isDrawerOpen ? (drawerEl.offsetWidth || 560) : 0;
-      const effectiveW = Math.max(container.clientWidth - drawerW, 300);
-      const targetCenterX = effectiveW / 2;
-      const targetCenterY = container.clientHeight / 2;
+      const { w: stageW, h: stageH } = getStageSize();
+      const sideW = document.getElementById('sidebar-filter')?.clientWidth || 0;
+      const headH = document.querySelector('header')?.clientHeight || 0;
+      // 目标中心 = 未被左侧栏/顶部栏/右侧抽屉遮挡的可视区域中心
+      const effectiveW = Math.max(stageW - sideW - drawerW, 300);
+      const targetCenterX = sideW + effectiveW / 2;
+      const targetCenterY = headH + (stageH - headH) / 2;
 
       let targetX = 0, targetY = 0;
       if (cameraTargetNode) {
@@ -830,8 +841,7 @@ window.QM.topology = (function() {
       simulateCelestialSystem(true);
     }
 
-    const w = container.clientWidth;
-    const h = container.clientHeight;
+    const { w, h } = getStageSize();
     ctx.clearRect(0, 0, w, h);
 
     const bounds = getViewportBounds(100);
@@ -1330,7 +1340,7 @@ window.QM.topology = (function() {
     const boxW = Math.max(90, textW + padX * 2);
     const boxH = 30;
 
-    const cw = container.clientWidth;
+    const cw = getStageSize().w;
     let bx = sp.x - boxW / 2;
     let by = sp.y - sp.r - 40;
 
