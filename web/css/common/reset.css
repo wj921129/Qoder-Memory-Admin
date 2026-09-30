@@ -14,10 +14,6 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
   background-color: var(--bg-main);
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.07) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 60%);
   background-attachment: fixed;
   color: var(--text-main);
   overflow: hidden;
@@ -26,6 +22,29 @@ body {
   height: 100vh;
   user-select: none;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/** 全屏深空星云与全息光路基底 (贯穿顶部 Header 与左侧 Sidebar 背后，提供毛玻璃折射介质) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    /* 顶部导航与左侧交汇处的青蓝核心星云 (穿透 Header 与 Sidebar) */
+    radial-gradient(circle at 12% 10%, rgba(56, 189, 248, 0.24) 0%, transparent 45%),
+    /* 顶部右侧工具栏背后的紫晶跃迁星云 (穿透 Header 工具栏) */
+    radial-gradient(circle at 86% 8%, rgba(168, 85, 247, 0.20) 0%, transparent 40%),
+    /* 左侧分类栏下部的深海全息辉光 (穿透 Sidebar 标签云) */
+    radial-gradient(circle at 10% 68%, rgba(14, 165, 233, 0.18) 0%, transparent 48%),
+    /* 视界中央深空宇宙微星云 */
+    radial-gradient(circle at 55% 50%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+    /* 全视界科技微网格与点阵 */
+    linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 36px 36px, 36px 36px;
 }
 
 /* ========== 通用工具类 ========== */

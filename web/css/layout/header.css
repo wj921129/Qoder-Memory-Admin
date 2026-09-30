@@ -21,6 +21,7 @@ header {
   /* 不设 overflow 裁剪：保证头部悬浮下拉菜单可完整展开渲染（专业模式“更多工具”菜单不再被遮挡） */
   gap: 12px;
   position: relative;
+  transform: translateZ(0);
 }
 /** 顶部导航底沿科技全息渐变流光线 */
 header::after {

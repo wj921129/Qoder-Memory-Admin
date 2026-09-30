@@ -18,6 +18,7 @@
   user-select: text;
   z-index: 20;
   position: relative;
+  transform: translateZ(0);
 }
 /** 侧边栏右侧垂直全息渐变流光轴 */
 #sidebar-filter::after {
