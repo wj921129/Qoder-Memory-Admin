@@ -10,7 +10,7 @@ main {
   height: calc(100vh - 58px);
   overflow: hidden;
   position: relative;
-  background-color: var(--bg-canvas);
+  background-color: transparent;
 }
 
 /** 中间核心业务视界渲染区 */

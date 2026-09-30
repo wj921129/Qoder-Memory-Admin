@@ -6,11 +6,11 @@
 /** 顶部全景毛玻璃导航控制台 (Cybernetic Command Header) */
 header {
   height: 58px;
-  background: var(--glass-bg-header);
+  background: var(--glass-bg-panel);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
-  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.15), 0 0 45px rgba(168, 85, 247, 0.08), inset 0 -1px 0 rgba(56, 189, 248, 0.2);
+  border-bottom: 1px solid var(--glass-border-panel);
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12), var(--glass-inner-light), inset 0 -1px 0 rgba(56, 189, 248, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -70,16 +70,16 @@ header::after {
   background: linear-gradient(135deg, rgba(11, 18, 38, 0.42) 0%, rgba(22, 10, 42, 0.30) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid var(--glass-border-panel);
   padding: 4px 9px;
   border-radius: var(--rounded-md);
   margin-left: 6px;
   flex-shrink: 0;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--glass-inner-light), 0 2px 8px rgba(0, 0, 0, 0.25);
   transition: var(--transition-smooth);
 }
 .project-selector-wrap:hover {
-  border-color: rgba(56, 189, 248, 0.48);
+  border-color: var(--glass-border-hover);
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.22), 0 0 16px rgba(56, 189, 248, 0.22), 0 0 25px rgba(168, 85, 247, 0.12);
 }
 /* ---------- 悬浮触发展开下拉控制组件 (Hover Dropdown) ---------- */
@@ -93,10 +93,10 @@ header::after {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(148, 163, 184, 0.1);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: var(--glass-bg-control);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
+  border: 1px solid var(--glass-border-subtle);
   color: var(--text-main);
   font-size: 11px;
   font-weight: 500;
@@ -106,13 +106,14 @@ header::after {
   cursor: pointer;
   transition: var(--transition-smooth);
   max-width: 190px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
 /** 触发键悬停流光 */
 .nav-dd-btn:hover {
-  border-color: rgba(125, 211, 252, 0.6);
+  border-color: var(--glass-border-hover);
   color: #fff;
-  box-shadow: 0 0 12px -3px rgba(56, 189, 248, 0.5);
-  background: rgba(148, 163, 184, 0.18);
+  box-shadow: 0 0 12px -3px rgba(56, 189, 248, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background: var(--glass-bg-control-hover);
 }
 /** 当前取值文本 (超长省略) */
 .nav-dd-label {
@@ -262,10 +263,10 @@ body.mode-default .pro-only {
 .btn-effects-toggle {
   width: 32px;
   height: 29px;
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.14) 0%, rgba(148, 163, 184, 0.06) 100%);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: var(--glass-bg-control);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: var(--rounded-md);
   color: var(--text-muted);
   display: inline-flex;
@@ -279,8 +280,9 @@ body.mode-default .pro-only {
 }
 /** 特效开关按钮悬停高亮 */
 .btn-effects-toggle:hover {
-  border-color: rgba(125, 211, 252, 0.6);
+  border-color: var(--glass-border-hover);
   color: #e0f2fe;
+  background: var(--glass-bg-control-hover);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 0 14px -4px rgba(56, 189, 248, 0.55);

@@ -6,11 +6,11 @@
 /** 左侧毛玻璃分类过滤器容器 */
 #sidebar-filter {
   width: 260px;
-  background: var(--glass-bg-sidebar);
+  background: var(--glass-bg-panel);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
-  border-right: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 6px 0 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12), 0 0 45px rgba(168, 85, 247, 0.08);
+  border-right: 1px solid var(--glass-border-panel);
+  box-shadow: 4px 0 28px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12), var(--glass-inner-light);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -28,9 +28,10 @@
   right: 0;
   width: 1px;
   background: linear-gradient(180deg, 
-    rgba(56, 189, 248, 0.6) 0%, 
-    rgba(168, 85, 247, 0.45) 40%, 
-    rgba(56, 189, 248, 0.45) 80%,
+    transparent 0%, 
+    rgba(56, 189, 248, 0.55) 15%, 
+    rgba(168, 85, 247, 0.45) 50%, 
+    rgba(56, 189, 248, 0.55) 85%, 
     transparent 100%
   );
   pointer-events: none;
@@ -39,7 +40,7 @@
 /** 侧边栏独立业务分区 */
 .sidebar-section {
   padding: 15px;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.14);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
 }
 /** 关键词云标签自适应撑满 */
 .sidebar-section-tags {
@@ -99,14 +100,14 @@
   background: linear-gradient(135deg, rgba(14, 22, 44, 0.40) 0%, rgba(26, 12, 48, 0.28) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.18);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border-panel);
+  box-shadow: var(--glass-inner-light), 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: var(--transition-smooth);
 }
 /** 官方分类项悬停流光 */
 .official-cat-item:hover {
   background: linear-gradient(135deg, rgba(26, 38, 70, 0.65) 0%, rgba(42, 18, 72, 0.50) 100%);
-  border-color: var(--color-neon-cyan);
+  border-color: var(--glass-border-hover);
   color: #fff;
   transform: translateX(4px);
   box-shadow: 0 3px 16px rgba(56, 189, 248, 0.35), 0 0 25px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -126,6 +127,8 @@
   padding: 2px 8px;
   border-radius: var(--rounded-full);
   background: rgba(10, 16, 34, 0.55);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
   border: 1px solid rgba(56, 189, 248, 0.35);
   color: var(--color-neon-cyan);
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.22);
@@ -149,6 +152,9 @@
   color: #cbd5e1;
   cursor: pointer;
   margin-bottom: 4px;
+  background: rgba(148, 163, 184, 0.05);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
   border: 1px solid transparent;
   transition: var(--transition-smooth);
   max-width: 100%;
@@ -165,24 +171,28 @@
 }
 /** 细分子目录悬停 */
 .cat-item:hover {
-  background: rgba(28, 42, 70, 0.65);
-  border-color: rgba(56, 189, 248, 0.25);
+  background: var(--glass-bg-control-hover);
+  border-color: var(--glass-border-panel);
   color: #fff;
   transform: translateX(2px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 /** 细分子目录选中激活态 */
 .cat-item.active {
   background: rgba(2, 132, 199, 0.25);
   color: var(--color-neon-cyan);
-  border: 1px solid rgba(56, 189, 248, 0.45);
+  border: 1px solid var(--glass-border-hover);
   font-weight: 600;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 /** 细分子目录统计微标 */
 .cat-count {
   font-size: 11px;
   padding: 2px 7px;
   background: rgba(20, 30, 52, 0.50);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
+  border: 1px solid rgba(148, 163, 184, 0.15);
   border-radius: var(--rounded-full);
   color: var(--text-muted);
   flex-shrink: 0;
@@ -202,17 +212,17 @@
   background: linear-gradient(135deg, rgba(14, 22, 44, 0.42) 0%, rgba(26, 12, 48, 0.30) 100%);
   backdrop-filter: var(--glass-blur-xs);
   -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid var(--glass-border-panel);
   border-radius: var(--rounded-full);
   color: #cbd5e1;
   cursor: pointer;
   transition: var(--transition-smooth);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: var(--glass-inner-light);
 }
 /** 语义标签悬停微亮 */
 .tag-pill:hover {
   background: linear-gradient(135deg, rgba(30, 46, 80, 0.65) 0%, rgba(55, 24, 90, 0.50) 100%);
-  border-color: var(--color-neon-cyan);
+  border-color: var(--glass-border-hover);
   color: #fff;
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.35), 0 0 20px rgba(168, 85, 247, 0.2);
   transform: translateY(-1px);
