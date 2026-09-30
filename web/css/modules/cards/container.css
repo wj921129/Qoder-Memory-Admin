@@ -21,52 +21,57 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: rgba(10, 16, 32, 0.65);
+  background: rgba(8, 14, 30, 0.78);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
   overflow-x: auto;
   flex-shrink: 0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
-/** 分类切换胶囊按钮 */
+/** 分类切换胶囊按钮 (Cyber Filter Pill) */
 .official-tab {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 14px;
+  padding: 6px 15px;
   border-radius: var(--rounded-full);
-  background: rgba(30, 41, 59, 0.5);
-  border: 1px solid rgba(56, 189, 248, 0.15);
+  background: rgba(16, 26, 48, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.2);
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
   transition: var(--transition-smooth);
   white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 /** 分类胶囊悬停 */
 .official-tab:hover {
-  background: rgba(51, 65, 85, 0.7);
+  background: rgba(28, 44, 76, 0.85);
   color: #fff;
   border-color: var(--color-neon-cyan);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+.official-tab:active {
+  transform: translateY(0) scale(0.97);
 }
 /** 分类胶囊激活态发光边框 */
 .official-tab.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.3) 0%, rgba(56, 189, 248, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.35) 0%, rgba(56, 189, 248, 0.2) 100%);
   color: var(--color-neon-cyan);
   border-color: var(--color-neon-cyan);
   font-weight: 600;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.3), var(--glass-shine);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 /** 分类胶囊数量统计小徽章 */
 .official-tab .tab-badge {
   font-size: 10px;
   font-weight: 600;
-  padding: 1px 7px;
+  padding: 2px 7px;
   border-radius: var(--rounded-full);
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(10, 16, 32, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
   color: inherit;
 }
 
@@ -78,8 +83,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
-  background: rgba(15, 23, 42, 0.35);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.14);
+  background: rgba(11, 18, 36, 0.55);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
 }
@@ -101,8 +106,8 @@
 }
 /** 排序方式毛玻璃下拉框 */
 .sort-select {
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(16, 26, 48, 0.75);
+  border: 1px solid rgba(56, 189, 248, 0.22);
   color: var(--text-main);
   padding: 4px 10px;
   border-radius: var(--rounded-sm);
@@ -114,7 +119,8 @@
 /** 排序下拉框悬停高亮 */
 .sort-select:hover {
   border-color: var(--color-neon-cyan);
-  color: var(--color-neon-cyan);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
 }
 
 /* ========== 卡片内容滚动区 ========== */

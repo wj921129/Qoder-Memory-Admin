@@ -3,35 +3,42 @@
    ======================================================== */
 
 :root {
-  /* ========== 基础暗夜色深 ========== */
-  --bg-main: #060913;
-  --bg-canvas: #05070e;
-  --bg-panel: rgba(10, 16, 30, 0.75);
-  --bg-card: rgba(13, 22, 42, 0.65);
+  /* ========== 基础暗夜色深 (Deep Cosmic Space) ========== */
+  --bg-main: #050811;
+  --bg-canvas: #04060c;
+  --bg-panel: rgba(8, 14, 28, 0.72);
+  --bg-card: rgba(11, 18, 36, 0.62);
 
-  /* ========== 科技毛玻璃系统 ========== */
-  --glass-bg-header: rgba(8, 14, 26, 0.75);
-  --glass-bg-sidebar: rgba(8, 14, 28, 0.72);
-  --glass-bg-panel: rgba(10, 17, 34, 0.78);
-  --glass-bg-card: rgba(13, 21, 40, 0.62);
-  --glass-bg-control: rgba(15, 23, 42, 0.65);
-  --glass-bg-dropdown: rgba(10, 17, 34, 0.88);
-  --glass-blur-sm: blur(8px);
-  --glass-blur-md: blur(14px);
-  --glass-blur-lg: blur(20px);
+  /* ========== 科技毛玻璃系统 (Frosted Glassmorphism 2.0) ========== */
+  --glass-bg-header: rgba(7, 12, 24, 0.76);
+  --glass-bg-sidebar: rgba(6, 11, 22, 0.74);
+  --glass-bg-panel: rgba(8, 14, 30, 0.78);
+  --glass-bg-card: rgba(11, 18, 38, 0.62);
+  --glass-bg-control: rgba(13, 20, 38, 0.65);
+  --glass-bg-dropdown: rgba(9, 15, 32, 0.92);
+  --glass-bg-modal: rgba(8, 14, 30, 0.88);
+  --glass-blur-xs: blur(6px) saturate(140%);
+  --glass-blur-sm: blur(12px) saturate(150%);
+  --glass-blur-md: blur(20px) saturate(170%);
+  --glass-blur-lg: blur(30px) saturate(190%);
   --glass-border: rgba(56, 189, 248, 0.18);
-  --glass-border-subtle: rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(56, 189, 248, 0.45);
-  --glass-shine: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --glass-border-subtle: rgba(255, 255, 255, 0.07);
+  --glass-border-hover: rgba(56, 189, 248, 0.48);
+  --glass-shine: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --glass-inner-bevel: inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 -1px 1px rgba(0, 0, 0, 0.4);
 
-  /* ========== 边框与阴影体系 ========== */
-  --border-color: #1e293b;
+  /* ========== 科技边框与发光导轨体系 (Cybernetic Edges & Rails) ========== */
+  --border-color: rgba(30, 41, 59, 0.7);
   --border-focus: #38bdf8;
   --color-border-glow: rgba(56, 189, 248, 0.35);
-  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --glass-shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.75);
-  --glass-shadow-glow: 0 0 20px rgba(56, 189, 248, 0.2);
+  --tech-border-hairline: 1px solid rgba(56, 189, 248, 0.16);
+  --tech-border-bright: 1px solid rgba(56, 189, 248, 0.42);
+  --tech-corner-accent: #38bdf8;
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --glass-shadow-md: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 12px rgba(56, 189, 248, 0.08);
+  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.14);
+  --glass-shadow-glow: 0 0 20px rgba(56, 189, 248, 0.28);
+  --shadow-modal: 0 25px 70px -10px rgba(0, 0, 0, 0.92), 0 0 30px rgba(56, 189, 248, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 
   /* ========== 文本色彩体系 ========== */
   --text-main: #e2e8f0;
@@ -58,6 +65,8 @@
   --rounded-md: 6px;
   --rounded-lg: 10px;
   --rounded-xl: 14px;
+  --rounded-2xl: 20px;
   --rounded-full: 9999px;
-  --transition-smooth: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-smooth: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-bounce: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

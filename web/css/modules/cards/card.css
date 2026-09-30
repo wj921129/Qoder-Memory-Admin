@@ -10,25 +10,26 @@
   gap: 18px;
 }
 
-/* ========== 记忆卡片晶体主体 ========== */
+/* ========== 记忆卡片晶体主体 (Cybernetic Crystal Slate) ========== */
 /** 单个记忆切片毛玻璃卡片 */
 .memory-card {
   background: var(--glass-bg-card);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: var(--rounded-lg);
   padding: 18px;
   display: flex;
   flex-direction: column;
   transition: var(--transition-smooth);
   user-select: text;
-  box-shadow: var(--glass-shadow-sm), var(--glass-shine);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
 }
 /** 记忆卡片悬停流光浮动 */
 .memory-card:hover {
-  border-color: var(--glass-border-hover);
-  box-shadow: var(--glass-shadow-md), 0 0 20px rgba(56, 189, 248, 0.22), var(--glass-shine);
+  border-color: rgba(56, 189, 248, 0.48);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 22px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   transform: translateY(-3px);
 }
 /** 卡片标题文字 */

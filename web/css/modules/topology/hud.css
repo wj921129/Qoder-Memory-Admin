@@ -2,27 +2,48 @@
    Qoder Memory Visualizer - 认知引力场 HUD 状态框
    ======================================================== */
 
-/* ========== HUD 核心终端面板 ========== */
+/* ========== HUD 核心终端面板 (Tactical Sci-Fi HUD) ========== */
 /** 拓扑右上角毛玻璃科技 HUD 悬浮框 */
 .galaxy-hud {
   position: absolute;
   top: 18px;
   right: 18px;
-  background: rgba(8, 14, 28, 0.72);
+  background: rgba(7, 13, 28, 0.82);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(56, 189, 248, 0.32);
   border-radius: var(--rounded-md);
-  padding: 8px 14px;
+  padding: 8px 16px;
   font-size: 11px;
   color: #cbd5e1;
   pointer-events: none;
   z-index: 25;
   display: flex;
   align-items: center;
-  gap: 9px;
-  box-shadow: var(--glass-shadow-md), 0 0 16px rgba(56, 189, 248, 0.15), var(--glass-shine);
+  gap: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 16px rgba(56, 189, 248, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition: var(--transition-smooth);
+}
+/** HUD 战术瞄准角标装饰 (Top-Left & Bottom-Right) */
+.galaxy-hud::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--color-neon-cyan);
+  border-left: 2px solid var(--color-neon-cyan);
+}
+.galaxy-hud::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid var(--color-neon-cyan);
+  border-right: 2px solid var(--color-neon-cyan);
 }
 
 /* ========== HUD 状态指示与微标 ========== */
@@ -32,17 +53,17 @@
   height: 8px;
   border-radius: 50%;
   background: var(--color-neon-emerald);
-  box-shadow: 0 0 8px var(--color-neon-emerald);
+  box-shadow: 0 0 10px var(--color-neon-emerald);
   animation: hudPulse 1.8s infinite ease-in-out;
 }
 @keyframes hudPulse {
   0%, 100% {
-    opacity: 0.5;
+    opacity: 0.55;
     transform: scale(0.9);
   }
   50% {
     opacity: 1;
-    transform: scale(1.2);
+    transform: scale(1.25);
   }
 }
 /** HUD 当前运行模式展示胶囊 */
@@ -51,9 +72,9 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--rounded-sm);
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(20, 32, 58, 0.85);
   color: var(--text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid rgba(148, 163, 184, 0.35);
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -61,8 +82,8 @@
 /** HUD 专业/编辑模式专属发光金色胶囊 */
 .hud-mode-pill.edit,
 .hud-mode-pill.pro {
-  background: rgba(217, 119, 6, 0.25);
+  background: rgba(217, 119, 6, 0.28);
   color: #fde68a;
-  border-color: rgba(245, 158, 11, 0.6);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  border-color: rgba(245, 158, 11, 0.65);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }

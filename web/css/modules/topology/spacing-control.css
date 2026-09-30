@@ -2,29 +2,50 @@
    Qoder Memory Visualizer - 选中行星卫星间距控制面板 (右下角)
    ======================================================== */
 
-/* ========== 间距控制器主面板 ========== */
+/* ========== 间距控制器主面板 (Orbit Spacing Console) ========== */
 /** 右下角卫星间距调节毛玻璃面板 */
 .satellite-spacing-controller {
   position: absolute;
   bottom: 18px;
   right: 18px;
-  min-width: 290px;
-  background: rgba(9, 15, 30, 0.78);
+  min-width: 296px;
+  background: rgba(8, 14, 30, 0.86);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(56, 189, 248, 0.32);
   border-radius: var(--rounded-md);
-  padding: 10px 14px;
+  padding: 11px 15px;
   font-size: 11px;
   color: #cbd5e1;
   z-index: 25;
-  box-shadow: var(--glass-shadow-md), var(--glass-shine);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   pointer-events: auto;
   user-select: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
   transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+}
+/** 间距控制器战术瞄准角标 (Top-Left & Bottom-Right) */
+.satellite-spacing-controller::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--color-neon-cyan);
+  border-left: 2px solid var(--color-neon-cyan);
+}
+.satellite-spacing-controller::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid var(--color-neon-cyan);
+  border-right: 2px solid var(--color-neon-cyan);
 }
 /** 抽屉打开时右下角面板自适应左移避免遮挡 */
 body.has-drawer-open .satellite-spacing-controller,
@@ -33,14 +54,14 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 间距控制器悬停流光 */
 .satellite-spacing-controller:hover {
-  background: rgba(10, 17, 34, 0.92);
-  border-color: var(--glass-border-hover);
-  box-shadow: var(--glass-shadow-lg), 0 0 16px rgba(56, 189, 248, 0.2);
+  background: rgba(10, 18, 38, 0.94);
+  border-color: rgba(56, 189, 248, 0.52);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 /** 间距控制器选中激活态高亮 */
 .satellite-spacing-controller.is-active {
   border-color: var(--color-neon-cyan);
-  box-shadow: var(--glass-shadow-lg), 0 0 18px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.88), 0 0 22px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* ========== 控制面板头部 ========== */

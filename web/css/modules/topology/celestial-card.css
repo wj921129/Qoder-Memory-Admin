@@ -2,33 +2,55 @@
    Qoder Memory Visualizer - 天体基本信息常驻介绍卡片 (Celestial Info Card)
    ======================================================== */
 
-/* ========== 天体卡片主体容器 ========== */
+/* ========== 天体卡片主体容器 (Celestial Terminal Window) ========== */
 /** 拓扑左上角毛玻璃天体详情浮动面板 */
 .celestial-card {
   position: absolute;
   top: 18px;
   left: 18px;
-  width: 320px;
-  background: rgba(9, 15, 30, 0.78);
+  width: 326px;
+  background: rgba(8, 14, 30, 0.86);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--rounded-lg);
-  box-shadow: var(--glass-shadow-lg), 0 0 24px rgba(56, 189, 248, 0.2), var(--glass-shine);
-  padding: 15px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.82), 0 0 24px rgba(56, 189, 248, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  padding: 16px 19px;
   color: #e2e8f0;
   z-index: 30;
   display: none;
   flex-direction: column;
   gap: 12px;
-  animation: celestialCardFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: celestialCardFadeIn 0.26s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: text;
   pointer-events: auto;
+  position: absolute;
+}
+/** 天体详情卡战术瞄准角标 (Top-Left & Bottom-Right) */
+.celestial-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--color-neon-cyan);
+  border-left: 2px solid var(--color-neon-cyan);
+}
+.celestial-card::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 2px solid var(--color-neon-cyan);
+  border-right: 2px solid var(--color-neon-cyan);
 }
 @keyframes celestialCardFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.97);
+    transform: translateY(-10px) scale(0.96);
   }
   to {
     opacity: 1;

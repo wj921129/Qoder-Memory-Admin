@@ -2,35 +2,56 @@
    Qoder Memory Visualizer - 引力拓扑图例指南浮层
    ======================================================== */
 
-/* ========== 图例悬浮舱主体 ========== */
+/* ========== 图例悬浮舱主体 (Sci-Fi Legend Terminal) ========== */
 /** 拓扑左下角毛玻璃图例悬浮仓 */
 .galaxy-legend {
   position: absolute;
   bottom: 18px;
   left: 18px;
-  width: 300px;
-  background: rgba(8, 14, 28, 0.75);
+  width: 310px;
+  background: rgba(7, 13, 28, 0.82);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(56, 189, 248, 0.3);
   border-radius: var(--rounded-md);
-  padding: 8px 14px;
+  padding: 9px 15px;
   font-size: 11px;
   color: var(--text-muted);
   display: flex;
   flex-direction: column;
   pointer-events: auto;
   z-index: 25;
-  box-shadow: var(--glass-shadow-md), var(--glass-shine);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   cursor: pointer;
   transform-origin: bottom left;
   transition: var(--transition-smooth);
 }
+/** 图例悬浮仓战术瞄准角标 (Top-Right & Bottom-Left) */
+.galaxy-legend::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid var(--color-neon-cyan);
+  border-right: 2px solid var(--color-neon-cyan);
+}
+.galaxy-legend::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: -2px;
+  width: 6px;
+  height: 6px;
+  border-bottom: 2px solid var(--color-neon-cyan);
+  border-left: 2px solid var(--color-neon-cyan);
+}
 /** 图例悬浮仓悬停高亮展开 */
 .galaxy-legend:hover {
-  background: rgba(10, 17, 34, 0.92);
-  border-color: var(--glass-border-hover);
-  box-shadow: var(--glass-shadow-lg), 0 0 16px rgba(56, 189, 248, 0.25);
+  background: rgba(9, 16, 34, 0.94);
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 
 /* ========== 图例头部与折叠动效 ========== */

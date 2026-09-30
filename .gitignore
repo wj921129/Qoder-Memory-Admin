@@ -22,6 +22,7 @@ scratch/
 temp/
 tmp/
 .codegraph/
+.agents/
 
 # Logs
 *.log
