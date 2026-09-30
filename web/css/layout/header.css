@@ -6,9 +6,9 @@
 /** 顶部全景毛玻璃导航控制台 (Cybernetic Command Header) */
 header {
   height: 58px;
-  background: var(--glass-bg-header);
-  backdrop-filter: var(--glass-blur-lg);
-  -webkit-backdrop-filter: var(--glass-blur-lg);
+  background: var(--glass-bg-panel);
+  backdrop-filter: var(--glass-blur-xl);
+  -webkit-backdrop-filter: var(--glass-blur-xl);
   border-bottom: 1px solid rgba(56, 189, 248, 0.25);
   box-shadow: 0 4px 28px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.15), 0 0 45px rgba(168, 85, 247, 0.08), inset 0 -1px 0 rgba(56, 189, 248, 0.2);
   display: flex;

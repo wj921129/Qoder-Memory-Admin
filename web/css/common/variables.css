@@ -8,12 +8,11 @@
   --bg-canvas: #04060c;
 
   /* ========== 精密光学毛玻璃系统 (Precision Optical Glass) ========== */
-  --glass-bg-header: linear-gradient(180deg, rgba(8, 16, 36, 0.46) 0%, rgba(6, 11, 24, 0.38) 100%);
-  --glass-bg-sidebar: linear-gradient(180deg, rgba(7, 14, 30, 0.42) 0%, rgba(14, 9, 28, 0.35) 100%);
+  /** 统一面板毛玻璃封装：顶部导航 / 左侧边栏 / 主内容抽屉共用同一玻璃基面 */
+  --glass-bg-panel: linear-gradient(180deg, rgba(7, 13, 30, 0.52) 0%, rgba(18, 8, 34, 0.45) 100%);
   --glass-bg-card: linear-gradient(135deg, rgba(10, 18, 38, 0.36) 0%, rgba(20, 10, 42, 0.26) 100%);
   --glass-bg-dropdown: linear-gradient(160deg, rgba(15, 24, 48, 0.86) 0%, rgba(10, 15, 32, 0.90) 100%);
   --glass-bg-modal: linear-gradient(165deg, rgba(16, 26, 50, 0.68) 0%, rgba(10, 15, 32, 0.78) 100%);
-  --glass-bg-drawer: linear-gradient(180deg, rgba(7, 13, 30, 0.52) 0%, rgba(18, 8, 34, 0.45) 100%);
   --glass-blur-xs: blur(10px) saturate(180%) contrast(104%);
   --glass-blur-sm: blur(18px) saturate(200%) contrast(106%);
   --glass-blur-md: blur(28px) saturate(220%) contrast(108%);

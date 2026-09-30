@@ -6,9 +6,9 @@
 /** 左侧毛玻璃分类过滤器容器 */
 #sidebar-filter {
   width: 260px;
-  background: var(--glass-bg-sidebar);
-  backdrop-filter: var(--glass-blur-lg);
-  -webkit-backdrop-filter: var(--glass-blur-lg);
+  background: var(--glass-bg-panel);
+  backdrop-filter: var(--glass-blur-xl);
+  -webkit-backdrop-filter: var(--glass-blur-xl);
   border-right: 1px solid rgba(56, 189, 248, 0.25);
   box-shadow: 6px 0 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12), 0 0 45px rgba(168, 85, 247, 0.08);
   display: flex;
