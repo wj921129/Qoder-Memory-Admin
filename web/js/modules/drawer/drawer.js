@@ -67,13 +67,13 @@ window.QM.drawer = (function() {
         const bodyInput = document.getElementById('edit-body');
         const text = (bodyInput && bodyInput.value) || '';
         if (!text.trim()) {
-          window.QM.utils?.showToast('正文内容为空');
+          window.QM.utils?.showToast('正文内容为空', 'warn');
           return;
         }
         navigator.clipboard.writeText(text).then(() => {
-          window.QM.utils?.showToast('📋 已成功复制正文 Markdown 到剪贴板！');
+          window.QM.utils?.showToast('📋 已成功复制正文 Markdown 到剪贴板！', 'success');
         }).catch(() => {
-          window.QM.utils?.showToast('复制失败，请手动选择复制');
+          window.QM.utils?.showToast('复制失败，请手动选择复制', 'error');
         });
       });
     }
@@ -352,7 +352,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     currentActiveItemId = null;
     const { appMode, memories, currentProject, currentProjectScope } = window.QM.state.state;
     if (appMode !== 'pro') {
-      window.QM.utils?.showToast('当前处于默认模式。请先在顶部导航栏切换至「⚡ 专业模式」后再新建记忆！');
+      window.QM.utils?.showToast('当前处于默认模式。请先在顶部导航栏切换至「⚡ 专业模式」后再新建记忆！', 'warn');
       return;
     }
 
@@ -422,13 +422,13 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   function saveCurrentDrawer() {
     const state = window.QM.state.state;
     if (state.appMode !== 'pro') {
-      window.QM.utils?.showToast('当前处于默认模式，无法保存修改！');
+      window.QM.utils?.showToast('当前处于默认模式，无法保存修改！', 'warn');
       return;
     }
 
     const id = document.getElementById('edit-id').value;
     const name = document.getElementById('edit-name').value.trim();
-    if (!name) return window.QM.utils?.showToast ? window.QM.utils.showToast('请输入记忆标题') : alert('请输入记忆标题');
+    if (!name) return window.QM.utils?.showToast ? window.QM.utils.showToast('请输入记忆标题', 'warn') : alert('请输入记忆标题');
 
     let filename = document.getElementById('edit-filename').value.trim();
     if (!filename) {
@@ -456,11 +456,11 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
       if (item) {
         // IDE 原生库的分类由物理子目录承载，改类等于搬家文件，本节暂不支持，回滚避免静默失效
         if (item.storeType === 'ide' && category !== item.category) {
-          window.QM.utils?.showToast('⚠️ IDE 记忆库的分类等同物理子目录，本轮不支持在此改类，已保留原分类');
+          window.QM.utils?.showToast('⚠️ IDE 记忆库的分类等同物理子目录，本轮不支持在此改类，已保留原分类', 'warn');
           category = item.category;
         }
         if (item.storeType === 'ide' && item.rawFormat === 'ide' && type !== item.type) {
-          window.QM.utils?.showToast('⚠️ 该切片的认知域由目录名决定，官方无 type 字段，已保留原分类推导');
+          window.QM.utils?.showToast('⚠️ 该切片的认知域由目录名决定，官方无 type 字段，已保留原分类推导', 'warn');
           type = item.type;
         }
 
@@ -480,7 +480,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         }
         item.dirty = true;
       }
-      window.QM.utils?.showToast('记忆切片已更新， Ctrl + S 落盘');
+      window.QM.utils?.showToast('记忆切片已更新， Ctrl + S 落盘', 'success');
     } else {
       const targetProjId = state.activeGalaxyId || (state.galaxies && state.galaxies[0] ? state.galaxies[0].id : state.currentProject);
       const targetGalaxy = (state.galaxies || []).find(g => g.id === targetProjId);
@@ -501,7 +501,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         body,
         dirty: true
       });
-      window.QM.utils?.showToast('记忆切片已成功创建！');
+      window.QM.utils?.showToast('记忆切片已成功创建！', 'success');
     }
 
     closeDrawer();
@@ -515,7 +515,12 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (!item) return;
 
     const targetProjName = item.projectName || item.projectId || currentProject;
-    const confirmed = confirm(`⚠️ 危险维护操作确认：\n\n确定彻底删除记忆切片 "${item.name}" 吗？\n文件：${item.filename} [所属工程: ${targetProjName}]\n\n此操作将从物理磁盘中彻底删除该 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`);
+    const confirmed = await window.QM.utils.confirmDialog({
+      title: '删除记忆切片',
+      message: `确定彻底删除“${item.name}”吗？\n文件：${item.filename} [所属工程: ${targetProjName}]\n\n此操作将从物理磁盘中彻底删除该 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`,
+      icon: '🗑️',
+      confirmText: '彻底删除'
+    });
     if (!confirmed) return;
 
     if (isServerMode && window.QM.api) {
@@ -535,11 +540,11 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         if (window.QM.topology?.buildGalaxyGraph) {
           window.QM.topology.buildGalaxyGraph();
         }
-        window.QM.utils?.showToast(`🗑️ 已从磁盘彻底删除 ${item.filename} 并刷新索引！`);
+        window.QM.utils?.showToast(`🗑️ 已从磁盘彻底删除 ${item.filename} 并刷新索引！`, 'success');
         return;
       } catch (err) {
         console.error('[Delete] 服务端删除失败:', err.message);
-        window.QM.utils?.showToast(`删除失败: ${err.message}`);
+        window.QM.utils?.showToast(`删除失败: ${err.message}`, 'error');
         return;
       }
     }
@@ -555,7 +560,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (window.QM.topology?.buildGalaxyGraph) {
       window.QM.topology.buildGalaxyGraph();
     }
-    window.QM.utils?.showToast(`已删除记忆条目 (离线态)`);
+    window.QM.utils?.showToast(`已删除记忆条目 (离线态)`, 'success');
   }
 
   return {

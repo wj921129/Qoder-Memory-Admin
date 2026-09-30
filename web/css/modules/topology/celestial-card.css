@@ -89,21 +89,30 @@
   background: var(--color-neon-cyan);
   box-shadow: 0 0 6px var(--color-neon-cyan);
 }
-/** 天体卡片关闭图标按钮 */
+/** 天体卡片关闭图标按钮 —— 微型圆形玻璃键 */
 .c-close-btn {
-  background: transparent;
-  border: none;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   color: var(--text-muted);
-  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
   transition: var(--transition-smooth);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-/** 天体卡片关闭按钮悬停高亮 */
+/** 天体卡片关闭按钮悬停警示红晕 */
 .c-close-btn:hover {
-  color: #f8fafc;
-  transform: scale(1.15);
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(248, 113, 113, 0.5);
+  color: #fecaca;
+  box-shadow: 0 0 12px -3px rgba(239, 68, 68, 0.5);
 }
 
 /* ========== 天体卡片核心内容 ========== */

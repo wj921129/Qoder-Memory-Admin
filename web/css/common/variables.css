@@ -6,61 +6,33 @@
   /* ========== 基础暗夜色深 (Deep Cosmic Space) ========== */
   --bg-main: #050811;
   --bg-canvas: #04060c;
-  --bg-panel: rgba(8, 14, 28, 0.72);
-  --bg-card: rgba(11, 18, 36, 0.62);
 
-  /* ========== 科技魔幻超透毛玻璃系统 (Hyper-Glassmorphism & Prismatic Aura) ========== */
+  /* ========== 精密光学毛玻璃系统 (Precision Optical Glass) ========== */
   --glass-bg-header: linear-gradient(180deg, rgba(8, 16, 36, 0.46) 0%, rgba(6, 11, 24, 0.38) 100%);
   --glass-bg-sidebar: linear-gradient(180deg, rgba(7, 14, 30, 0.42) 0%, rgba(14, 9, 28, 0.35) 100%);
-  --glass-bg-panel: linear-gradient(135deg, rgba(8, 16, 34, 0.44) 0%, rgba(18, 10, 38, 0.34) 100%);
   --glass-bg-card: linear-gradient(135deg, rgba(10, 18, 38, 0.36) 0%, rgba(20, 10, 42, 0.26) 100%);
-  --glass-bg-control: rgba(12, 20, 42, 0.38);
-  --glass-bg-dropdown: linear-gradient(145deg, rgba(10, 18, 38, 0.72) 0%, rgba(18, 9, 36, 0.65) 100%);
-  --glass-bg-modal: linear-gradient(145deg, rgba(8, 16, 36, 0.48) 0%, rgba(20, 10, 42, 0.38) 100%);
+  --glass-bg-dropdown: linear-gradient(160deg, rgba(15, 24, 48, 0.86) 0%, rgba(10, 15, 32, 0.90) 100%);
+  --glass-bg-modal: linear-gradient(165deg, rgba(16, 26, 50, 0.68) 0%, rgba(10, 15, 32, 0.78) 100%);
   --glass-bg-drawer: linear-gradient(180deg, rgba(7, 13, 30, 0.52) 0%, rgba(18, 8, 34, 0.45) 100%);
   --glass-blur-xs: blur(10px) saturate(180%) contrast(104%);
   --glass-blur-sm: blur(18px) saturate(200%) contrast(106%);
   --glass-blur-md: blur(28px) saturate(220%) contrast(108%);
   --glass-blur-lg: blur(40px) saturate(235%) contrast(110%);
   --glass-blur-xl: blur(52px) saturate(250%) contrast(112%);
-  --glass-border: rgba(56, 189, 248, 0.32);
-  --glass-border-subtle: rgba(255, 255, 255, 0.12);
-  --glass-border-hover: rgba(56, 189, 248, 0.65);
-  --glass-shine: inset 0 1px 1px rgba(255, 255, 255, 0.28), inset 0 0 16px rgba(56, 189, 248, 0.08);
-  --glass-inner-bevel: inset 0 1px 1px rgba(255, 255, 255, 0.25), inset 0 -1px 1px rgba(0, 0, 0, 0.45);
-  --glass-glow-magic: 0 0 28px rgba(56, 189, 248, 0.22), 0 0 45px rgba(168, 85, 247, 0.14);
 
-  /* ========== 科技边框与发光导轨体系 (Cybernetic Edges & Rails) ========== */
-  --border-color: rgba(30, 41, 59, 0.7);
+  /* ========== 聚焦导轨体系 ========== */
   --border-focus: #38bdf8;
-  --color-border-glow: rgba(56, 189, 248, 0.45);
-  --tech-border-hairline: 1px solid rgba(56, 189, 248, 0.22);
-  --tech-border-bright: 1px solid rgba(56, 189, 248, 0.55);
-  --tech-corner-accent: #38bdf8;
-  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --glass-shadow-md: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(56, 189, 248, 0.12);
-  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.75), 0 0 28px rgba(56, 189, 248, 0.18), 0 0 45px rgba(168, 85, 247, 0.12);
-  --glass-shadow-glow: 0 0 25px rgba(56, 189, 248, 0.35);
-  --shadow-modal: 0 25px 70px -10px rgba(0, 0, 0, 0.88), 0 0 35px rgba(56, 189, 248, 0.25), 0 0 60px rgba(168, 85, 247, 0.16), inset 0 1px 1px rgba(255, 255, 255, 0.28);
 
   /* ========== 文本色彩体系 ========== */
   --text-main: #e2e8f0;
   --text-muted: #94a3b8;
   --text-bright: #f8fafc;
-  --text-highlight: #38bdf8;
 
   /* ========== 科技霓虹色彩 ========== */
-  --color-primary: #0284c7;
-  --color-primary-hover: #38bdf8;
-  --primary: #0284c7;
-  --primary-hover: #38bdf8;
   --color-neon-cyan: #38bdf8;
-  --color-neon-blue: #0ea5e9;
   --color-neon-purple: #a855f7;
   --color-neon-emerald: #10b981;
-  --color-neon-amber: #f59e0b;
   --warning: #f59e0b;
-  --danger: #ef4444;
   --success: #10b981;
 
   /* ========== 圆角与过渡规范 ========== */
@@ -68,8 +40,6 @@
   --rounded-md: 6px;
   --rounded-lg: 10px;
   --rounded-xl: 14px;
-  --rounded-2xl: 20px;
   --rounded-full: 9999px;
   --transition-smooth: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-bounce: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

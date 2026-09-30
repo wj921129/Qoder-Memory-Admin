@@ -29,17 +29,17 @@
   flex-shrink: 0;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 -1px 0 rgba(255, 255, 255, 0.12);
 }
-/** 分类切换胶囊按钮 (Cyber Filter Pill) */
+/** 分类切换胶囊按钮 (Filter Pill) */
 .official-tab {
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 6px 15px;
   border-radius: var(--rounded-full);
-  background: linear-gradient(135deg, rgba(16, 26, 50, 0.40) 0%, rgba(30, 14, 56, 0.28) 100%);
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.13) 0%, rgba(148, 163, 184, 0.06) 100%);
   backdrop-filter: var(--glass-blur-xs);
   -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
@@ -49,22 +49,26 @@
 }
 /** 分类胶囊悬停 */
 .official-tab:hover {
-  background: linear-gradient(135deg, rgba(28, 44, 78, 0.65) 0%, rgba(52, 22, 92, 0.50) 100%);
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.22) 0%, rgba(148, 163, 184, 0.11) 100%);
   color: #fff;
-  border-color: var(--color-neon-cyan);
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35), 0 0 25px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: rgba(125, 211, 252, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 16px -5px rgba(56, 189, 248, 0.5);
   transform: translateY(-1px);
 }
 .official-tab:active {
   transform: translateY(0) scale(0.97);
 }
-/** 分类胶囊激活态发光边框 */
+/** 分类胶囊激活态：蓝宝石受光 */
 .official-tab.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.42) 0%, rgba(168, 85, 247, 0.28) 100%);
-  color: var(--color-neon-cyan);
-  border-color: var(--color-neon-cyan);
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.42) 0%, rgba(3, 105, 161, 0.38) 100%);
+  color: #e0f2fe;
+  border-color: rgba(125, 211, 252, 0.65);
   font-weight: 600;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45), 0 0 35px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 18px -6px rgba(56, 189, 248, 0.6);
 }
 /** 分类胶囊数量统计小徽章 */
 .official-tab .tab-badge {
@@ -108,8 +112,8 @@
 }
 /** 排序方式毛玻璃下拉框 */
 .sort-select {
-  background: rgba(16, 26, 48, 0.75);
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   color: var(--text-main);
   padding: 4px 10px;
   border-radius: var(--rounded-sm);
@@ -120,9 +124,10 @@
 }
 /** 排序下拉框悬停高亮 */
 .sort-select:hover {
-  border-color: var(--color-neon-cyan);
+  border-color: rgba(125, 211, 252, 0.6);
   color: #fff;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  background: rgba(148, 163, 184, 0.16);
+  box-shadow: 0 0 12px -3px rgba(56, 189, 248, 0.5);
 }
 
 /* ========== 卡片内容滚动区 ========== */

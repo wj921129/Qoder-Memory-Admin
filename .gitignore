@@ -11,6 +11,7 @@ Desktop.ini
 # Editor & IDE directories
 .idea/
 .vscode/
+.qoder
 *.swp
 *.swo
 *.sublime-workspace

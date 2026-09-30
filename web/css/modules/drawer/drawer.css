@@ -279,21 +279,24 @@ select.form-control {
 }
 /** 一键复制代码操作按钮 */
 .btn-copy-code {
-  background: rgba(18, 28, 48, 0.6);
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.13) 0%, rgba(148, 163, 184, 0.06) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   color: var(--text-muted);
   font-size: 11px;
   padding: 3px 10px;
   border-radius: var(--rounded-sm);
   cursor: pointer;
   transition: var(--transition-smooth);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 /** 复制代码按钮悬停高亮 */
 .btn-copy-code:hover {
-  background: rgba(28, 44, 76, 0.85);
-  color: var(--color-neon-cyan);
-  border-color: var(--color-neon-cyan);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.2) 0%, rgba(148, 163, 184, 0.1) 100%);
+  color: #7dd3fc;
+  border-color: rgba(125, 211, 252, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 12px -3px rgba(56, 189, 248, 0.5);
 }
 
 /* ========== 高级元数据折叠仓 (Machined Nested Module) ========== */
@@ -412,16 +415,18 @@ select.form-control {
 /** 抽屉只读提示横幅 */
 .drawer-notice-banner {
   display: none;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-left: 4px solid var(--color-neon-cyan);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.55) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-left: 3px solid var(--color-neon-cyan);
   padding: 8px 14px;
   border-radius: var(--rounded-md);
   font-size: 11.5px;
   color: #cbd5e1;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 16px -6px rgba(56, 189, 248, 0.35);
 }
 /** 自定义分类输入框默认隐藏 */
 #edit-category-custom {

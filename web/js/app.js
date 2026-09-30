@@ -152,7 +152,7 @@ window.QM.app = (function() {
     } else {
       state.isServerMode = false;
       if (utils?.showToast) {
-        utils.showToast('提示：当前为离线模式，双击 start.bat 可启动本地服务实现免软链接物理直读直写');
+        utils.showToast('提示：当前为离线模式，双击 start.bat 可启动本地服务实现免软链接物理直读直写', 'warn');
       }
       if (cards?.renderUI) cards.renderUI();
       if (topology?.fitGalaxyView) topology.fitGalaxyView();
@@ -227,7 +227,7 @@ window.QM.app = (function() {
     } catch (err) {
       console.error('载入全宇宙多星系数据异常:', err);
       if (utils?.showToast) {
-        utils.showToast(`载入宏观宇宙异常: ${err.message}`);
+        utils.showToast(`载入宏观宇宙异常: ${err.message}`, 'error');
       }
     }
   }
@@ -268,7 +268,7 @@ window.QM.app = (function() {
 
     if (s.appMode !== 'pro') {
       if (utils?.showToast) {
-        utils.showToast('当前处于默认模式。请先在顶部导航栏切换至「⚡ 专业模式」后再同步落盘！');
+        utils.showToast('当前处于默认模式。请先在顶部导航栏切换至「⚡ 专业模式」后再同步落盘！', 'warn');
       }
       return;
     }
@@ -306,11 +306,11 @@ window.QM.app = (function() {
 
         if (utils?.showToast) {
           const unchangedNote = totalUnchanged > 0 ? `，${totalUnchanged} 篇无差异保持原样` : '';
-          utils.showToast(`💾 已成功原子落盘 ${totalWritten} 篇切片至对应星系${unchangedNote}，索引已同步！`);
+          utils.showToast(`💾 已成功原子落盘 ${totalWritten} 篇切片至对应星系${unchangedNote}，索引已同步！`, 'success');
         }
       } catch (err) {
         if (utils?.showToast) {
-          utils.showToast(`落盘失败: ${err.message}`);
+          utils.showToast(`落盘失败: ${err.message}`, 'error');
         }
       }
     } else {
