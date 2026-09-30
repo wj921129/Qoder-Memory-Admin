@@ -447,7 +447,12 @@ window.QM.topology = (function() {
         for (const mlm of mdLinkMatches) targetIds.add(mlm[2].trim().replace(/\.md$/, ''));
 
         targetIds.forEach(tId => {
-          const targetItem = gMemories.find(item => item.id === tId || item.filename === (tId + '.md') || item.filename === tId);
+          const targetItem = gMemories.find(item => 
+            item.id === tId || 
+            item.id === `${g.id}__${tId}` || 
+            item.filename === (tId + '.md') || 
+            item.filename === tId
+          );
           if (targetItem && targetItem.id !== m.id) {
             edges.push({
               from: m.id,

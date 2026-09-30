@@ -1153,6 +1153,7 @@ export function createServer() {
             m.projectId = p.id;
             m.projectName = p.rawName || p.name;
             m.projectScope = p.scope;
+            m.id = `${p.id}__${m.filename.replace(/\.md$/, '')}`;
           });
 
           if (galaxyMap.has(p.id)) {
@@ -1229,6 +1230,7 @@ export function createServer() {
           m.projectId = targetProj.id;
           m.projectName = targetProj.rawName || targetProj.name;
           m.projectScope = targetProj.scope;
+          m.id = `${targetProj.id}__${m.filename.replace(/\.md$/, '')}`;
         });
 
         // 动态计算本次记忆集的官方 4 大分类计数
@@ -1369,7 +1371,10 @@ export function createServer() {
           return;
         }
 
-        const targetFile = path.basename(filename || (id.endsWith('.md') ? id : `${id}.md`));
+        let pureId = id || '';
+        if (pureId.includes('__')) pureId = pureId.split('__').slice(1).join('__');
+        else if (pureId.includes('::')) pureId = pureId.split('::').pop();
+        const targetFile = path.basename(filename || (pureId.endsWith('.md') ? pureId : `${pureId}.md`));
         const candidatePaths = [path.join(targetProj.realPath, targetFile)];
 
         if (targetProj.ideMemoryDirs) {

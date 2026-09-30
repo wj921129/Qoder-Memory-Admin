@@ -113,9 +113,10 @@ window.QM.drawer = (function() {
     const deleteBtn = document.getElementById('drawer-delete-btn');
 
     if (scopeSubEl) {
-      scopeSubEl.innerText = currentProjectScope === 'global'
+      const showScope = (item.projectScope === 'global' || currentProjectScope === 'global')
         ? '作用范围：🌐 全局 (Global Scope)'
-        : `作用范围：📁 当前工程 (${currentProject})`;
+        : `作用范围：📁 当前工程 (${item.projectName || item.projectId || currentProject})`;
+      scopeSubEl.innerText = showScope;
     }
 
     // 控制删除按钮：具体记忆切片展示删除按钮，支持安全维护
@@ -480,7 +481,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     } else {
       const targetProjId = state.activeGalaxyId || (state.galaxies && state.galaxies[0] ? state.galaxies[0].id : state.currentProject) || 'fmmpay-dev';
       const targetGalaxy = (state.galaxies || []).find(g => g.id === targetProjId);
-      const newId = 'mem-' + Date.now();
+      const newId = `${targetProjId}__mem-` + Date.now();
       state.memories.unshift({
         id: newId,
         projectId: targetProjId,
@@ -510,7 +511,8 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     const item = memories.find(m => m.id === id);
     if (!item) return;
 
-    const confirmed = confirm(`⚠️ 危险维护操作确认：\n\n确定彻底删除记忆切片 "${item.name}" 吗？\n文件：${item.filename}\n\n此操作将从物理磁盘中彻底删除该 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`);
+    const targetProjName = item.projectName || item.projectId || currentProject || 'fmmpay-dev';
+    const confirmed = confirm(`⚠️ 危险维护操作确认：\n\n确定彻底删除记忆切片 "${item.name}" 吗？\n文件：${item.filename} [所属工程: ${targetProjName}]\n\n此操作将从物理磁盘中彻底删除该 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`);
     if (!confirmed) return;
 
     if (isServerMode && window.QM.api) {
