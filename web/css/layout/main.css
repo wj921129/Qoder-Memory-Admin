@@ -2,18 +2,34 @@
    Qoder Memory Visualizer - 主体工作区容器骨架
    ======================================================== */
 
+/* ========== 主体视界容器 ========== */
+/** 主视界双栏布局容器 */
 main {
   flex: 1;
   display: flex;
   height: calc(100vh - 58px);
   overflow: hidden;
   position: relative;
+  background-color: var(--bg-canvas);
 }
 
+/** 中间核心业务视界渲染区 */
 #content-area {
   flex: 1;
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* ========== 深空全景微光装饰层 ========== */
+/** 深空宇宙环境光斑背景层 */
+.cosmic-glow-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: 
+    radial-gradient(ellipse 60% 40% at 20% 20%, rgba(56, 189, 248, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 70%);
 }

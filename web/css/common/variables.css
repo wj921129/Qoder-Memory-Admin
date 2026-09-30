@@ -1,17 +1,63 @@
 /* ========================================================
    Qoder Memory Visualizer - 全局设计变量系统 (Design Tokens)
    ======================================================== */
+
 :root {
+  /* ========== 基础暗夜色深 ========== */
   --bg-main: #060913;
-  --bg-panel: rgba(15, 23, 42, 0.94);
-  --bg-card: rgba(15, 23, 42, 0.78);
+  --bg-canvas: #05070e;
+  --bg-panel: rgba(10, 16, 30, 0.75);
+  --bg-card: rgba(13, 22, 42, 0.65);
+
+  /* ========== 科技毛玻璃系统 ========== */
+  --glass-bg-header: rgba(8, 14, 26, 0.75);
+  --glass-bg-sidebar: rgba(8, 14, 28, 0.72);
+  --glass-bg-panel: rgba(10, 17, 34, 0.78);
+  --glass-bg-card: rgba(13, 21, 40, 0.62);
+  --glass-bg-control: rgba(15, 23, 42, 0.65);
+  --glass-bg-dropdown: rgba(10, 17, 34, 0.88);
+  --glass-blur-sm: blur(8px);
+  --glass-blur-md: blur(14px);
+  --glass-blur-lg: blur(20px);
+  --glass-border: rgba(56, 189, 248, 0.18);
+  --glass-border-subtle: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(56, 189, 248, 0.45);
+  --glass-shine: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  /* ========== 边框与阴影体系 ========== */
   --border-color: #1e293b;
   --border-focus: #38bdf8;
+  --color-border-glow: rgba(56, 189, 248, 0.35);
+  --glass-shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.45);
+  --glass-shadow-md: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --glass-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.75);
+  --glass-shadow-glow: 0 0 20px rgba(56, 189, 248, 0.2);
+
+  /* ========== 文本色彩体系 ========== */
   --text-main: #e2e8f0;
   --text-muted: #94a3b8;
+  --text-bright: #f8fafc;
+  --text-highlight: #38bdf8;
+
+  /* ========== 科技霓虹色彩 ========== */
+  --color-primary: #0284c7;
+  --color-primary-hover: #38bdf8;
   --primary: #0284c7;
   --primary-hover: #38bdf8;
+  --color-neon-cyan: #38bdf8;
+  --color-neon-blue: #0ea5e9;
+  --color-neon-purple: #a855f7;
+  --color-neon-emerald: #10b981;
+  --color-neon-amber: #f59e0b;
   --warning: #f59e0b;
   --danger: #ef4444;
   --success: #10b981;
+
+  /* ========== 圆角与过渡规范 ========== */
+  --rounded-sm: 4px;
+  --rounded-md: 6px;
+  --rounded-lg: 10px;
+  --rounded-xl: 14px;
+  --rounded-full: 9999px;
+  --transition-smooth: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }

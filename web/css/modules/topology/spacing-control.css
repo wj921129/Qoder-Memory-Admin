@@ -2,21 +2,23 @@
    Qoder Memory Visualizer - 选中行星卫星间距控制面板 (右下角)
    ======================================================== */
 
+/* ========== 间距控制器主面板 ========== */
+/** 右下角卫星间距调节毛玻璃面板 */
 .satellite-spacing-controller {
   position: absolute;
   bottom: 18px;
   right: 18px;
   min-width: 290px;
-  background: rgba(10, 16, 30, 0.90);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  border-radius: 8px;
+  background: rgba(9, 15, 30, 0.78);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-md);
   padding: 10px 14px;
   font-size: 11px;
   color: #cbd5e1;
   z-index: 25;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-shadow-md), var(--glass-shine);
   pointer-events: auto;
   user-select: none;
   display: flex;
@@ -24,33 +26,34 @@
   gap: 8px;
   transition: right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
 }
-
-/* 当右侧抽屉展开时，平滑挤到抽屉左侧 (580px + 18px = 598px)，杜绝遮挡 */
+/** 抽屉打开时右下角面板自适应左移避免遮挡 */
 body.has-drawer-open .satellite-spacing-controller,
 main:has(#editor-drawer.open) .satellite-spacing-controller {
   right: 598px;
 }
-
+/** 间距控制器悬停流光 */
 .satellite-spacing-controller:hover {
-  background: rgba(10, 16, 30, 0.96);
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 14px rgba(56, 189, 248, 0.18);
+  background: rgba(10, 17, 34, 0.92);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-lg), 0 0 16px rgba(56, 189, 248, 0.2);
 }
-
+/** 间距控制器选中激活态高亮 */
 .satellite-spacing-controller.is-active {
-  border-color: rgba(56, 189, 248, 0.7);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 18px rgba(56, 189, 248, 0.25);
+  border-color: var(--color-neon-cyan);
+  box-shadow: var(--glass-shadow-lg), 0 0 18px rgba(56, 189, 248, 0.3);
 }
 
+/* ========== 控制面板头部 ========== */
+/** 间距控制器头部标题与目标天体 */
 .spacing-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
   padding-bottom: 6px;
 }
-
+/** 控制器标题 */
 .spacing-title {
   font-weight: 600;
   color: #f8fafc;
@@ -58,51 +61,53 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   align-items: center;
   gap: 5px;
 }
-
+/** 当前受控目标行星名称展示 */
 .spacing-target {
   font-size: 10.5px;
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* ========== 滑块与步进按钮操作组 ========== */
+/** 间距调节控件横向行 */
 .spacing-controls {
   display: flex;
   align-items: center;
   gap: 8px;
 }
-
+/** 增减步进微调按钮 */
 .spacing-btn {
   background: rgba(30, 41, 59, 0.85);
   border: 1px solid rgba(56, 189, 248, 0.3);
   color: #f8fafc;
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--rounded-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   font-weight: bold;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-smooth);
   line-height: 1;
 }
-
+/** 步进按钮悬停高亮 */
 .spacing-btn:hover:not(:disabled) {
   background: rgba(56, 189, 248, 0.25);
-  border-color: #38bdf8;
-  color: #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+  border-color: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
 }
-
+/** 步进按钮禁用态 */
 .spacing-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
-
+/** 间距滑块轨道 */
 .spacing-slider {
   flex: 1;
   -webkit-appearance: none;
@@ -114,68 +119,68 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   cursor: pointer;
   transition: background 0.2s ease;
 }
-
+/** 滑块轨道悬停高亮 */
 .spacing-slider:hover:not(:disabled) {
   background: #475569;
 }
-
+/** 滑块微晶圆形拖拽钮 */
 .spacing-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 6px #38bdf8;
+  background: var(--color-neon-cyan);
+  box-shadow: 0 0 8px var(--color-neon-cyan);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
-
+/** 滑块拖拽钮悬停放大 */
 .spacing-slider::-webkit-slider-thumb:hover {
   transform: scale(1.25);
 }
-
+/** 禁用滑块拖拽钮弱化 */
 .spacing-slider:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
-
+/** 禁用滑块圆钮灰色展示 */
 .spacing-slider:disabled::-webkit-slider-thumb {
   background: #64748b;
   box-shadow: none;
 }
-
+/** 当前间距倍率数值展示 */
 .spacing-val {
-  font-family: monospace;
+  font-family: 'JetBrains Mono', Consolas, Menlo, Monaco, monospace;
   font-size: 11px;
   font-weight: 600;
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   min-width: 32px;
   text-align: right;
 }
-
+/** 恢复默认间距重置按钮 */
 .spacing-reset-btn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 12px;
   padding: 2px 4px;
   border-radius: 3px;
   transition: color 0.15s ease;
 }
-
+/** 间距重置按钮悬停 */
 .spacing-reset-btn:hover:not(:disabled) {
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
 }
-
+/** 间距重置按钮禁用 */
 .spacing-reset-btn:disabled {
   opacity: 0.25;
   cursor: not-allowed;
 }
-
+/** 间距控制器底部操作指引小字 */
 .spacing-tip {
   font-size: 9.5px;
-  color: #94a3b8;
+  color: var(--text-muted);
   line-height: 1.35;
 }

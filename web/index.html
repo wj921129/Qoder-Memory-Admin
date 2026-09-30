@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Qoder Memory 工业级记忆拓扑管理台 - 认知引力场</title>
-  <!-- 结构化样式总入口 (分层汇聚公共变量/组件、布局骨架与各业务模块) -->
+  <!-- 样式总入口 -->
   <link rel="stylesheet" href="./css/index.css">
 </head>
 <body>
@@ -15,26 +15,25 @@
         ⚡ <span class="brand-title-full">Qoder 工业级记忆拓扑管理台</span><span class="brand-title-short">Qoder Memory</span>
       </h1>
       <div class="project-selector-wrap">
-        <!-- 1. 版本选择 -->
+        <!-- 版本选择 -->
         <select id="edition-select" class="selector-dropdown edition-select" title="Qoder 客户端版本 (国内版 / 国际版)">
           <option value="cn" selected>🇨🇳 国内版</option>
           <option value="intl">🌐 国际版</option>
         </select>
 
-        <!-- 2. 账号选择 -->
+        <!-- 账号选择 -->
         <select id="account-select" class="selector-dropdown account-select" title="选择用户账号 (隔离独立记忆库)">
           <option value="" disabled selected>正在载入账号...</option>
         </select>
 
-        <!-- 3. 记忆源轨道 -->
-        <!-- 3. 记忆源轨道 (专业模式专属) -->
+        <!-- 记忆源轨道 (专业模式专属) -->
         <select id="track-select" class="selector-dropdown track-select pro-only" title="切换记忆源：🌟 IDE 官方长期记忆 (对齐官方 4 大分类) / 🤖 Agent 任务自治记忆 (Auto-Memory) / 🌐 全量透视">
           <option value="ide" selected>🌟 IDE 官方记忆</option>
           <option value="agent">🤖 Agent 任务记忆</option>
           <option value="all">🌐 全量透视</option>
         </select>
 
-        <!-- 4. 星系视界与定位导航器 (专业模式专属) -->
+        <!-- 星系视界与定位导航器 (专业模式专属) -->
         <select id="project-select" class="project-select pro-only" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
           <option value="all" selected>🌌 宏观全宇宙 (All Galaxies)</option>
         </select>
@@ -43,7 +42,7 @@
       </div>
     </div>
 
-    <!-- 模式切换：默认模式 vs 专业模式 -->
+    <!-- 运行模式分段切换器 -->
     <div class="mode-switcher" id="mode-switcher">
       <button class="mode-switcher-btn active" id="btn-mode-default" title="默认模式：仅展示官方记忆与单一删除维护">
         <span>🏷️ 默认模式</span>
@@ -53,7 +52,7 @@
       </button>
     </div>
 
-    <!-- 视图切换与渲染特效紧凑控件组 -->
+    <!-- 视图切换与渲染特效微型控件组 -->
     <div class="view-control-group">
       <div class="view-switcher">
         <button class="view-switcher-btn active" id="btn-mode-galaxy" title="切换至语义引力拓扑视界">
@@ -68,13 +67,13 @@
       </button>
     </div>
 
-    <!-- 精简工具栏：仅常驻核心业务操作 -->
+    <!-- 精简工具栏 -->
     <div class="toolbar">
       <input type="text" id="search-box" class="search-input" placeholder="检索认知锚点 / 关键词...">
       <button class="btn btn-primary pro-only" id="new-card-btn" title="新建记忆知识切片">+ 新建</button>
       <button class="btn pro-only" id="save-all-btn" title="保存修改至磁盘 (Ctrl+S)">💾 保存</button>
-      
-      <!-- 更多辅助工具收敛菜单 (专业模式专属) -->
+
+      <!-- 更多辅助工具下拉菜单 -->
       <div class="dropdown pro-only" id="more-dropdown">
         <button class="btn btn-subtle btn-icon" id="more-menu-btn" title="更多辅助工具">⋯</button>
         <div class="dropdown-menu" id="more-menu">
@@ -87,27 +86,31 @@
 
   <!-- 主体工作区 -->
   <main>
-    <!-- 左侧分类与标签侧边栏 -->
+    <!-- 深空环境微光装饰层 -->
+    <div class="cosmic-glow-bg" aria-hidden="true"></div>
+
+    <!-- 左侧分类侧边栏 -->
     <aside id="sidebar-filter">
-      <!-- 官方四大分类体系 (对齐 Qoder 官方 IDE 设置界面) -->
+      <!-- 官方四大分类体系 -->
       <div class="sidebar-section">
         <div class="sidebar-section-title">
           <span>官方四大分类体系 (Official)</span>
-          <span id="official-cat-total-count" style="color:#38bdf8;">0</span>
+          <span id="official-cat-total-count" class="official-cat-total-badge">0</span>
         </div>
         <div id="official-category-list"></div>
       </div>
 
       <!-- 底层物理子目录细分 -->
-      <div class="sidebar-section" style="max-height: 200px; overflow-y: auto;">
+      <div class="sidebar-section sidebar-section-subdirs">
         <div class="sidebar-section-title">
           <span>底层细分子目录 (Sub-Dirs)</span>
-          <span id="cat-total-count" style="color:#64748b; font-size:11px;">0</span>
+          <span id="cat-total-count" class="subcat-total-badge">0</span>
         </div>
         <div id="category-list"></div>
       </div>
 
-      <div class="sidebar-section" style="flex:1;">
+      <!-- 高频语义标签云 -->
+      <div class="sidebar-section sidebar-section-tags">
         <div class="sidebar-section-title">
           <span>高频语义标签 (Keywords)</span>
           <span id="tag-total-count">0</span>
@@ -132,17 +135,17 @@
             <span class="legend-header-arrow">▴</span>
           </div>
           <div class="legend-content">
-            <div class="legend-item"><span class="legend-dot" style="background:#f59e0b; color:#f59e0b;"></span> 全局意图枢纽：项目核心语义源 (Core Anchor)</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#38bdf8; color:#38bdf8;"></span> 主题认知域：一级分类引力中心 (Topic Domain)</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#a78bfa; color:#a78bfa;"></span> 记忆知识节点：具体规约/避坑事实 (Memory Unit)</div>
-            <div class="legend-item"><span class="legend-line" style="background:#10b981; box-shadow:0 0 6px #10b981;"></span> 链式激活流：显式衍生脉冲与依赖 (Activation Flow)</div>
-            <div class="legend-item"><span class="legend-line" style="background:#38bdf8; opacity:0.5;"></span> 认知引力轨道：语义亲和度约束环 (Semantic Field)</div>
+            <div class="legend-item"><span class="legend-dot legend-dot-hub"></span> 全局意图枢纽：项目核心语义源 (Core Anchor)</div>
+            <div class="legend-item"><span class="legend-dot legend-dot-domain"></span> 主题认知域：一级分类引力中心 (Topic Domain)</div>
+            <div class="legend-item"><span class="legend-dot legend-dot-unit"></span> 记忆知识节点：具体规约/避坑事实 (Memory Unit)</div>
+            <div class="legend-item"><span class="legend-line legend-line-flow"></span> 链式激活流：显式衍生脉冲与依赖 (Activation Flow)</div>
+            <div class="legend-item"><span class="legend-line legend-line-orbit"></span> 认知引力轨道：语义亲和度约束环 (Semantic Field)</div>
             <div class="legend-tip">💡 滚轮以鼠标为中心缩放 · 点击行星居中放大并扩展间距 · 取消选中后介绍卡片常驻</div>
           </div>
         </div>
 
-        <!-- 天体基本信息常驻介绍卡片 (点击星体激活，取消选中后依然常驻) -->
-        <div class="celestial-card" id="celestial-card" style="display:none;">
+        <!-- 天体基本信息常驻介绍卡片 -->
+        <div class="celestial-card" id="celestial-card">
           <div class="celestial-card-header">
             <div class="celestial-badge" id="c-card-badge">
               <span class="c-badge-dot" id="c-card-dot"></span>
@@ -158,12 +161,12 @@
           </div>
           <div class="celestial-card-footer">
             <button class="btn btn-subtle btn-sm" id="c-card-center-btn" title="将镜头重新平滑运镜对齐至该天体">🎯 视角居中</button>
-            <button class="btn btn-danger btn-sm" id="c-card-delete-btn" style="display:none;" title="彻底删除此记忆切片">🗑️ 删除</button>
-            <button class="btn btn-sm" id="c-card-open-btn" style="background:#0284c7;" title="在侧边栏查阅完整 Markdown 正文或编辑">📖 详细规约</button>
+            <button class="btn btn-danger btn-sm" id="c-card-delete-btn" title="彻底删除此记忆切片">🗑️ 删除</button>
+            <button class="btn btn-sm" id="c-card-open-btn" title="在侧边栏查阅完整 Markdown 正文或编辑">📖 详细规约</button>
           </div>
         </div>
 
-        <!-- 宇宙背景页面右下角：当前选中行星的卫星间距控制面板 -->
+        <!-- 卫星公转间距控制面板 -->
         <div class="satellite-spacing-controller" id="satellite-spacing-controller">
           <div class="spacing-header">
             <span class="spacing-title">🪐 卫星间距控制</span>
@@ -182,7 +185,7 @@
 
       <!-- 视图 2：知识卡片流 -->
       <div id="cards-container" class="hidden">
-        <!-- 官方 4 大分类快捷过滤条 (与 Qoder 原生设置界面完全对齐) -->
+        <!-- 官方四大分类快捷过滤条 -->
         <div class="official-tabs-bar" id="official-tabs-bar">
           <button class="official-tab active" data-group="all">
             <span>全部</span>
@@ -206,10 +209,11 @@
           </button>
         </div>
 
+        <!-- 统计与排序控制条 -->
         <div class="view-control-bar">
           <div class="view-stats" id="view-stats">显示 0 条记忆</div>
           <div class="view-actions">
-            <label style="font-size:11px; color:#94a3b8;">排序：</label>
+            <label class="sort-label">排序：</label>
             <select id="sort-select" class="sort-select">
               <option value="name">按标题字母 (A-Z)</option>
               <option value="category">按分类分组</option>
@@ -227,13 +231,13 @@
     <aside id="editor-drawer">
       <div class="drawer-header">
         <div class="drawer-header-left">
-          <h2 id="drawer-title" style="margin-bottom:2px;">查阅记忆切片</h2>
-          <span id="drawer-scope-sub" style="font-size:11px; color:#38bdf8; font-weight:500;">Scope: 智能识别中</span>
+          <h2 id="drawer-title" class="drawer-title-main">查阅记忆切片</h2>
+          <span id="drawer-scope-sub" class="drawer-scope-sub">Scope: 智能识别中</span>
         </div>
         <button class="close-btn" id="close-drawer" title="关闭抽屉">&times;</button>
       </div>
       <div class="drawer-body">
-        <div id="drawer-readonly-notice" class="drawer-notice-banner" style="display:none;">
+        <div id="drawer-readonly-notice" class="drawer-notice-banner">
           <span>🔒 <strong>只读查阅模式</strong>：当前处于安全保护状态。如需编辑此记忆切片，请先在顶部导航栏开启「✏️ 编辑模式」。</span>
         </div>
         <input type="hidden" id="edit-id">
@@ -262,7 +266,7 @@
           <textarea id="edit-body" class="form-control form-control-body" rows="12" placeholder="支持标准 Markdown 语法，详细阐述规约或根因..."></textarea>
         </div>
 
-        <!-- 高级元数据折叠卡片 (默认折叠收起，按需点击展开) -->
+        <!-- 高级元数据折叠卡片 -->
         <div class="drawer-meta-section is-collapsed" id="drawer-meta-section">
           <div class="drawer-meta-toggle" id="drawer-meta-toggle" title="点击展开/折叠规约元数据与高级配置">
             <div class="meta-toggle-left">
@@ -319,7 +323,7 @@
                 <option value="common">通用工程规约 (common)</option>
                 <option value="custom">+ 自定义分类...</option>
               </select>
-              <input type="text" id="edit-category-custom" class="form-control" style="display:none; margin-top:6px;" placeholder="输入自定义分类名称">
+              <input type="text" id="edit-category-custom" class="form-control" placeholder="输入自定义分类名称">
             </div>
 
             <div class="form-group">
@@ -338,7 +342,7 @@
       </div>
       <div class="drawer-footer">
         <button class="btn btn-danger" id="drawer-delete-btn" title="彻底删除此记忆切片及物理 Markdown 文件">🗑️ 删除此记忆</button>
-        <div style="flex:1;"></div>
+        <div class="drawer-footer-spacer"></div>
         <button class="btn btn-subtle" id="drawer-cancel-btn">关闭</button>
         <button class="btn" id="drawer-save-btn">保存并应用</button>
       </div>
@@ -348,19 +352,20 @@
   <!-- MEMORY.md 查看模态框 -->
   <div class="modal-backdrop hidden" id="index-modal">
     <div class="modal-box">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="color:#f8fafc; font-size:15px;">📋 MEMORY.md 索引文件预览</h3>
+      <div class="modal-header-row">
+        <h3 class="modal-title">📋 MEMORY.md 索引文件预览</h3>
         <button class="close-btn" onclick="document.getElementById('index-modal').classList.add('hidden')">&times;</button>
       </div>
-      <p style="font-size:12px; color:#94a3b8;">该文件为 Qoder 记忆根索引，保存时会自动根据当前全部记忆条目与链式关系同步更新。</p>
-      <textarea id="index-content-preview" class="form-control" rows="14" style="font-family:monospace; font-size:12px;" readonly></textarea>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <p class="modal-desc">该文件为 Qoder 记忆根索引，保存时会自动根据当前全部记忆条目与链式关系同步更新。</p>
+      <textarea id="index-content-preview" class="form-control modal-preview-textarea" rows="14" readonly></textarea>
+      <div class="modal-btn-row">
         <button class="btn btn-subtle" onclick="navigator.clipboard.writeText(document.getElementById('index-content-preview').value); window.QM.utils.showToast('已复制 MEMORY.md 内容');">复制到剪贴板</button>
         <button class="btn" onclick="document.getElementById('index-modal').classList.add('hidden')">关闭</button>
       </div>
     </div>
   </div>
 
+  <!-- 轻量全局提示容器 -->
   <div id="toast"></div>
 
   <!-- 1. 公共基础设施层 (Common Infrastructure) -->

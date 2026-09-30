@@ -2,29 +2,39 @@
    Qoder Memory Visualizer - 引力拓扑图例指南浮层
    ======================================================== */
 
+/* ========== 图例悬浮舱主体 ========== */
+/** 拓扑左下角毛玻璃图例悬浮仓 */
 .galaxy-legend {
   position: absolute;
   bottom: 18px;
   left: 18px;
-  width: 290px;
-  background: rgba(10, 16, 30, 0.90);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  border-radius: 8px;
-  padding: 8px 12px;
+  width: 300px;
+  background: rgba(8, 14, 28, 0.75);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-md);
+  padding: 8px 14px;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
   pointer-events: auto;
   z-index: 25;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-shadow-md), var(--glass-shine);
   cursor: pointer;
   transform-origin: bottom left;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  transition: var(--transition-smooth);
+}
+/** 图例悬浮仓悬停高亮展开 */
+.galaxy-legend:hover {
+  background: rgba(10, 17, 34, 0.92);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-lg), 0 0 16px rgba(56, 189, 248, 0.25);
 }
 
+/* ========== 图例头部与折叠动效 ========== */
+/** 图例头部折叠触发条 */
 .legend-header {
   display: flex;
   align-items: center;
@@ -33,7 +43,7 @@
   user-select: none;
   cursor: pointer;
 }
-
+/** 图例头部标题 */
 .legend-header-title {
   display: flex;
   align-items: center;
@@ -42,14 +52,18 @@
   font-weight: 500;
   color: #e2e8f0;
 }
-
+/** 图例头部折叠箭头 */
 .legend-header-arrow {
   font-size: 11px;
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-block;
 }
-
+/** 图例悬停时箭头旋转 */
+.galaxy-legend:hover .legend-header-arrow {
+  transform: rotate(180deg);
+}
+/** 图例折叠展开内容区 */
 .legend-content {
   max-height: 0;
   opacity: 0;
@@ -62,32 +76,24 @@
   border-top: 1px solid transparent;
   transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, margin-top 0.3s ease, padding-top 0.3s ease, border-color 0.3s ease;
 }
-
-.galaxy-legend:hover {
-  background: rgba(10, 16, 30, 0.97);
-  border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 16px rgba(56, 189, 248, 0.2);
-}
-
-.galaxy-legend:hover .legend-header-arrow {
-  transform: rotate(180deg);
-}
-
+/** 图例展开内容显现 */
 .galaxy-legend:hover .legend-content {
   max-height: 340px;
   opacity: 1;
   margin-top: 10px;
   padding-top: 10px;
-  border-top-color: rgba(255, 255, 255, 0.08);
+  border-top-color: rgba(56, 189, 248, 0.15);
 }
 
+/* ========== 图例条目与视觉标识 ========== */
+/** 单个图例展示行 */
 .legend-item {
   display: flex;
   align-items: center;
   gap: 9px;
   line-height: 1.4;
 }
-
+/** 图例圆形标识基类 */
 .legend-dot {
   width: 9px;
   height: 9px;
@@ -96,21 +102,48 @@
   box-shadow: 0 0 6px currentColor;
   flex-shrink: 0;
 }
-
-.legend-line {
+/** 全局意图枢纽橙黄发光圆点 */
+.legend-dot-hub {
+  background: var(--warning);
+  color: var(--warning);
+}
+/** 主题认知域青蓝发光圆点 */
+.legend-dot-domain {
+  background: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+}
+/** 记忆切片节点紫光圆点 */
+.legend-dot-unit {
+  background: var(--color-neon-purple);
+  color: var(--color-neon-purple);
+}
+/** 链式激活流绿色发光线段 */
+.legend-line-flow {
   width: 20px;
   height: 2px;
+  background: var(--color-neon-emerald);
+  box-shadow: 0 0 6px var(--color-neon-emerald);
   display: inline-block;
   border-radius: 1px;
   flex-shrink: 0;
 }
-
+/** 认知引力轨道青蓝约束环线段 */
+.legend-line-orbit {
+  width: 20px;
+  height: 2px;
+  background: var(--color-neon-cyan);
+  opacity: 0.55;
+  display: inline-block;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+/** 图例底部交互提示小字 */
 .legend-tip {
   margin-top: 4px;
   padding-top: 6px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 10px;
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   display: flex;
   align-items: center;
   gap: 5px;

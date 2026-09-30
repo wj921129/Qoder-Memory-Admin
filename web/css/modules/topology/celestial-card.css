@@ -2,28 +2,29 @@
    Qoder Memory Visualizer - 天体基本信息常驻介绍卡片 (Celestial Info Card)
    ======================================================== */
 
+/* ========== 天体卡片主体容器 ========== */
+/** 拓扑左上角毛玻璃天体详情浮动面板 */
 .celestial-card {
   position: absolute;
   top: 18px;
   left: 18px;
   width: 320px;
-  background: rgba(10, 16, 30, 0.90);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 10px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.15);
-  padding: 14px 16px;
+  background: rgba(9, 15, 30, 0.78);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-lg);
+  box-shadow: var(--glass-shadow-lg), 0 0 24px rgba(56, 189, 248, 0.2), var(--glass-shine);
+  padding: 15px 18px;
   color: #e2e8f0;
   z-index: 30;
-  display: flex;
+  display: none;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   animation: celestialCardFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: text;
   pointer-events: auto;
 }
-
 @keyframes celestialCardFadeIn {
   from {
     opacity: 0;
@@ -35,104 +36,117 @@
   }
 }
 
+/* ========== 天体卡片头部 ========== */
+/** 天体详情卡片头部 */
 .celestial-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+  padding-bottom: 9px;
 }
-
+/** 天体类型标识微晶徽章 */
 .celestial-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 11px;
   font-weight: 600;
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  padding: 2px 8px;
-  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 9px;
+  border-radius: var(--rounded-full);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.15);
 }
-
+/** 天体徽章圆形发光指示点 */
 .c-badge-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 6px #38bdf8;
+  background: var(--color-neon-cyan);
+  box-shadow: 0 0 6px var(--color-neon-cyan);
 }
-
+/** 天体卡片关闭图标按钮 */
 .c-close-btn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   padding: 0 4px;
-  transition: color 0.15s ease;
+  transition: var(--transition-smooth);
 }
+/** 天体卡片关闭按钮悬停高亮 */
 .c-close-btn:hover {
   color: #f8fafc;
+  transform: scale(1.15);
 }
 
+/* ========== 天体卡片核心内容 ========== */
+/** 天体卡片主体信息区 */
 .celestial-card-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
-
+/** 天体标题名称 */
 .c-card-title {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 600;
   color: #f8fafc;
   line-height: 1.4;
   word-break: break-word;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
-
+/** 天体次级分类与切片规模描述 */
 .c-card-sub {
   font-size: 11px;
-  color: #38bdf8;
-  font-family: inherit;
+  color: var(--color-neon-cyan);
   font-weight: 500;
 }
-
+/** 天体描述文本框 */
 .c-card-desc {
   font-size: 11.5px;
-  color: #94a3b8;
-  line-height: 1.5;
-  background: rgba(15, 23, 42, 0.6);
-  border-left: 2px solid #38bdf8;
-  padding: 6px 9px;
-  border-radius: 0 4px 4px 0;
+  color: #cbd5e1;
+  line-height: 1.55;
+  background: rgba(15, 23, 42, 0.55);
+  border-left: 3px solid var(--color-neon-cyan);
+  padding: 7px 10px;
+  border-radius: 0 var(--rounded-sm) var(--rounded-sm) 0;
   max-height: 110px;
   overflow-y: auto;
   word-break: break-word;
 }
-
+/** 天体关键词标签流 */
 .c-card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
   margin-top: 2px;
 }
-
+/** 天体单项标签微标 */
 .c-card-tag {
   font-size: 10px;
-  padding: 2px 6px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 4px;
+  padding: 2px 7px;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--rounded-sm);
   color: #cbd5e1;
 }
 
+/* ========== 天体卡片底部操作 ========== */
+/** 天体卡片底部操作区 */
 .celestial-card-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 8px;
+  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  padding-top: 9px;
+}
+/** 天体删除操作按钮默认隐藏 */
+#c-card-delete-btn {
+  display: none;
 }

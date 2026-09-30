@@ -2,15 +2,17 @@
    Qoder Memory Visualizer - 认知引力场 HUD 状态框
    ======================================================== */
 
+/* ========== HUD 核心终端面板 ========== */
+/** 拓扑右上角毛玻璃科技 HUD 悬浮框 */
 .galaxy-hud {
   position: absolute;
   top: 18px;
   right: 18px;
-  background: rgba(10, 16, 30, 0.90);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 189, 248, 0.28);
-  border-radius: 8px;
+  background: rgba(8, 14, 28, 0.72);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-md);
   padding: 8px 14px;
   font-size: 11px;
   color: #cbd5e1;
@@ -18,48 +20,49 @@
   z-index: 25;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  transition: all 0.2s ease;
+  gap: 9px;
+  box-shadow: var(--glass-shadow-md), 0 0 16px rgba(56, 189, 248, 0.15), var(--glass-shine);
+  transition: var(--transition-smooth);
 }
 
+/* ========== HUD 状态指示与微标 ========== */
+/** HUD 拓扑网络连通脉冲指示灯 */
 .hud-focus-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-  animation: hudPulse 1.8s infinite;
+  background: var(--color-neon-emerald);
+  box-shadow: 0 0 8px var(--color-neon-emerald);
+  animation: hudPulse 1.8s infinite ease-in-out;
 }
-
 @keyframes hudPulse {
   0%, 100% {
-    opacity: 0.4;
+    opacity: 0.5;
     transform: scale(0.9);
   }
   50% {
     opacity: 1;
-    transform: scale(1.15);
+    transform: scale(1.2);
   }
 }
-
+/** HUD 当前运行模式展示胶囊 */
 .hud-mode-pill {
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: rgba(30, 41, 59, 0.9);
-  color: #94a3b8;
+  padding: 2px 8px;
+  border-radius: var(--rounded-sm);
+  background: rgba(30, 41, 59, 0.8);
+  color: var(--text-muted);
   border: 1px solid rgba(148, 163, 184, 0.3);
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
-
+/** HUD 专业/编辑模式专属发光金色胶囊 */
 .hud-mode-pill.edit,
 .hud-mode-pill.pro {
   background: rgba(217, 119, 6, 0.25);
   color: #fde68a;
   border-color: rgba(245, 158, 11, 0.6);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
 }

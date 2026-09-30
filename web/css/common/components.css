@@ -2,162 +2,202 @@
    Qoder Memory Visualizer - 公共通用 UI 组件库
    ======================================================== */
 
-/* 1. 基础按钮系统 */
+/* ========== 基础按钮系统 ========== */
+/** 基础主操作按钮 */
 .btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #fff;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35), var(--glass-shine);
+  padding: 6px 14px;
+  border-radius: var(--rounded-md);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  transition: all 0.15s ease;
+  gap: 6px;
+  transition: var(--transition-smooth);
   white-space: nowrap;
 }
+/** 主操作按钮悬停流光高亮 */
 .btn:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.45), var(--glass-shine);
+  transform: translateY(-1px);
 }
+/** 次级幽灵毛玻璃按钮 */
 .btn-subtle {
-  background: #1e293b;
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
   color: #cbd5e1;
-  border: 1px solid #334155;
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  box-shadow: none;
 }
+/** 次级幽灵按钮悬停 */
 .btn-subtle:hover {
-  background: #334155;
+  background: rgba(51, 65, 85, 0.8);
   color: #fff;
-  border-color: #475569;
+  border-color: rgba(56, 189, 248, 0.4);
 }
+/** 危险警告按钮 */
 .btn-danger {
-  background: #991b1b;
+  background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%);
+  border: 1px solid rgba(239, 68, 68, 0.4);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(153, 27, 27, 0.35);
 }
+/** 危险警告按钮悬停 */
 .btn-danger:hover {
-  background: var(--danger);
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  border-color: #f87171;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
 }
+/** 紧凑型小尺寸按钮 */
 .btn-sm {
-  padding: 3px 7px;
+  padding: 4px 9px;
   font-size: 11px;
-  border-radius: 4px;
+  border-radius: var(--rounded-sm);
 }
+/** 图标专用操作按钮 */
 .btn-icon {
   padding: 5px 9px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
-  letter-spacing: 1px;
 }
+/** 微型紧凑功能图标按钮 */
 .btn-icon-mini {
-  background: transparent;
-  border: 1px solid transparent;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(51, 65, 85, 0.4);
   color: #94a3b8;
   cursor: pointer;
-  padding: 2px 5px;
+  padding: 3px 6px;
   font-size: 12px;
-  border-radius: 4px;
+  border-radius: var(--rounded-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
 }
+/** 微型图标按钮悬停高亮 */
 .btn-icon-mini:hover {
-  background: #1e293b;
-  border-color: #475569;
+  background: rgba(30, 41, 59, 0.85);
+  border-color: var(--color-neon-cyan);
   color: #f8fafc;
   transform: scale(1.08);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
 }
 
-/* 2. 状态徽章与圆点 */
+/* ========== 状态徽章与标识 ========== */
+/** 状态信息徽章 */
 .badge {
   font-size: 12px;
   padding: 3px 10px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: var(--rounded-full);
   color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
 }
+/** 状态发光圆点 */
 .dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--success);
+  box-shadow: 0 0 6px var(--success);
 }
+/** 未保存脏数据指示发光点 */
 .dot.dirty {
   background: var(--warning);
-  box-shadow: 0 0 6px var(--warning);
+  box-shadow: 0 0 8px var(--warning);
 }
-
+/** 作用域范围彩色徽章 */
 .badge-scope {
   font-size: 11px;
   padding: 3px 9px;
-  border-radius: 12px;
+  border-radius: var(--rounded-full);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   white-space: nowrap;
 }
+/** 全局智库作用域徽章 */
 .badge-scope.global {
   background: rgba(139, 92, 246, 0.2);
   color: #c4b5fd;
   border: 1px solid rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.2);
 }
+/** 工程专有作用域徽章 */
 .badge-scope.project {
   background: rgba(14, 165, 233, 0.2);
   color: #7dd3fc;
   border: 1px solid rgba(14, 165, 233, 0.5);
+  box-shadow: 0 0 8px rgba(14, 165, 233, 0.2);
 }
 
-/* 3. 通用输入框与搜索框 */
+/* ========== 通用输入框与搜索框 ========== */
+/** 毛玻璃搜索框 */
 .search-input {
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid rgba(56, 189, 248, 0.2);
   color: var(--text-main);
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  border-radius: var(--rounded-md);
   font-size: 12px;
   width: 190px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: var(--transition-smooth);
 }
+/** 搜索框聚焦发光外圈 */
 .search-input:focus {
+  background: rgba(15, 23, 42, 0.9);
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25), 0 0 12px rgba(56, 189, 248, 0.15);
 }
 
-/* 4. 更多操作下拉菜单 */
+/* ========== 毛玻璃下拉菜单 ========== */
+/** 下拉菜单外层容器 */
 .dropdown {
   position: relative;
   display: inline-block;
 }
+/** 下拉浮动毛玻璃面板 */
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid #334155;
-  border-radius: 8px;
-  min-width: 175px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  padding: 4px;
+  background: var(--glass-bg-dropdown);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-lg);
+  min-width: 180px;
+  box-shadow: var(--glass-shadow-lg), 0 0 20px rgba(56, 189, 248, 0.1);
+  padding: 5px;
   display: none;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   z-index: 100;
 }
+/** 下拉展开入场显现 */
 .dropdown-menu.show {
   display: flex;
-  animation: dropFadeIn 0.15s ease-out;
+  animation: dropFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes dropFadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
+/** 下拉菜单选项条目 */
 .dropdown-item {
   background: transparent;
   border: none;
@@ -165,45 +205,83 @@
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--rounded-md);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
   text-align: left;
   width: 100%;
-  transition: all 0.12s ease;
+  transition: var(--transition-smooth);
   white-space: nowrap;
 }
+/** 下拉条目悬停高亮 */
 .dropdown-item:hover {
-  background: #1e293b;
-  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--color-neon-cyan);
+  box-shadow: inset 0 0 8px rgba(56, 189, 248, 0.1);
 }
 
-/* 5. 模态弹窗与提示 */
+/* ========== 模态弹窗与轻提示 ========== */
+/** 模态全屏毛玻璃背景遮罩 */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(4, 8, 18, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+/** 模态框主体毛玻璃控制盒 */
 .modal-box {
-  width: 600px;
+  width: 620px;
   max-height: 85vh;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  padding: 22px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+  background: rgba(11, 19, 38, 0.92);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-xl);
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(56, 189, 248, 0.18), var(--glass-shine);
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   overflow-y: auto;
   user-select: text;
 }
+/** 弹窗头部标题行 */
+.modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/** 弹窗标题文本 */
+.modal-title {
+  color: var(--text-bright);
+  font-size: 15px;
+  font-weight: 600;
+}
+/** 弹窗说明辅助文本 */
+.modal-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+/** 弹窗只读代码预览文本框 */
+.modal-preview-textarea {
+  font-family: 'JetBrains Mono', Consolas, Menlo, Monaco, monospace;
+  font-size: 12px;
+}
+/** 弹窗底部操作按钮行 */
+.modal-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+/** 关闭叉号按钮 */
 .close-btn {
   background: none;
   border: none;
@@ -211,23 +289,29 @@
   font-size: 22px;
   cursor: pointer;
   line-height: 1;
+  transition: var(--transition-smooth);
 }
+/** 关闭叉号悬停变亮 */
 .close-btn:hover {
   color: #fff;
+  transform: scale(1.15);
 }
-
+/** 全局浮动胶囊提示 (Toast) */
 #toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--primary);
+  background: rgba(2, 132, 199, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(56, 189, 248, 0.45);
   color: #fff;
-  padding: 8px 18px;
-  border-radius: 20px;
+  padding: 9px 22px;
+  border-radius: var(--rounded-full);
   font-size: 13px;
   font-weight: 500;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.4);
   z-index: 200;
   display: none;
 }

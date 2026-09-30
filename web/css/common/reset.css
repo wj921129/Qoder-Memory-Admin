@@ -1,40 +1,57 @@
 /* ========================================================
    Qoder Memory Visualizer - 基础重置样式与滚动条美化
    ======================================================== */
+
+/* ========== 盒模型与全局重置 ========== */
+/** 全局盒模型重置 */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/** 页面根容器与深空科技背景 */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg-main);
+  background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.07) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 60%);
+  background-attachment: fixed;
   color: var(--text-main);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100vh;
   user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 隐藏类与基础工具类 */
+/* ========== 通用工具类 ========== */
+/** 全局隐藏工具类 */
 .hidden {
   display: none !important;
 }
 
-/* 滚动条美化 */
+/* ========== 科技感细微滚动条 ========== */
+/** 滚动条基底尺寸 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
+/** 滚动条轨道底色 */
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(8, 14, 26, 0.5);
 }
+/** 滚动条微光滑块 */
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.25);
+  border-radius: var(--rounded-full);
+  transition: var(--transition-smooth);
 }
+/** 滚动条滑块悬停高亮 */
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(56, 189, 248, 0.55);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
 }

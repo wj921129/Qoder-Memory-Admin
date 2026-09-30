@@ -2,18 +2,20 @@
    Qoder Memory Visualizer - 3D 认知引力场拓扑画布容器
    ======================================================== */
 
+/* ========== 拓扑引力场渲染画布 ========== */
+/** 拓扑全屏深空容器 */
 #galaxy-container {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, #0c1527 0%, #070c18 45%, #03060c 100%);
+  background: radial-gradient(ellipse at 50% 50%, #0d1830 0%, #060b17 50%, #03060d 100%);
   cursor: grab;
   z-index: 10;
 }
-
+/** 拓扑拖拽交互抓取态 */
 #galaxy-container:active {
   cursor: grabbing;
 }
-
+/** 3D 拓扑物理渲染画布 */
 #galaxy-canvas {
   width: 100%;
   height: 100%;

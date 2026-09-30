@@ -2,21 +2,28 @@
    Qoder Memory Visualizer - 顶部导航栏与全局控制栏布局
    ======================================================== */
 
+/* ========== 顶部控制台骨架 ========== */
+/** 顶部全景毛玻璃导航控制台 */
 header {
   height: 58px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-color);
+  background: var(--glass-bg-header);
+  backdrop-filter: var(--glass-blur-md);
+  -webkit-backdrop-filter: var(--glass-blur-md);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(56, 189, 248, 0.12);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 18px;
   z-index: 40;
   flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
-  gap: 10px;
+  gap: 12px;
 }
 
+/* ========== 品牌与全局意图导航 ========== */
+/** 品牌区外层容器 */
 .brand {
   display: flex;
   align-items: center;
@@ -24,70 +31,82 @@ header {
   flex: 0 1 auto;
   min-width: 0;
 }
-
+/** 品牌大标题与科技电光图标 */
 .brand h1 {
   font-size: 15px;
   font-weight: 600;
-  color: #f8fafc;
-  letter-spacing: 0.3px;
+  color: var(--text-bright);
+  letter-spacing: 0.5px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   flex-shrink: 0;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
 }
-
-/* 意图锚点项目切换器与级联选择器组 */
+/** 意图锚点项目切换器与级联选择器胶囊 */
 .project-selector-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #0f172a;
-  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border);
   padding: 3px 8px;
-  border-radius: 6px;
-  margin-left: 4px;
+  border-radius: var(--rounded-md);
+  margin-left: 6px;
   flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+/** 级联选择器标签 */
 .project-selector-wrap label {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--text-muted);
   white-space: nowrap;
 }
+/** 毛玻璃级联下拉选项框 */
 .selector-dropdown {
-  background: #1e293b;
-  border: 1px solid #334155;
-  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(51, 65, 85, 0.7);
+  color: var(--text-main);
   font-size: 11px;
   font-weight: 500;
-  padding: 3px 6px;
-  border-radius: 4px;
+  padding: 3px 7px;
+  border-radius: var(--rounded-sm);
   outline: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-smooth);
 }
+/** 下拉选项框悬停流光 */
 .selector-dropdown:hover {
-  border-color: #38bdf8;
-  color: #38bdf8;
+  border-color: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
 }
+/** 原生下拉选项弹出层背景 */
 .selector-dropdown option {
   background: #0f172a;
   color: #f8fafc;
   padding: 4px 6px;
 }
+/** 版本选择框微标色彩 */
 .edition-select {
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   font-weight: 600;
 }
+/** 账号选择框微标色彩 */
 .account-select {
   color: #a78bfa;
 }
+/** 记忆源轨道选择框微标色彩 */
 .track-select {
   color: #34d399;
 }
+/** 星系视界穿梭导航下拉框 */
 .project-select {
   background: transparent;
   border: none;
-  color: #38bdf8;
+  color: var(--color-neon-cyan);
   font-size: 12px;
   font-weight: 600;
   outline: none;
@@ -97,187 +116,205 @@ header {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
 }
+/** 星系下拉框分组头 */
 .project-select optgroup {
   background: #1e293b;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 700;
   font-size: 11px;
   padding: 4px 0;
 }
+/** 星系下拉框具体星系选项 */
 .project-select option {
   background: #0f172a;
   color: #f8fafc;
   padding: 4px 8px;
 }
 
-/* 模式切换分段开关 (默认模式 vs 专业模式) */
+/* ========== 运行模式与视图切换器 ========== */
+/** 模式切换分段开关轨道 */
 .mode-switcher {
   display: flex;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-md);
   padding: 2px;
-  gap: 2px;
+  gap: 3px;
   flex-shrink: 0;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
+/** 模式切换按钮基础态 */
 .mode-switcher-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 4px 10px;
+  padding: 4px 11px;
   font-size: 12px;
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: var(--rounded-sm);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   gap: 5px;
   white-space: nowrap;
 }
+/** 模式切换按钮悬停 */
 .mode-switcher-btn:hover {
   color: #fff;
 }
+/** 默认模式激活态高光 */
 .mode-switcher-btn.active {
-  background: #0284c7;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4), var(--glass-shine);
 }
+/** 专业模式激活态琥珀金光 */
 .mode-switcher-btn#btn-mode-pro.active {
-  background: #d97706;
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: #fff;
-  box-shadow: 0 1px 4px rgba(217, 119, 6, 0.4);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.5), var(--glass-shine);
 }
-
-/* 默认模式下严格隐藏专业专属控件与后续编辑操作 */
+/** 默认模式下隐藏专业专属元素 */
 body.mode-default .pro-only {
   display: none !important;
 }
-
-/* 视图切换分段器 */
+/** 视图切换器轨道容器 */
 .view-switcher {
   display: flex;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-md);
   padding: 2px;
-  gap: 2px;
+  gap: 3px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
 }
+/** 视图切换按钮 */
 .view-switcher-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 4px 10px;
+  padding: 4px 11px;
   font-size: 12px;
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: var(--rounded-sm);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: var(--transition-smooth);
   display: flex;
   align-items: center;
   gap: 5px;
 }
+/** 视图切换按钮悬停 */
 .view-switcher-btn:hover {
   color: #fff;
 }
+/** 视图切换按钮激活晶体态 */
 .view-switcher-btn.active {
-  background: #0284c7;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4), var(--glass-shine);
 }
-
-/* 视图控制与动态特效微型开关组 */
+/** 视图控制与动态特效微型开关组 */
 .view-control-group {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
 }
-
+/** 动态渲染特效聚能开关按钮 */
 .btn-effects-toggle {
   width: 30px;
   height: 28px;
-  background: #0f172a;
-  border: 1px solid #334155;
-  border-radius: 6px;
-  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--rounded-md);
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 13px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: var(--transition-smooth);
   padding: 0;
 }
+/** 特效开关按钮悬停高亮 */
 .btn-effects-toggle:hover {
-  border-color: #38bdf8;
+  border-color: var(--color-neon-cyan);
   color: #f8fafc;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
 }
+/** 特效开关激活粒子辉光 */
 .btn-effects-toggle.active {
-  background: rgba(14, 165, 233, 0.15);
-  border-color: #0284c7;
-  color: #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+  background: rgba(14, 165, 233, 0.2);
+  border-color: var(--color-neon-cyan);
+  color: var(--color-neon-cyan);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
 }
+/** 特效开关节能静止态 */
 .btn-effects-toggle.eco {
-  background: rgba(30, 41, 59, 0.6);
-  border-color: #475569;
-  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.4);
+  border-color: rgba(71, 85, 105, 0.6);
+  color: var(--text-muted);
 }
-
-/* 卡片视图下无需展示拓扑特效按钮，自动隐匿 */
+/** 卡片流模式下自动隐藏拓扑特效按钮 */
 body.view-cards .btn-effects-toggle {
   display: none;
 }
 
-/* 顶部工具栏 */
+/* ========== 顶部右侧工具栏 ========== */
+/** 顶部右侧工具操作集 */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex-shrink: 0;
   margin-left: auto;
 }
-
+/** 工具栏搜索输入框 */
 .toolbar .search-input {
   flex: 0 1 180px;
   max-width: 180px;
   min-width: 90px;
 }
-
-/* 只读模式下操作按钮弱化 */
+/** 只读保护模式下新建按钮弱化 */
 body.is-readonly #new-card-btn {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
   border-style: dashed;
 }
+/** 只读保护模式下保存按钮弱化 */
 body.is-readonly #save-all-btn {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
-
-/* 未落盘保存按钮高亮脉冲 */
+/** 未保存脏数据保存按钮脉冲流光 */
 #save-all-btn.dirty {
-  background: #f59e0b;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-color: #fde68a;
   color: #0f172a;
   font-weight: 600;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
   animation: pulseSave 2s infinite ease-in-out;
 }
 @keyframes pulseSave {
-  0%, 100% { box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); }
-  50% { box-shadow: 0 0 14px rgba(245, 158, 11, 0.7); }
+  0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.85); transform: translateY(-1px); }
 }
-
-/* ========================================================
-   防溢出响应式断点控制 (@media)
-   ======================================================== */
+/** 响应式短标题初始隐藏 */
 .brand-title-short {
   display: none;
 }
 
-/* 1440px 及以下：收敛标题、缩小工程下拉框宽度、隐藏标签文本 */
+/* ========== 防溢出响应式断点集中控制 ========== */
+/** 1440px 屏幕收窄适配 */
 @media (max-width: 1440px) {
   .brand-title-full {
     display: none;
@@ -295,8 +332,7 @@ body.is-readonly #save-all-btn {
     max-width: 160px;
   }
 }
-
-/* 1240px 及以下：收窄星系下拉与搜索输入框 */
+/** 1240px 屏幕压缩适配 */
 @media (max-width: 1240px) {
   .project-select {
     max-width: 130px;
@@ -305,8 +341,7 @@ body.is-readonly #save-all-btn {
     max-width: 140px;
   }
 }
-
-/* 1060px 及以下：进一步紧凑布局 */
+/** 1060px 屏幕紧凑适配 */
 @media (max-width: 1060px) {
   .project-select {
     max-width: 110px;
@@ -315,8 +350,7 @@ body.is-readonly #save-all-btn {
     max-width: 120px;
   }
 }
-
-/* 900px 及以下：极限压缩 */
+/** 900px 屏幕极限压缩适配 */
 @media (max-width: 900px) {
   .toolbar .search-input {
     max-width: 100px;
