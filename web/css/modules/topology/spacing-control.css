@@ -9,7 +9,7 @@
   bottom: 18px;
   right: 18px;
   min-width: 296px;
-  background: rgba(8, 14, 30, 0.86);
+  background: rgba(7, 12, 26, 0.55);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
   border: 1px solid rgba(56, 189, 248, 0.32);
@@ -18,7 +18,7 @@
   font-size: 11px;
   color: #cbd5e1;
   z-index: 25;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   pointer-events: auto;
   user-select: none;
   display: flex;
@@ -54,9 +54,9 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 间距控制器悬停流光 */
 .satellite-spacing-controller:hover {
-  background: rgba(10, 18, 38, 0.94);
+  background: rgba(9, 16, 34, 0.72);
   border-color: rgba(56, 189, 248, 0.52);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 /** 间距控制器选中激活态高亮 */
 .satellite-spacing-controller.is-active {

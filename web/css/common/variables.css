@@ -9,23 +9,25 @@
   --bg-panel: rgba(8, 14, 28, 0.72);
   --bg-card: rgba(11, 18, 36, 0.62);
 
-  /* ========== 科技毛玻璃系统 (Frosted Glassmorphism 2.0) ========== */
-  --glass-bg-header: rgba(7, 12, 24, 0.76);
-  --glass-bg-sidebar: rgba(6, 11, 22, 0.74);
-  --glass-bg-panel: rgba(8, 14, 30, 0.78);
-  --glass-bg-card: rgba(11, 18, 38, 0.62);
-  --glass-bg-control: rgba(13, 20, 38, 0.65);
-  --glass-bg-dropdown: rgba(9, 15, 32, 0.92);
-  --glass-bg-modal: rgba(8, 14, 30, 0.88);
-  --glass-blur-xs: blur(6px) saturate(140%);
-  --glass-blur-sm: blur(12px) saturate(150%);
-  --glass-blur-md: blur(20px) saturate(170%);
-  --glass-blur-lg: blur(30px) saturate(190%);
-  --glass-border: rgba(56, 189, 248, 0.18);
-  --glass-border-subtle: rgba(255, 255, 255, 0.07);
-  --glass-border-hover: rgba(56, 189, 248, 0.48);
-  --glass-shine: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-  --glass-inner-bevel: inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 -1px 1px rgba(0, 0, 0, 0.4);
+  /* ========== 科技毛玻璃系统 (Frosted Glassmorphism 2.0 - High Transparency) ========== */
+  --glass-bg-header: rgba(6, 11, 24, 0.55);
+  --glass-bg-sidebar: rgba(5, 9, 20, 0.50);
+  --glass-bg-panel: rgba(7, 12, 26, 0.52);
+  --glass-bg-card: rgba(9, 15, 32, 0.42);
+  --glass-bg-control: rgba(12, 19, 36, 0.48);
+  --glass-bg-dropdown: rgba(7, 13, 28, 0.70);
+  --glass-bg-modal: rgba(7, 13, 28, 0.60);
+  --glass-bg-drawer: rgba(6, 11, 24, 0.62);
+  --glass-blur-xs: blur(8px) saturate(160%);
+  --glass-blur-sm: blur(16px) saturate(180%);
+  --glass-blur-md: blur(24px) saturate(190%);
+  --glass-blur-lg: blur(36px) saturate(210%);
+  --glass-blur-xl: blur(48px) saturate(220%);
+  --glass-border: rgba(56, 189, 248, 0.24);
+  --glass-border-subtle: rgba(255, 255, 255, 0.09);
+  --glass-border-hover: rgba(56, 189, 248, 0.58);
+  --glass-shine: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --glass-inner-bevel: inset 0 1px 1px rgba(255, 255, 255, 0.2), inset 0 -1px 1px rgba(0, 0, 0, 0.45);
 
   /* ========== 科技边框与发光导轨体系 (Cybernetic Edges & Rails) ========== */
   --border-color: rgba(30, 41, 59, 0.7);

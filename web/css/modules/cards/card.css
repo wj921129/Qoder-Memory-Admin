@@ -116,7 +116,9 @@
 .card-desc {
   font-size: 12px;
   color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.5);
+  background: rgba(15, 23, 42, 0.38);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-left: 3px solid var(--color-neon-cyan);
   padding: 8px 11px;
   border-radius: 0 var(--rounded-md) var(--rounded-md) 0;
@@ -151,7 +153,7 @@
   left: 0;
   right: 0;
   height: 40px;
-  background: linear-gradient(to bottom, transparent, rgba(13, 21, 40, 0.95));
+  background: linear-gradient(to bottom, transparent, rgba(8, 14, 30, 0.85));
   pointer-events: none;
 }
 
@@ -168,7 +170,9 @@
 .keyword-pill {
   font-size: 10px;
   padding: 2px 7px;
-  background: rgba(30, 41, 59, 0.6);
+  background: rgba(30, 41, 59, 0.40);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(51, 65, 85, 0.5);
   border-radius: var(--rounded-sm);
   color: #94a3b8;

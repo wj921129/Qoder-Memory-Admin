@@ -9,7 +9,7 @@
   bottom: 18px;
   left: 18px;
   width: 310px;
-  background: rgba(7, 13, 28, 0.82);
+  background: rgba(6, 11, 24, 0.52);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
   border: 1px solid rgba(56, 189, 248, 0.3);
@@ -21,7 +21,7 @@
   flex-direction: column;
   pointer-events: auto;
   z-index: 25;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   cursor: pointer;
   transform-origin: bottom left;
   transition: var(--transition-smooth);
@@ -49,9 +49,9 @@
 }
 /** 图例悬浮仓悬停高亮展开 */
 .galaxy-legend:hover {
-  background: rgba(9, 16, 34, 0.94);
+  background: rgba(8, 15, 32, 0.72);
   border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
 /* ========== 图例头部与折叠动效 ========== */

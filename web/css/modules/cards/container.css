@@ -21,13 +21,13 @@
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: rgba(8, 14, 30, 0.78);
+  background: rgba(8, 14, 30, 0.52);
   backdrop-filter: var(--glass-blur-md);
   -webkit-backdrop-filter: var(--glass-blur-md);
   border-bottom: 1px solid rgba(56, 189, 248, 0.2);
   overflow-x: auto;
   flex-shrink: 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 /** 分类切换胶囊按钮 (Cyber Filter Pill) */
 .official-tab {
@@ -36,21 +36,23 @@
   gap: 7px;
   padding: 6px 15px;
   border-radius: var(--rounded-full);
-  background: rgba(16, 26, 48, 0.6);
+  background: rgba(16, 26, 48, 0.42);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
   border: 1px solid rgba(56, 189, 248, 0.2);
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
   transition: var(--transition-smooth);
   white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 /** 分类胶囊悬停 */
 .official-tab:hover {
-  background: rgba(28, 44, 76, 0.85);
+  background: rgba(28, 44, 76, 0.65);
   color: #fff;
   border-color: var(--color-neon-cyan);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transform: translateY(-1px);
 }
 .official-tab:active {
@@ -70,7 +72,7 @@
   font-weight: 600;
   padding: 2px 7px;
   border-radius: var(--rounded-full);
-  background: rgba(10, 16, 32, 0.85);
+  background: rgba(10, 16, 32, 0.55);
   border: 1px solid rgba(56, 189, 248, 0.3);
   color: inherit;
 }
@@ -84,7 +86,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(56, 189, 248, 0.14);
-  background: rgba(11, 18, 36, 0.55);
+  background: rgba(11, 18, 36, 0.42);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
 }
