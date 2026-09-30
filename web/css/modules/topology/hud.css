@@ -8,10 +8,10 @@
   position: absolute;
   top: 18px;
   right: 18px;
-  background: rgba(6, 11, 24, 0.52);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
-  border: 1px solid rgba(56, 189, 248, 0.32);
+  background: linear-gradient(135deg, rgba(8, 16, 36, 0.42) 0%, rgba(20, 10, 42, 0.30) 100%);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--rounded-md);
   padding: 8px 16px;
   font-size: 11px;
@@ -21,7 +21,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 16px rgba(56, 189, 248, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.22), 0 0 35px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25);
   transition: var(--transition-smooth);
 }
 /** HUD 战术瞄准角标装饰 (Top-Left & Bottom-Right) */
@@ -72,11 +72,11 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--rounded-sm);
-  background: rgba(20, 32, 58, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(18, 28, 54, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: var(--text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.3);
   display: inline-flex;
   align-items: center;
   gap: 4px;

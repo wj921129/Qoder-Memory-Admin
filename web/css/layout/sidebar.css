@@ -7,10 +7,10 @@
 #sidebar-filter {
   width: 260px;
   background: var(--glass-bg-sidebar);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
-  border-right: 1px solid rgba(56, 189, 248, 0.22);
-  box-shadow: 6px 0 30px rgba(0, 0, 0, 0.65);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border-right: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 6px 0 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12), 0 0 45px rgba(168, 85, 247, 0.08);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -27,13 +27,13 @@
   right: 0;
   width: 1px;
   background: linear-gradient(180deg, 
-    rgba(56, 189, 248, 0.5) 0%, 
-    rgba(168, 85, 247, 0.3) 40%, 
-    rgba(56, 189, 248, 0.35) 80%,
+    rgba(56, 189, 248, 0.6) 0%, 
+    rgba(168, 85, 247, 0.45) 40%, 
+    rgba(56, 189, 248, 0.45) 80%,
     transparent 100%
   );
   pointer-events: none;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4), 0 0 20px rgba(168, 85, 247, 0.25);
 }
 /** 侧边栏独立业务分区 */
 .sidebar-section {
@@ -100,28 +100,28 @@
   color: var(--text-main);
   cursor: pointer;
   margin-bottom: 7px;
-  background: rgba(14, 22, 42, 0.42);
+  background: linear-gradient(135deg, rgba(14, 22, 44, 0.40) 0%, rgba(26, 12, 48, 0.28) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 6px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: var(--transition-smooth);
 }
 /** 官方分类项悬停流光 */
 .official-cat-item:hover {
-  background: rgba(26, 38, 70, 0.65);
+  background: linear-gradient(135deg, rgba(26, 38, 70, 0.65) 0%, rgba(42, 18, 72, 0.50) 100%);
   border-color: var(--color-neon-cyan);
   color: #fff;
   transform: translateX(4px);
-  box-shadow: 0 3px 14px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 0 3px 16px rgba(56, 189, 248, 0.35), 0 0 25px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 /** 官方分类激活选中态 */
 .official-cat-item.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.32) 0%, rgba(56, 189, 248, 0.18) 100%);
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.38) 0%, rgba(168, 85, 247, 0.25) 100%);
   border-color: var(--color-neon-cyan);
   color: var(--color-neon-cyan);
   font-weight: 600;
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45), 0 0 35px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 /** 官方分类条目数量发光微标 */
 .official-cat-badge {
@@ -185,22 +185,22 @@
 .tag-pill {
   font-size: 11px;
   padding: 4px 10px;
-  background: rgba(14, 22, 42, 0.42);
+  background: linear-gradient(135deg, rgba(14, 22, 44, 0.42) 0%, rgba(26, 12, 48, 0.30) 100%);
   backdrop-filter: var(--glass-blur-xs);
   -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: var(--rounded-full);
   color: #cbd5e1;
   cursor: pointer;
   transition: var(--transition-smooth);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 /** 语义标签悬停微亮 */
 .tag-pill:hover {
-  background: rgba(30, 46, 80, 0.65);
+  background: linear-gradient(135deg, rgba(30, 46, 80, 0.65) 0%, rgba(55, 24, 90, 0.50) 100%);
   border-color: var(--color-neon-cyan);
   color: #fff;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.28);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35), 0 0 20px rgba(168, 85, 247, 0.2);
   transform: translateY(-1px);
 }
 /** 激活语义标签脉冲霓虹辉光 */

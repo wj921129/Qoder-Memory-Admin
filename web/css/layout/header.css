@@ -7,10 +7,10 @@
 header {
   height: 58px;
   background: var(--glass-bg-header);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
-  border-bottom: 1px solid rgba(56, 189, 248, 0.22);
-  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.65), inset 0 -1px 0 rgba(56, 189, 248, 0.15);
+  backdrop-filter: var(--glass-blur-lg);
+  -webkit-backdrop-filter: var(--glass-blur-lg);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 4px 28px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.15), 0 0 45px rgba(168, 85, 247, 0.08), inset 0 -1px 0 rgba(56, 189, 248, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -32,13 +32,13 @@ header::after {
   height: 1px;
   background: linear-gradient(90deg, 
     transparent 0%, 
-    rgba(56, 189, 248, 0.45) 15%, 
-    rgba(168, 85, 247, 0.35) 50%, 
-    rgba(56, 189, 248, 0.45) 85%, 
+    rgba(56, 189, 248, 0.55) 15%, 
+    rgba(168, 85, 247, 0.45) 50%, 
+    rgba(56, 189, 248, 0.55) 85%, 
     transparent 100%
   );
   pointer-events: none;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4), 0 0 20px rgba(168, 85, 247, 0.3);
 }
 
 /* ========== 品牌与全局意图导航 ========== */
@@ -67,20 +67,20 @@ header::after {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(11, 18, 36, 0.48);
+  background: linear-gradient(135deg, rgba(11, 18, 38, 0.42) 0%, rgba(22, 10, 42, 0.30) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   padding: 4px 9px;
   border-radius: var(--rounded-md);
   margin-left: 6px;
   flex-shrink: 0;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), 0 2px 8px rgba(0, 0, 0, 0.25);
   transition: var(--transition-smooth);
 }
 .project-selector-wrap:hover {
-  border-color: rgba(56, 189, 248, 0.38);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16), 0 0 12px rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.48);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.22), 0 0 16px rgba(56, 189, 248, 0.22), 0 0 25px rgba(168, 85, 247, 0.12);
 }
 /** 级联选择器标签 */
 .project-selector-wrap label {
@@ -164,15 +164,15 @@ header::after {
 /** 模式切换分段开关轨道 */
 .mode-switcher {
   display: flex;
-  background: rgba(9, 15, 30, 0.45);
+  background: linear-gradient(135deg, rgba(9, 15, 32, 0.40) 0%, rgba(18, 9, 36, 0.30) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.22);
   border-radius: var(--rounded-md);
   padding: 3px;
   gap: 3px;
   flex-shrink: 0;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 /** 模式切换按钮基础态 */
 .mode-switcher-btn {
@@ -193,19 +193,19 @@ header::after {
 /** 模式切换按钮悬停 */
 .mode-switcher-btn:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
 }
 /** 默认模式激活态高光 */
 .mode-switcher-btn.active {
   background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
   color: #fff;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 /** 专业模式激活态琥珀金光 */
 .mode-switcher-btn#btn-mode-pro.active {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   color: #fff;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 /** 默认模式下隐藏专业专属元素 */
 body.mode-default .pro-only {
@@ -214,14 +214,14 @@ body.mode-default .pro-only {
 /** 视图切换器轨道容器 */
 .view-switcher {
   display: flex;
-  background: rgba(9, 15, 30, 0.45);
+  background: linear-gradient(135deg, rgba(9, 15, 32, 0.40) 0%, rgba(18, 9, 36, 0.30) 100%);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.22);
   border-radius: var(--rounded-md);
   padding: 3px;
   gap: 3px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 /** 视图切换按钮 */
 .view-switcher-btn {
