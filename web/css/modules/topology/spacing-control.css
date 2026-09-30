@@ -8,13 +8,13 @@
   position: absolute;
   bottom: 18px;
   right: 18px;
-  min-width: 296px;
+  min-width: 250px;
   background: linear-gradient(135deg, rgba(8, 16, 36, 0.22) 0%, rgba(20, 10, 42, 0.14) 100%);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
   border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: var(--rounded-md);
-  padding: 11px 15px;
+  padding: 8px 14px;
   font-size: 11px;
   color: #cbd5e1;
   z-index: 25;
@@ -23,13 +23,13 @@
   user-select: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  /* 默认折叠态：未选中行星时整体隐藏，选中后平滑展开 */
+  gap: 0;
+  /* 默认隐藏态：未选中天体时整体隐藏 */
   opacity: 0;
   visibility: hidden;
   transform: translateY(16px) scale(0.95);
   transform-origin: 100% 100%;
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.3s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.3s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
 }
 /** 间距控制器战术瞄准角标 (Top-Left & Bottom-Right) */
 .satellite-spacing-controller::before {
@@ -57,32 +57,51 @@ body.has-drawer-open .satellite-spacing-controller,
 main:has(#editor-drawer.open) .satellite-spacing-controller {
   right: 598px;
 }
-/** 间距控制器悬停流光 */
+/** 间距控制器悬停流光与自适应展开 */
 .satellite-spacing-controller:hover {
   background: linear-gradient(135deg, rgba(10, 20, 44, 0.65) 0%, rgba(26, 12, 52, 0.55) 100%);
   border-color: rgba(56, 189, 248, 0.55);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 25px rgba(56, 189, 248, 0.32), 0 0 50px rgba(168, 85, 247, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+  padding: 11px 15px;
 }
-/** 间距控制器选中行星后展开激活态 */
+/** 间距控制器选中天体后出现：默认呈现紧凑折叠状态 */
 .satellite-spacing-controller.is-active {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateY(0) scale(1);
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
   border-color: var(--color-neon-cyan);
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.88), 0 0 22px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 /* ========== 控制面板头部 ========== */
-/** 间距控制器头部标题与目标天体 */
+/** 间距控制器头部标题与目标天体 (默认折叠态不显底边框) */
 .spacing-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 0;
+  transition: border-color 0.25s ease, padding-bottom 0.25s ease;
+}
+/** 悬停展开时显现底边分隔线 */
+.satellite-spacing-controller:hover .spacing-header {
+  border-bottom-color: rgba(56, 189, 248, 0.15);
   padding-bottom: 6px;
+}
+/** 间距控制微型折叠指示角标 */
+.spacing-header::after {
+  content: '▾';
+  font-size: 10px;
+  color: var(--text-muted);
+  transition: transform 0.25s ease, color 0.25s ease;
+  margin-left: 2px;
+}
+.satellite-spacing-controller:hover .spacing-header::after {
+  transform: rotate(180deg);
+  color: var(--color-neon-cyan);
 }
 /** 控制器标题 */
 .spacing-title {
@@ -102,7 +121,32 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   white-space: nowrap;
 }
 
-/* ========== 滑块与步进按钮操作组 ========== */
+/* ========== 滑块与步进按钮操作组 (默认折叠隐藏，鼠标移入展开) ========== */
+/** 默认折叠状态：不显示进度条与使用提示 */
+.spacing-controls,
+.spacing-tip {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  transition: max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, margin 0.25s ease;
+}
+/** 鼠标移入后平滑展开显示进度条操作组 */
+.satellite-spacing-controller:hover .spacing-controls {
+  max-height: 38px;
+  opacity: 1;
+  pointer-events: auto;
+  margin-top: 8px;
+}
+/** 鼠标移入后平滑展开显示操作小贴士 */
+.satellite-spacing-controller:hover .spacing-tip {
+  max-height: 36px;
+  opacity: 1;
+  pointer-events: auto;
+  margin-top: 6px;
+}
 /** 间距调节控件横向行 */
 .spacing-controls {
   display: flex;

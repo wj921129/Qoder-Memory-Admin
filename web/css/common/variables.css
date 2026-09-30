@@ -25,6 +25,13 @@
   --surface-opaque-elevated: #121c35;
   --surface-opaque-border: rgba(56, 189, 248, 0.22);
 
+  /* ========== 全局通用微透光/少透光光学表面体系 (Universal Translucent Surface) ========== */
+  /** 全局少透光毛玻璃基面变量：与官方分类、标签云、弹窗文本框等对齐，保留深空星系通透质感 */
+  --surface-translucent: linear-gradient(135deg, rgba(14, 22, 44, 0.26) 0%, rgba(26, 12, 48, 0.16) 100%);
+  --surface-translucent-hover: linear-gradient(135deg, rgba(26, 38, 70, 0.65) 0%, rgba(42, 18, 72, 0.50) 100%);
+  --surface-translucent-border: rgba(56, 189, 248, 0.18);
+  --surface-translucent-border-hover: rgba(56, 189, 248, 0.50);
+
   /* ========== 聚焦导轨体系 ========== */
   --border-focus: #38bdf8;
 

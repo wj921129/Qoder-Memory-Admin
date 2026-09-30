@@ -86,7 +86,7 @@ window.QM.sidebar = (function() {
         catKeys.forEach(cat => {
           const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
           catHtml += `
-            <div class="cat-item surface-opaque ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" title="${escapeHtml(label)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
+            <div class="cat-item surface-translucent ${activeCategory === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}" title="${escapeHtml(label)}" onclick="window.QM.sidebar.selectCategory(this.getAttribute('data-category'))">
               <span>${escapeHtml(label)}</span>
               <span class="cat-count">${catCounts[cat]}</span>
             </div>

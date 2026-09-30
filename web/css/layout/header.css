@@ -130,7 +130,7 @@ header::after {
   transform: rotate(180deg);
   color: var(--color-neon-cyan);
 }
-/** 悬浮下拉毛玻璃菜单面板 (移出后短暂延时消失，保证子项可点击) */
+/** 悬浮下拉毛玻璃菜单面板 (鼠标移出时立即强制消失，彻底杜绝悬浮粘滞) */
 .nav-dd-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -148,7 +148,7 @@ header::after {
   padding: 5px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   z-index: 120;
   box-shadow:
     0 18px 44px -12px rgba(0, 0, 0, 0.85),
@@ -156,45 +156,52 @@ header::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-6px);
-  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.1s ease, transform 0.1s ease, visibility 0s linear 0.1s;
 }
-/** 鼠标移入 / 键盘聚焦时展开菜单 */
-.nav-dd:hover .nav-dd-menu,
-.nav-dd:focus-within .nav-dd-menu {
+/** 鼠标移入时展开菜单 (移出时自动立即关闭，移除 focus-within 避免焦点粘滞) */
+.nav-dd:hover .nav-dd-menu {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
   transform: translateY(0);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s;
 }
-/** 下拉选项条目 */
+/** 下拉选项条目：每一行均采用实体不透光表面，彻底遮蔽底层星系画布透光 */
 .nav-dd-item {
   display: flex;
   align-items: center;
   gap: 6px;
   width: 100%;
-  background: transparent;
-  border: none;
+  background: var(--surface-opaque);
+  border: 1px solid var(--surface-opaque-border);
   color: var(--text-main);
   font-size: 11.5px;
   font-weight: 500;
   text-align: left;
-  padding: 7px 10px;
+  padding: 6px 10px;
   border-radius: var(--rounded-sm);
   cursor: pointer;
   white-space: nowrap;
   transition: var(--transition-smooth);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
 }
 /** 选项悬停高亮 */
 .nav-dd-item:hover {
-  background: rgba(56, 189, 248, 0.12);
-  color: #e0f2fe;
+  background: var(--surface-opaque-elevated);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #fff;
+  transform: translateX(1px);
 }
 /** 选项当前选中态 */
 .nav-dd-item.active {
-  background: rgba(2, 132, 199, 0.25);
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.38) 0%, #0d1a33 100%);
+  border-color: var(--color-neon-cyan);
   color: var(--color-neon-cyan);
   font-weight: 600;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 /** 选项尾部规模微标 (星系切片数等) */
 .nav-dd-count {
@@ -202,14 +209,17 @@ header::after {
   font-size: 10px;
   opacity: 0.6;
 }
-/** 下拉内的分组标题行 (全局智库星系 / 本地工程星系) */
+/** 下拉内的分组标题行 (全局智库星系 / 本地工程星系)：实体不透光底衬 */
 .nav-dd-group {
-  padding: 5px 10px 3px;
+  padding: 6px 10px 4px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: var(--text-muted);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  color: #38bdf8;
+  background: #060913;
+  border-radius: var(--rounded-sm);
+  border: 1px dashed rgba(56, 189, 248, 0.25);
+  margin-top: 2px;
   margin-bottom: 2px;
 }
 /* ---------- 各控制组色泽主题 ---------- */

@@ -473,6 +473,7 @@ window.QM.app = (function() {
     // 8. 更多菜单与 MEMORY.md 预览弹窗
     const moreMenuBtn = document.getElementById('more-menu-btn');
     const moreMenu = document.getElementById('more-menu');
+    const moreDropdown = document.getElementById('more-dropdown');
     if (moreMenuBtn && moreMenu) {
       moreMenuBtn.addEventListener('click', e => {
         e.stopPropagation();
@@ -481,6 +482,11 @@ window.QM.app = (function() {
       window.addEventListener('click', e => {
         if (!e.target.closest('#more-dropdown')) moreMenu.classList.remove('show');
       });
+      if (moreDropdown) {
+        moreDropdown.addEventListener('mouseleave', () => {
+          moreMenu.classList.remove('show');
+        });
+      }
     }
 
     const viewIndexBtn = document.getElementById('view-index-btn');

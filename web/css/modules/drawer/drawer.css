@@ -137,15 +137,15 @@
   gap: 8px;
   min-width: 0;
 }
-/** 通用毛玻璃表单输入控件 (Cyber Glass Input) */
+/** 通用毛玻璃表单输入控件 (Cyber Glass Input)：少透光光学表面 */
 .form-control {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  background: rgba(9, 15, 32, 0.35);
+  background: var(--surface-translucent);
   backdrop-filter: var(--glass-blur-xs);
   -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid rgba(56, 189, 248, 0.22);
+  border: 1px solid var(--surface-translucent-border);
   color: var(--text-main);
   padding: 8px 12px;
   border-radius: var(--rounded-md);

@@ -82,9 +82,13 @@
   color: #64748b;
   font-size: 11px;
 }
+/** 默认模式下隐藏底层物理子目录细分 */
+body.mode-default .sidebar-section-subdirs {
+  display: none !important;
+}
 
 /* ========== 官方四大分类体系 (晶体控制舱) ========== */
-/** 官方分类毛玻璃交互项 (Crystal Capsule Item) */
+/** 官方分类毛玻璃交互项 (Crystal Capsule Item)：少透光光学表面 */
 .official-cat-item {
   display: flex;
   align-items: center;
@@ -96,16 +100,16 @@
   color: var(--text-main);
   cursor: pointer;
   margin-bottom: 7px;
-  background: linear-gradient(135deg, rgba(14, 22, 44, 0.24) 0%, rgba(26, 12, 48, 0.16) 100%);
+  background: var(--surface-translucent);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.18);
+  border: 1px solid var(--surface-translucent-border);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: var(--transition-smooth);
 }
 /** 官方分类项悬停流光 */
 .official-cat-item:hover {
-  background: linear-gradient(135deg, rgba(26, 38, 70, 0.65) 0%, rgba(42, 18, 72, 0.50) 100%);
+  background: var(--surface-translucent-hover) !important;
   border-color: var(--color-neon-cyan);
   color: #fff;
   transform: translateX(4px);
@@ -138,7 +142,7 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
-/** 细分子目录条目：每行独立外框与实体不透光底衬，彻底杜绝底层星系透光干扰 */
+/** 细分子目录条目：取消不透光，与官方四大分类全面对齐少透光光学质感 */
 .cat-item {
   display: flex;
   align-items: center;
@@ -149,9 +153,11 @@
   color: #cbd5e1;
   cursor: pointer;
   margin-bottom: 5px;
-  background: var(--surface-opaque);
-  border: 1px solid var(--surface-opaque-border);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: var(--surface-translucent);
+  backdrop-filter: var(--glass-blur-xs);
+  -webkit-backdrop-filter: var(--glass-blur-xs);
+  border: 1px solid var(--surface-translucent-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: var(--transition-smooth);
   max-width: 100%;
   box-sizing: border-box;
@@ -166,22 +172,20 @@
   margin-right: 8px;
 }
 /** 细分子目录悬停 */
-.cat-item:hover,
-.cat-item.surface-opaque:hover {
-  background: var(--surface-opaque-elevated) !important;
+.cat-item:hover {
+  background: var(--surface-translucent-hover) !important;
   border-color: var(--color-neon-cyan);
   color: #fff;
   transform: translateX(2px);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6), 0 0 12px rgba(56, 189, 248, 0.25);
+  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 /** 细分子目录选中激活态 */
-.cat-item.active,
-.cat-item.surface-opaque.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.4) 0%, #0c1a34 100%) !important;
+.cat-item.active {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.38) 0%, rgba(168, 85, 247, 0.25) 100%) !important;
   color: var(--color-neon-cyan);
   border-color: var(--color-neon-cyan);
   font-weight: 600;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 /** 细分子目录统计微标 */
 .cat-count {
@@ -200,14 +204,14 @@
   flex-wrap: wrap;
   gap: 7px;
 }
-/** 独立语义标签药丸 (Cyber Holographic Pill) */
+/** 独立语义标签药丸 (Cyber Holographic Pill)：统一复用少透光光学表面 */
 .tag-pill {
   font-size: 11px;
   padding: 4px 10px;
-  background: linear-gradient(135deg, rgba(14, 22, 44, 0.26) 0%, rgba(26, 12, 48, 0.16) 100%);
+  background: var(--surface-translucent);
   backdrop-filter: var(--glass-blur-xs);
   -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  border: 1px solid var(--surface-translucent-border);
   border-radius: var(--rounded-full);
   color: #cbd5e1;
   cursor: pointer;

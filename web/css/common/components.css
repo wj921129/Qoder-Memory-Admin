@@ -257,10 +257,10 @@
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
-/** 下拉菜单选项条目 */
+/** 下拉菜单选项条目：实体不透光表面 */
 .dropdown-item {
-  background: transparent;
-  border: none;
+  background: var(--surface-opaque);
+  border: 1px solid var(--surface-opaque-border);
   color: var(--text-main);
   padding: 8px 12px;
   font-size: 12px;
@@ -274,12 +274,15 @@
   width: 100%;
   transition: var(--transition-smooth);
   white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
 }
 /** 下拉条目悬停高亮 */
 .dropdown-item:hover {
-  background: rgba(56, 189, 248, 0.12);
-  color: #e0f2fe;
-  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.2);
+  background: var(--surface-opaque-elevated);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #fff;
+  transform: translateX(1px);
 }
 
 /* ========== 模态弹窗与轻提示 (Precision Optical Modal) ========== */
@@ -391,10 +394,10 @@
 .modal-preview-textarea {
   font-family: 'JetBrains Mono', Consolas, Menlo, Monaco, monospace;
   font-size: 12px;
-  background: rgba(6, 12, 28, 0.42);
+  background: var(--surface-translucent);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
-  border: 1px solid rgba(56, 189, 248, 0.24);
+  border: 1px solid var(--surface-translucent-border);
   border-radius: var(--rounded-md);
   padding: 14px;
   color: #a5f3fc;
@@ -596,5 +599,26 @@
 .surface-opaque:hover,
 .glass-opaque:hover {
   border-color: rgba(56, 189, 248, 0.45);
+}
+
+/* ========== 全局通用微透光/少透光光学表面体系 (Universal Translucent Surface System) ========== */
+/**
+ * 全局复用少透光样式类：提供适度透光与轻度毛玻璃质感，
+ * 彻底对齐官方分类条目、高频标签云、弹窗代码框等视觉层级，
+ * 支持全局任意组件（子分类列表、标签、表单控件、弹窗输入框等）复用。
+ */
+.surface-translucent,
+.glass-translucent {
+  background: var(--surface-translucent) !important;
+  backdrop-filter: var(--glass-blur-sm);
+  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border: 1px solid var(--surface-translucent-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.surface-translucent:hover,
+.glass-translucent:hover {
+  background: var(--surface-translucent-hover) !important;
+  border-color: var(--surface-translucent-border-hover);
 }
 

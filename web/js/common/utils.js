@@ -126,7 +126,7 @@ window.QM.utils = (function() {
 
   /**
    * 绑定头部悬浮下拉：点击选项后先同步当前值展示，再回调业务切换逻辑
-   * (展开/收起完全由 CSS :hover 驱动：移入展开、移出自动消失)
+   * (展开/收起由 CSS :hover 驱动，鼠标移出时立即强制消失)
    */
   function setupNavDropdown(id, onSelect) {
     const dd = document.getElementById(id);
@@ -138,6 +138,17 @@ window.QM.utils = (function() {
       if (!item || !menu.contains(item)) return;
       syncNavDropdown(id, item.dataset.value);
       if (onSelect) onSelect(item.dataset.value);
+      // 点击后主动释放焦点，防止浏览器保留 focus 导致菜单滞留
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+    });
+
+    // 鼠标移出容器时，主动清理内部焦点，强制关闭下拉
+    dd.addEventListener('mouseleave', () => {
+      if (dd.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
     });
   }
 
