@@ -16,18 +16,38 @@ const ROOT_DIR = path.resolve(SERVER_DIR, '..');
 const WEB_DIR = path.resolve(ROOT_DIR, 'web');
 const USER_HOME = process.env.USERPROFILE || os.homedir();
 
-// 项目元信息辅助字典 (用于补充展示图标与友好名称)
-const PROJECT_META = {
-  global: { name: '🌐 全局研发智库 (Qoder CN 通用规范)', icon: '🌐', shortName: 'global' },
-  'fmmpay-busi': { name: '⚡ fmmpay-busi (国际卡收单核心服务)', icon: '⚡', shortName: 'fmmpay-busi' },
-  'fmmpay-dev': { name: '🚀 fmmpay-dev (国际卡开发工程与业务库)', icon: '🚀', shortName: 'fmmpay-dev' },
-  'gpay-gateb': { name: '🛡️ gpay-gateb (支付网关接入前置服务)', icon: '🛡️', shortName: 'gpay-gateb' },
-  'gpay-gateb-dev': { name: '🛡️ gpay-gateb (支付网关接入前置服务)', icon: '🛡️', shortName: 'gpay-gateb-dev' },
-  'gpay-chnlwg': { name: '🔌 gpay-chnlwg (渠道网关通道通信服务)', icon: '🔌', shortName: 'gpay-chnlwg' },
-  'gpay-cbmu': { name: '🌐 gpay-cbmu (跨境商户结算中台服务)', icon: '🌐', shortName: 'gpay-cbmu' },
-  'gpay-cbmu-dev': { name: '🌐 gpay-cbmu (跨境商户结算中台服务)', icon: '🌐', shortName: 'gpay-cbmu-dev' },
-  'gpay-busi': { name: '💳 gpay-busi (全渠道支付核心业务服务)', icon: '💳', shortName: 'gpay-busi' }
+// 默认通用项目元信息基础字典
+const DEFAULT_PROJECT_META = {
+  global: { name: '🌐 全局研发智库 (Qoder 通用规范)', icon: '🌐', shortName: 'global' }
 };
+
+// 动态载入本地工程自定义配置 (从 data/projects.local.json 隔离读取，零外部依赖，防泄露)
+export function loadLocalProjectConfig() {
+  const candidatePaths = [
+    path.resolve(ROOT_DIR, 'data', 'projects.local.json'),
+    path.resolve(ROOT_DIR, 'projects.local.json')
+  ];
+
+  for (const configPath of candidatePaths) {
+    if (fsSync.existsSync(configPath)) {
+      try {
+        const raw = fsSync.readFileSync(configPath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        return {
+          projectMeta: { ...DEFAULT_PROJECT_META, ...(parsed.projectMeta || {}) },
+          priority: Array.isArray(parsed.priority) && parsed.priority.length > 0 ? parsed.priority : ['global']
+        };
+      } catch (err) {
+        console.warn(`[Config] 解析本地配置文件失败: ${configPath}`, err.message);
+      }
+    }
+  }
+
+  return {
+    projectMeta: { ...DEFAULT_PROJECT_META },
+    priority: ['global']
+  };
+}
 
 // Slug 源码工程路径智能贪心反解器 (基于真实物理文件系统测试)
 export function recoverPathFromSlug(slug) {
@@ -58,9 +78,9 @@ export function recoverPathFromSlug(slug) {
 }
 
 // 智能探测工程元信息 (Java/Maven/Node/Git 等)
-function detectProjectMeta(baseName, workspacePath, exists) {
-  if (PROJECT_META[baseName]) {
-    return PROJECT_META[baseName];
+function detectProjectMeta(baseName, workspacePath, exists, metaDict = DEFAULT_PROJECT_META) {
+  if (metaDict && metaDict[baseName]) {
+    return metaDict[baseName];
   }
   let icon = '📁';
   let friendlyName = baseName;
@@ -232,6 +252,7 @@ let currentScanContext = { edition: 'cn', account: null, track: 'ide' };
 
 // 多源动态扫描全部 Qoder 记忆文档 (支持版本隔离、账号隔离、IDE/Agent 轨道切换)
 export async function scanAllProjects(options = {}) {
+  const localConfig = loadLocalProjectConfig();
   const editionKey = options.edition || currentScanContext.edition || 'cn';
   const targetEdition = EDITIONS[editionKey] || EDITIONS.cn;
   
@@ -315,7 +336,7 @@ export async function scanAllProjects(options = {}) {
 
           const { workspacePath, exists } = recoverPathFromSlug(pEnt.name);
           const baseName = workspacePath ? path.basename(workspacePath) : pEnt.name;
-          const meta = detectProjectMeta(baseName, workspacePath, exists);
+          const meta = detectProjectMeta(baseName, workspacePath, exists, localConfig.projectMeta);
 
           projectMap.set(pEnt.name, {
             id: baseName,
@@ -378,7 +399,7 @@ export async function scanAllProjects(options = {}) {
           proj.agentPath = memDir;
         } else {
           // 纯 Agent 任务记忆项目
-          const meta = detectProjectMeta(baseName, workspacePath, exists);
+          const meta = detectProjectMeta(baseName, workspacePath, exists, localConfig.projectMeta);
           projectMap.set(ent.name, {
             id: baseName,
             slug: ent.name,
@@ -441,8 +462,8 @@ export async function scanAllProjects(options = {}) {
     }
   }
 
-  // 排序优先级：global 优先，随后按业务重要度排布
-  const priority = ['global', 'fmmpay-busi', 'fmmpay-dev', 'gpay-gateb', 'gpay-gateb-dev', 'gpay-chnlwg', 'gpay-cbmu', 'gpay-cbmu-dev', 'gpay-busi'];
+  // 排序优先级：以本地配置为准（默认 global 优先）
+  const priority = localConfig.priority || ['global'];
   projects.sort((a, b) => {
     const ia = priority.indexOf(a.id);
     const ib = priority.indexOf(b.id);
@@ -1213,7 +1234,7 @@ export function createServer() {
 
       // 3. 读取指定项目/全局的全部记忆切片 (精准支持 IDE 原生记忆 vs Agent 任务自治记忆)
       if (pathname === '/api/memories' && req.method === 'GET') {
-        const projKey = parsedUrl.searchParams.get('project') || 'fmmpay-dev';
+        const projKey = parsedUrl.searchParams.get('project') || 'global';
         const edition = parsedUrl.searchParams.get('edition') || 'cn';
         const account = parsedUrl.searchParams.get('account') || null;
         const track = parsedUrl.searchParams.get('track') || 'ide';

@@ -26,6 +26,10 @@ tmp/
 .codegraph/
 .agents/
 
+# Local custom data & configs (prevent pushing to cloud)
+*.local.json
+/data/*.local.json
+
 # Logs
 *.log
 npm-debug.log*

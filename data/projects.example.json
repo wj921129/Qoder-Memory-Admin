@@ -1,0 +1,18 @@
+{
+  "_description": "本地工程自定义元数据与显示配置模板 (请复制本文件为 projects.local.json 使用，该本地文件已被 .gitignore 忽略，绝不会提交至云端)",
+  "priority": [
+    "global"
+  ],
+  "projectMeta": {
+    "global": {
+      "name": "🌐 全局研发智库 (Qoder 通用规范)",
+      "icon": "🌐",
+      "shortName": "global"
+    },
+    "example-service": {
+      "name": "🚀 example-service (示例核心服务)",
+      "icon": "🚀",
+      "shortName": "example-service"
+    }
+  }
+}
