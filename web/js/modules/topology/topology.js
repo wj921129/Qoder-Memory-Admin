@@ -1659,6 +1659,10 @@ window.QM.topology = (function() {
         if (draggedNode) {
           if (screenMoved < 6) {
             const clicked = draggedNode;
+            // 核心修复：判定为单击，立即解除拖拽状态，防止后续 simulateCelestialSystem 误将当前行星及卫星判定为 isBeingDragged
+            draggedNode = null;
+            dragSnapshotMap.clear();
+
             focusTarget = clicked;
             updateFocusRelatedSet();
 
@@ -1751,13 +1755,21 @@ window.QM.topology = (function() {
     if (cardCenterBtn) {
       cardCenterBtn.addEventListener('click', () => {
         if (currentCardNode) {
+          focusTarget = currentCardNode;
+          updateFocusRelatedSet();
           cameraTargetNode = currentCardNode;
           cameraTargetPos = null;
           cameraTargetScale = currentCardNode.type === 'domain'
             ? getDomainCameraScale(currentCardNode.cardCount)
             : (currentCardNode.type === 'core' ? 0.78 : 1.35);
           isAutoCameraActive = true;
+          hasDomainExpanding = true;
           startGalaxyLoop();
+          if (currentCardNode.type === 'domain') {
+            updateSpacingControllerUI(currentCardNode);
+          } else {
+            resetSpacingControllerUI();
+          }
           requestRender();
         }
       });

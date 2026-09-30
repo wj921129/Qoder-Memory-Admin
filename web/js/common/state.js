@@ -21,7 +21,13 @@ window.QM.state = (function() {
     galaxies: [],
     activeGalaxyId: null,
     selectedPlanet: null,
-    planetSpacingMap: {},
+    planetSpacingMap: (() => {
+      try {
+        return JSON.parse(localStorage.getItem('qm_planet_spacing_map') || '{}') || {};
+      } catch {
+        return {};
+      }
+    })(),
     availableProjects: [],
     isServerMode: false,
     isEditMode: false,
@@ -195,6 +201,11 @@ window.QM.state = (function() {
     if (!planetId) return;
     const clampedScale = Math.max(0.4, Math.min(3.0, parseFloat(scale) || 1.0));
     state.planetSpacingMap[planetId] = clampedScale;
+    try {
+      localStorage.setItem('qm_planet_spacing_map', JSON.stringify(state.planetSpacingMap));
+    } catch {
+      // 容错处理
+    }
     emit('planet-spacing-changed', { planetId, scale: clampedScale });
   }
 
