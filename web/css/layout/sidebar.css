@@ -131,6 +131,11 @@
 }
 
 /* ========== 物理子目录与细分过滤 ========== */
+/** 细分子目录独立滚动区：限定最大高度收纳，超出后区域内滚动 */
+.sidebar-section-subdirs #category-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
 /** 细分子目录条目 */
 .cat-item {
   display: flex;

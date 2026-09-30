@@ -245,6 +245,9 @@ window.QM.topology = (function() {
       hasDomainExpanding = true;
       startGalaxyLoop();
       showCelestialCard(starNode);
+      // 默认选中该星系恒星：激活星系间距控制并弹出对应详情抽屉
+      updateSpacingControllerUI(starNode);
+      window.QM.drawer?.openCoreDrawer(starNode);
       requestRender();
     }
   }
@@ -327,6 +330,8 @@ window.QM.topology = (function() {
 
       // 3.1 创建星系核心恒星节点
       const starNode = star.createStarNode(g, pos.cx, pos.cy);
+      // 读取用户自定义的星系整体间距配置
+      starNode.satelliteSpacingScale = window.QM.state.getPlanetSpacing(starNode.id) || 1.0;
       nodes.push(starNode);
       nodeMap.set(starNode.id, starNode);
 
@@ -561,7 +566,7 @@ window.QM.topology = (function() {
           focusRelatedIds.add(n.id);
         }
       });
-      if (hudText) hudText.innerText = `🌟 聚焦【${focusTarget.name}】星系恒星 · 激活星系拓扑`;
+      if (hudText) hudText.innerText = `🌟 聚焦【${focusTarget.name}】星系恒星 · 可调节右下角星系整体间距`;
     } else if (focusTarget.type === 'domain') {
       if (focusTarget.parentStarId) focusRelatedIds.add(focusTarget.parentStarId);
       nodes.forEach(n => {
@@ -693,8 +698,12 @@ window.QM.topology = (function() {
     const planet = window.QM.planet;
     const satellite = window.QM.satellite;
 
-    // 模拟所有恒星
+    // 模拟所有恒星 (同步星系整体间距倍率与选中展开度)
+    const activeStarId = (focusTarget && focusTarget.type === 'core') ? focusTarget.id : null;
     nodes.filter(n => n.type === 'core').forEach(c => {
+      c.satelliteSpacingScale = window.QM.state.getPlanetSpacing(c.id) || c.satelliteSpacingScale || 1.0;
+      const starTargetExp = (c.id === activeStarId) ? 1.0 : 0.0;
+      c.expansionProgress = (c.expansionProgress || 0) + (starTargetExp - (c.expansionProgress || 0)) * 0.08;
       star?.simulateStar(c, enableEffects);
     });
 
@@ -709,8 +718,9 @@ window.QM.topology = (function() {
 
     hasDomainExpanding = false;
     nodes.forEach(n => {
-      if (n.type !== 'domain') return;
-      const targetExp = (n.id === activeDomainId) ? 1.0 : 0.0;
+      if (n.type !== 'domain' && n.type !== 'core') return;
+      const anchorId = (n.type === 'core') ? activeStarId : activeDomainId;
+      const targetExp = (n.id === anchorId) ? 1.0 : 0.0;
       if (Math.abs(targetExp - (n.expansionProgress || 0)) > 0.005) {
         hasDomainExpanding = true;
       }
@@ -726,6 +736,8 @@ window.QM.topology = (function() {
         const parentStar = nodeMap.get(n.parentStarId);
         // 读取当前行星最新的卫星间距倍率
         n.satelliteSpacingScale = window.QM.state.getPlanetSpacing(n.id) || n.satelliteSpacingScale || 1.0;
+        // 星系级整体间距倍率：恒星选中展开度与恒星间距倍率统一驱动行星与卫星扩张
+        n.galaxySpacingMult = planet.getGalaxySpacingMultiplier(parentStar);
         planet.simulatePlanet(n, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects, parentStar);
       });
 
@@ -1397,24 +1409,31 @@ window.QM.topology = (function() {
   }
 
   /**
-   * 右下角当前选中行星卫星间距控制器 UI 同步逻辑 (需求 1)
+   * 右下角当前选中天体 (行星/恒星) 间距控制器 UI 同步逻辑 (需求 1)
    */
-  function updateSpacingControllerUI(planetNode) {
+  function updateSpacingControllerUI(targetNode) {
     const ctrl = document.getElementById('satellite-spacing-controller');
     const targetName = document.getElementById('spacing-target-name');
+    const titleEl = document.getElementById('spacing-title');
+    const tipEl = document.getElementById('spacing-tip');
     const slider = document.getElementById('spacing-slider');
     const valText = document.getElementById('spacing-val');
     const btnDec = document.getElementById('btn-spacing-dec');
     const btnInc = document.getElementById('btn-spacing-inc');
     const btnReset = document.getElementById('btn-spacing-reset');
 
-    if (!ctrl || !planetNode) return;
+    if (!ctrl || !targetNode) return;
 
+    const isStar = targetNode.type === 'core';
     ctrl.classList.add('is-active');
-    if (targetName) targetName.innerText = `【${planetNode.name}】`;
+    if (targetName) targetName.innerText = isStar ? `🌟 ${targetNode.name} 星系` : `【${targetNode.name}】`;
+    if (titleEl) titleEl.innerText = isStar ? '🌟 星系间距控制' : '🪐 卫星间距控制';
+    if (tipEl) tipEl.innerText = isStar
+      ? '💡 选中恒星后，可整体扩展或聚拢该星系恒星、行星与卫星的环绕间距'
+      : '💡 选中行星后，可在此自由扩展或聚拢各卫星的环绕间距';
 
-    const currentSpacing = window.QM.state.getPlanetSpacing(planetNode.id) || planetNode.satelliteSpacingScale || 1.0;
-    planetNode.satelliteSpacingScale = currentSpacing;
+    const currentSpacing = window.QM.state.getPlanetSpacing(targetNode.id) || targetNode.satelliteSpacingScale || 1.0;
+    targetNode.satelliteSpacingScale = currentSpacing;
     if (slider) {
       slider.disabled = false;
       slider.value = currentSpacing;
@@ -1424,7 +1443,7 @@ window.QM.topology = (function() {
     if (btnInc) btnInc.disabled = false;
     if (btnReset) btnReset.disabled = false;
 
-    window.QM.state.setSelectedPlanet(planetNode);
+    window.QM.state.setSelectedPlanet(targetNode);
 
     // 无论动效/静止模式，均启动动画循环让 lerp 平滑过渡卫星展开，循环在过渡完成后自动停止
     hasDomainExpanding = true;
@@ -1443,7 +1462,7 @@ window.QM.topology = (function() {
     if (!ctrl) return;
 
     ctrl.classList.remove('is-active');
-    if (targetName) targetName.innerText = '未选中行星';
+    if (targetName) targetName.innerText = '未选中天体';
     if (slider) {
       slider.disabled = true;
       slider.value = 1.0;
@@ -1701,7 +1720,8 @@ window.QM.topology = (function() {
               if (sidebar && typeof sidebar.highlightCategory === 'function') {
                 sidebar.highlightCategory('all', true);
               }
-              resetSpacingControllerUI();
+              // 选中恒星：激活星系间距调节器
+              updateSpacingControllerUI(clicked);
             }
 
             showCelestialCard(clicked);
@@ -1762,7 +1782,7 @@ window.QM.topology = (function() {
           isAutoCameraActive = true;
           hasDomainExpanding = true;
           startGalaxyLoop();
-          if (currentCardNode.type === 'domain') {
+          if (currentCardNode.type === 'domain' || currentCardNode.type === 'core') {
             updateSpacingControllerUI(currentCardNode);
           } else {
             resetSpacingControllerUI();

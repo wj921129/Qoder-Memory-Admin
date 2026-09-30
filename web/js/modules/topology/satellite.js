@@ -111,8 +111,9 @@ window.QM.satellite = (function() {
     const expansion = parent.expansionProgress || 0;
     const spacingScale = (parent.satelliteSpacingScale !== undefined) ? parent.satelliteSpacingScale : 1.0;
 
-    // 选中状态下：间距倍率 spacingScale 深度作用于展开幅度
-    const expansionMult = 1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4);
+    // 选中状态下：间距倍率 spacingScale 深度作用于展开幅度，并叠加星系级整体间距倍率
+    const galaxyMult = parent.galaxySpacingMult || 1.0;
+    const expansionMult = (1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4)) * galaxyMult;
 
     if (enableEffects) {
       c.theta = (c.theta + c.omega) % (Math.PI * 2);
@@ -223,7 +224,8 @@ window.QM.satellite = (function() {
 
     const expansion = parent.expansionProgress || 0;
     const spacingScale = (parent.satelliteSpacingScale !== undefined) ? parent.satelliteSpacingScale : 1.0;
-    const expansionMult = 1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4);
+    const galaxyMult = parent.galaxySpacingMult || 1.0;
+    const expansionMult = (1.0 + expansion * (0.48 * spacingScale + (spacingScale - 1.0) * 0.4)) * galaxyMult;
 
     const localX = mLocalX / (expansionMult || 1);
     const localY = mLocalY / (expansionMult || 1);

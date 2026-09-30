@@ -280,8 +280,12 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
   function openCoreDrawer(node) {
     bindDrawerStaticEvents();
     currentActiveItemId = null;
-    const { memories, currentDirName, currentProject } = window.QM.state.state;
+    const { memories, currentProject } = window.QM.state.state;
     const effectiveProject = node.galaxyId || currentProject;
+    // 聚焦所选星系自身的记忆切片（离线兜底全量）
+    const scopedMemories = memories.filter(m => (m.projectId || m.galaxyId) === node.galaxyId);
+    const galaxyMemories = scopedMemories.length > 0 ? scopedMemories : memories;
+    const scopedName = node.name || node.galaxyId || effectiveProject;
     const drawer = drawerEl();
     const titleEl = document.getElementById('drawer-title');
     const noticeEl = document.getElementById('drawer-readonly-notice');
@@ -301,11 +305,11 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     if (drawer) drawer.classList.add('is-readonly');
     setDrawerInputsDisabled(true);
 
-    const categoriesFound = new Set(memories.map(m => m.category).filter(Boolean));
-    const allKeywords = Array.from(new Set(memories.flatMap(m => m.keywords || [])));
+    const categoriesFound = new Set(galaxyMemories.map(m => m.category).filter(Boolean));
+    const allKeywords = Array.from(new Set(galaxyMemories.flatMap(m => m.keywords || [])));
 
     document.getElementById('edit-id').value = "core-root";
-    document.getElementById('edit-name').value = `全局意图枢纽: ${currentDirName}`;
+    document.getElementById('edit-name').value = `全局意图枢纽: ${scopedName}`;
     document.getElementById('edit-filename').value = "MEMORY.md (根意图索引)";
 
     const catSelect = document.getElementById('edit-category-select');
@@ -316,18 +320,18 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     }
 
     document.getElementById('edit-source').value = 'core';
-    document.getElementById('edit-description').value = `项目名称: ${effectiveProject}，当前累计 ${memories.length} 篇记忆切片，分布于 ${categoriesFound.size} 个主题认知域中。`;
+    document.getElementById('edit-description').value = `星系名称: ${scopedName}，当前累计 ${galaxyMemories.length} 篇记忆切片，分布于 ${categoriesFound.size} 个主题认知域中。`;
     document.getElementById('edit-keywords').value = allKeywords.slice(0, 15).join(', ');
 
     const chainSelect = document.getElementById('edit-chain-target');
     if (chainSelect) {
-      chainSelect.innerHTML = `<option value="">-- 全项目共 ${memories.length} 篇知识切片 --</option>`;
+      chainSelect.innerHTML = `<option value="">-- 当前星系共 ${galaxyMemories.length} 篇知识切片 --</option>`;
     }
 
-    const bodyText = `# 项目认知枢纽：${currentDirName}
+    const bodyText = `# 项目认知枢纽：${scopedName}
 
-- **项目标识**：\`${effectiveProject}\`
-- **记忆库规模**：共 ${memories.length} 篇记忆切片
+- **星系标识**：\`${effectiveProject}\`
+- **记忆库规模**：共 ${galaxyMemories.length} 篇记忆切片
 - **认知域覆盖**：共 ${categoriesFound.size} 个一级分类
 - **总高频标签**：共 ${allKeywords.length} 个语义关键词
 

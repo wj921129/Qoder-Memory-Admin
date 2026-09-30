@@ -61,8 +61,8 @@
           </div>
         </div>
 
-        <!-- 星系视界与定位导航器 (专业模式专属) -->
-        <div class="nav-dd galaxy-dd pro-only" id="galaxy-dd" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
+        <!-- 星系视界与定位导航器 (全模式可用) -->
+        <div class="nav-dd galaxy-dd" id="galaxy-dd" title="🌌 星系视界与定位导航：支持全宇宙宏观透视或定向穿梭至指定星系">
           <button type="button" class="nav-dd-btn">
             <span class="nav-dd-label" id="galaxy-dd-label">🌌 宏观全宇宙</span>
             <span class="nav-dd-arrow">▾</span>
@@ -193,13 +193,13 @@
         <!-- 卫星公转间距控制面板 -->
         <div class="satellite-spacing-controller" id="satellite-spacing-controller">
           <div class="spacing-header">
-            <span class="spacing-title">🪐 卫星间距控制</span>
+            <span class="spacing-title" id="spacing-title">🪐 卫星间距控制</span>
             <span class="spacing-target" id="spacing-target-name">未选中行星</span>
           </div>
           <div class="spacing-controls">
-            <button class="spacing-btn" id="btn-spacing-dec" title="缩小当前选中行星的卫星公转间距" disabled>-</button>
-            <input type="range" class="spacing-slider" id="spacing-slider" min="0.4" max="2.6" step="0.05" value="1.0" disabled title="滑动微调各卫星公转间距">
-            <button class="spacing-btn" id="btn-spacing-inc" title="扩大当前选中行星的卫星公转间距" disabled>+</button>
+            <button class="spacing-btn" id="btn-spacing-dec" title="缩小当前选中天体的环绕间距" disabled>-</button>
+            <input type="range" class="spacing-slider" id="spacing-slider" min="0.4" max="2.6" step="0.05" value="1.0" disabled title="滑动微调天体环绕间距">
+            <button class="spacing-btn" id="btn-spacing-inc" title="扩大当前选中天体的环绕间距" disabled>+</button>
             <span class="spacing-val" id="spacing-val">1.0x</span>
             <button class="spacing-reset-btn" id="btn-spacing-reset" title="恢复默认间距" disabled>↺</button>
           </div>

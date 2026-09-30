@@ -85,6 +85,16 @@ window.QM.planet = (function() {
   }
 
   /**
+   * 星系级整体间距倍率：由所属恒星的选中展开度与间距倍率共同驱动行星/卫星轨道扩张
+   */
+  function getGalaxySpacingMultiplier(starNode) {
+    if (!starNode) return 1.0;
+    const scale = (starNode.satelliteSpacingScale !== undefined) ? starNode.satelliteSpacingScale : 1.0;
+    const expansion = starNode.expansionProgress || 0;
+    return 1.0 + expansion * (0.48 * scale + (scale - 1.0) * 0.4);
+  }
+
+  /**
    * 行星动力学模拟更新（每帧）- 围绕所属星系恒星中心公转
    */
   function simulatePlanet(node, isBeingDragged, activeDomainId, SYSTEM_TILT_X, CAMERA_DISTANCE, enableEffects = true, parentStar = null) {
@@ -108,8 +118,9 @@ window.QM.planet = (function() {
     if (enableEffects) {
       c.theta = (c.theta + c.omega) % (Math.PI * 2);
     }
-    const localX = c.semiMajor * Math.cos(c.theta);
-    const localY = c.semiMinor * Math.sin(c.theta);
+    const galaxyMult = getGalaxySpacingMultiplier(parentStar);
+    const localX = c.semiMajor * galaxyMult * Math.cos(c.theta);
+    const localY = c.semiMinor * galaxyMult * Math.sin(c.theta);
     const totalTilt = SYSTEM_TILT_X + (c.inclination || 0);
 
     node.x = starX + localX;
@@ -135,8 +146,9 @@ window.QM.planet = (function() {
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(1, Math.cos(SYSTEM_TILT_X + (c.inclination || 0)));
+    const galaxyMult = getGalaxySpacingMultiplier(parentStar);
     ctx.beginPath();
-    ctx.ellipse(0, 0, c.semiMajor, c.semiMinor, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, c.semiMajor * galaxyMult, c.semiMinor * galaxyMult, 0, 0, Math.PI * 2);
 
     if (isRelated) {
       ctx.strokeStyle = 'rgba(56, 189, 248, 0.16)';
@@ -296,8 +308,9 @@ window.QM.planet = (function() {
       starX, starY, starZ,
       c.inclination, SYSTEM_TILT_X, CAMERA_DISTANCE
     );
-    const localX = solved.localX;
-    const localY = solved.localY;
+    const galaxyMult = getGalaxySpacingMultiplier(parentStar);
+    const localX = solved.localX / (galaxyMult || 1);
+    const localY = solved.localY / (galaxyMult || 1);
 
     const ecc = c.eccentricity || 0.02;
     const oneMinusEcc2 = Math.max(0.01, 1 - ecc * ecc);
@@ -317,8 +330,8 @@ window.QM.planet = (function() {
     c.theta = newTheta;
     c.omega = newOmega;
 
-    node.x = starX + localX;
-    node.y = starY + localY * solved.cosTilt;
+    node.x = starX + solved.localX;
+    node.y = starY + solved.localY * solved.cosTilt;
     node.z = solved.planetZ;
     node.scale = solved.depthScale;
     node.screenX = dropX;
@@ -344,7 +357,8 @@ window.QM.planet = (function() {
     simulatePlanet,
     drawPlanetOrbit,
     drawPlanet,
-    recalculatePlanetOrbit
+    recalculatePlanetOrbit,
+    getGalaxySpacingMultiplier
   };
 })();
 

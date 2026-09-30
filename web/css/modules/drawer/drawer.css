@@ -110,6 +110,10 @@
   box-sizing: border-box;
   max-width: 100%;
 }
+/** 内容子项禁止 flex 压缩：保证内容溢出时触发容器滚动条而非被压扁裁剪 */
+.drawer-body > * {
+  flex-shrink: 0;
+}
 /** 基础表单字段组 */
 .form-group {
   display: flex;
