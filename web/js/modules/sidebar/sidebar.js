@@ -76,9 +76,22 @@ window.QM.sidebar = (function() {
     const catTotalEl = document.getElementById('cat-total-count');
     if (catTotalEl) catTotalEl.innerText = Object.keys(catCounts).length;
 
-    // 2. 标签云统计
+    // 2. 标签云统计与渲染
+    renderTagCloud();
+  }
+
+  function renderTagCloud() {
+    const { activeTag, memories } = window.QM.state.state;
+    const { escapeHtml } = window.QM.utils;
+    const topology = window.QM.topology;
+
+    // 当选中星体时，只展示所有关联星体中的标签；未选中时展示全局标签
+    const focusedMemories = topology?.getFocusedRelatedMemories ? topology.getFocusedRelatedMemories() : null;
+    const isFocused = focusedMemories !== null;
+    const targetMemories = isFocused ? focusedMemories : (memories || []);
+
     const tagCounts = {};
-    memories.forEach(m => {
+    targetMemories.forEach(m => {
       (m.keywords || []).forEach(k => {
         const t = k.trim();
         if (t) tagCounts[t] = (tagCounts[t] || 0) + 1;
@@ -87,18 +100,27 @@ window.QM.sidebar = (function() {
 
     const tagCloudEl = document.getElementById('tag-cloud');
     if (tagCloudEl) {
-      let tagHtml = '';
-      Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]).slice(0, 30).forEach(tag => {
-        tagHtml += `
-          <span class="tag-pill ${activeTag === tag ? 'active' : ''}" onclick="window.QM.sidebar.toggleTag('${escapeHtml(tag)}')">
-            ${escapeHtml(tag)} <small style="opacity:0.7;">(${tagCounts[tag]})</small>
-          </span>
-        `;
-      });
-      tagCloudEl.innerHTML = tagHtml;
+      const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
+      if (sortedTags.length === 0) {
+        const emptyTip = isFocused ? '(当前关联星体暂无标签)' : '(暂无高频标签)';
+        tagCloudEl.innerHTML = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">${emptyTip}</div>`;
+      } else {
+        let tagHtml = '';
+        sortedTags.slice(0, 30).forEach(tag => {
+          tagHtml += `
+            <span class="tag-pill ${activeTag === tag ? 'active' : ''}" onclick="window.QM.sidebar.toggleTag('${escapeHtml(tag)}')">
+              ${escapeHtml(tag)} <small style="opacity:0.7;">(${tagCounts[tag]})</small>
+            </span>
+          `;
+        });
+        tagCloudEl.innerHTML = tagHtml;
+      }
     }
     const tagTotalEl = document.getElementById('tag-total-count');
-    if (tagTotalEl) tagTotalEl.innerText = Object.keys(tagCounts).length;
+    if (tagTotalEl) {
+      tagTotalEl.innerText = Object.keys(tagCounts).length;
+      tagTotalEl.title = isFocused ? '当前所选星体及关联星体包含的独立标签数' : '全局高频语义标签总数';
+    }
   }
 
   function highlightCategory(catKey, shouldScroll = true) {
@@ -174,6 +196,7 @@ window.QM.sidebar = (function() {
     const state = window.QM.state.state;
     state.activeTag = state.activeTag === tag ? null : tag;
 
+    renderTagCloud();
     window.QM.cards?.renderUI();
 
     const hudText = document.getElementById('hud-text');
@@ -196,6 +219,7 @@ window.QM.sidebar = (function() {
   return {
     render,
     renderUI: render,
+    renderTagCloud,
     selectOfficialCategory,
     selectCategory,
     highlightCategory,

@@ -543,6 +543,7 @@ window.QM.topology = (function() {
         hudIndicator.style.background = "#10b981";
         hudIndicator.style.boxShadow = "0 0 8px #10b981";
       }
+      window.QM.sidebar?.renderTagCloud?.();
       return;
     }
 
@@ -554,7 +555,11 @@ window.QM.topology = (function() {
 
     if (focusTarget.type === 'core') {
       nodes.forEach(n => {
-        if (n.type === 'domain' && n.parentStarId === focusTarget.id) focusRelatedIds.add(n.id);
+        if (n.type === 'domain' && n.parentStarId === focusTarget.id) {
+          focusRelatedIds.add(n.id);
+        } else if (n.type === 'unit' && (n.galaxyId === focusTarget.galaxyId || n.projectId === focusTarget.galaxyId)) {
+          focusRelatedIds.add(n.id);
+        }
       });
       if (hudText) hudText.innerText = `🌟 聚焦【${focusTarget.name}】星系恒星 · 激活星系拓扑`;
     } else if (focusTarget.type === 'domain') {
@@ -572,7 +577,32 @@ window.QM.topology = (function() {
       hudIndicator.style.background = "#38bdf8";
       hudIndicator.style.boxShadow = "0 0 10px #38bdf8";
     }
+
+    window.QM.sidebar?.renderTagCloud?.();
   }
+
+  /**
+   * 获取当前聚焦天体及其所有关联天体对应的记忆切片列表
+   * 若无聚焦天体，返回 null（表示全局/全宇宙切片）
+   */
+  function getFocusedRelatedMemories() {
+    if (!focusTarget) return null;
+
+    const relatedMemories = [];
+    const seenMemoryIds = new Set();
+
+    nodes.forEach(n => {
+      if (n.type === 'unit' && n.rawItem && focusRelatedIds.has(n.id)) {
+        if (!seenMemoryIds.has(n.rawItem.id)) {
+          seenMemoryIds.add(n.rawItem.id);
+          relatedMemories.push(n.rawItem);
+        }
+      }
+    });
+
+    return relatedMemories;
+  }
+
 
   function isNodeDimmed(node) {
     if (!node) return false;
@@ -1382,11 +1412,6 @@ window.QM.topology = (function() {
 
     const currentSpacing = window.QM.state.getPlanetSpacing(planetNode.id) || planetNode.satelliteSpacingScale || 1.0;
     planetNode.satelliteSpacingScale = currentSpacing;
-    if (!planetNode.expansionProgress || planetNode.expansionProgress < 1.0) {
-      if (!window.QM.state.state.enableEffects) {
-        planetNode.expansionProgress = 1.0;
-      }
-    }
     if (slider) {
       slider.disabled = false;
       slider.value = currentSpacing;
@@ -1397,6 +1422,16 @@ window.QM.topology = (function() {
     if (btnReset) btnReset.disabled = false;
 
     window.QM.state.setSelectedPlanet(planetNode);
+
+    // 关键修复：静止/节能模式下，选中行星后强制计算卫星动力学展开并即时重绘，确保已调整的卫星间距即刻生效
+    if (!window.QM.state.state.enableEffects) {
+      planetNode.expansionProgress = 1.0;
+      simulateCelestialSystem(true);
+      drawGalaxy();
+    } else {
+      hasDomainExpanding = true;
+      startGalaxyLoop();
+    }
   }
 
   function resetSpacingControllerUI() {
@@ -1809,6 +1844,7 @@ window.QM.topology = (function() {
     onOfficialCategoryChanged,
     updateSpacingControllerUI,
     resetSpacingControllerUI,
+    getFocusedRelatedMemories,
     requestRender,
     startGalaxyLoop,
     stopGalaxyLoop
