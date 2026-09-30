@@ -281,6 +281,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     bindDrawerStaticEvents();
     currentActiveItemId = null;
     const { memories, currentDirName, currentProject } = window.QM.state.state;
+    const effectiveProject = node.galaxyId || currentProject;
     const drawer = drawerEl();
     const titleEl = document.getElementById('drawer-title');
     const noticeEl = document.getElementById('drawer-readonly-notice');
@@ -315,7 +316,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     }
 
     document.getElementById('edit-source').value = 'core';
-    document.getElementById('edit-description').value = `项目名称: ${currentProject}，当前累计 ${memories.length} 篇记忆切片，分布于 ${categoriesFound.size} 个主题认知域中。`;
+    document.getElementById('edit-description').value = `项目名称: ${effectiveProject}，当前累计 ${memories.length} 篇记忆切片，分布于 ${categoriesFound.size} 个主题认知域中。`;
     document.getElementById('edit-keywords').value = allKeywords.slice(0, 15).join(', ');
 
     const chainSelect = document.getElementById('edit-chain-target');
@@ -325,7 +326,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
 
     const bodyText = `# 项目认知枢纽：${currentDirName}
 
-- **项目标识**：\`${currentProject}\`
+- **项目标识**：\`${effectiveProject}\`
 - **记忆库规模**：共 ${memories.length} 篇记忆切片
 - **认知域覆盖**：共 ${categoriesFound.size} 个一级分类
 - **总高频标签**：共 ${allKeywords.length} 个语义关键词
@@ -481,7 +482,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
       }
       window.QM.utils?.showToast('记忆切片已更新， Ctrl + S 落盘');
     } else {
-      const targetProjId = state.activeGalaxyId || (state.galaxies && state.galaxies[0] ? state.galaxies[0].id : state.currentProject) || 'fmmpay-dev';
+      const targetProjId = state.activeGalaxyId || (state.galaxies && state.galaxies[0] ? state.galaxies[0].id : state.currentProject);
       const targetGalaxy = (state.galaxies || []).find(g => g.id === targetProjId);
       const newId = `${targetProjId}__mem-` + Date.now();
       state.memories.unshift({
@@ -513,13 +514,13 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     const item = memories.find(m => m.id === id);
     if (!item) return;
 
-    const targetProjName = item.projectName || item.projectId || currentProject || 'fmmpay-dev';
+    const targetProjName = item.projectName || item.projectId || currentProject;
     const confirmed = confirm(`⚠️ 危险维护操作确认：\n\n确定彻底删除记忆切片 "${item.name}" 吗？\n文件：${item.filename} [所属工程: ${targetProjName}]\n\n此操作将从物理磁盘中彻底删除该 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`);
     if (!confirmed) return;
 
     if (isServerMode && window.QM.api) {
       try {
-        const targetProj = item.projectId || currentProject || 'fmmpay-dev';
+        const targetProj = item.projectId || currentProject;
         await window.QM.api.deleteMemory(targetProj, id, item.filename);
         window.QM.state.state.memories = memories.filter(m => m.id !== id);
         window.QM.state.setDirty(false);

@@ -284,7 +284,7 @@ window.QM.app = (function() {
       // 按所属星系工程分组落盘
       const projMap = new Map();
       dirtyItems.forEach(m => {
-        const pId = m.projectId || s.currentProject || 'fmmpay-dev';
+        const pId = m.projectId || s.currentProject;
         if (!projMap.has(pId)) projMap.set(pId, []);
         projMap.get(pId).push(m);
       });
@@ -436,7 +436,7 @@ window.QM.app = (function() {
     if (btnOpenFolder) {
       btnOpenFolder.addEventListener('click', async () => {
         const s = stateCenter.state;
-        const targetProj = s.activeGalaxyId || (s.galaxies && s.galaxies[0] ? s.galaxies[0].id : 'fmmpay-dev');
+        const targetProj = s.activeGalaxyId || (s.galaxies && s.galaxies[0] ? s.galaxies[0].id : s.currentProject);
         try {
           const res = await api.openFolder(targetProj, 'memory');
           if (res && res.ok && utils?.showToast) {
