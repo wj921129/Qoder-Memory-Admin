@@ -158,46 +158,91 @@ window.QM.planet = (function() {
   }
 
   /**
+   * 将 Hex 或 RGB 色值安全转换为带精确 alpha 的 rgba(...)
+   */
+  function hexToRgba(color, alpha = 1) {
+    if (!color) return `rgba(56, 189, 248, ${alpha})`;
+    if (color.startsWith('rgba')) {
+      return color.replace(/[\d\.]+\)$/g, `${alpha})`);
+    }
+    if (color.startsWith('rgb')) {
+      return color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+    }
+    let c = color.replace('#', '');
+    if (c.length === 3) {
+      c = c.split('').map(x => x + x).join('');
+    }
+    const num = parseInt(c.slice(0, 6), 16);
+    if (isNaN(num)) return `rgba(56, 189, 248, ${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  /**
    * 绘制行星天体本体：
-   * 1. 消除复杂的受光漫射数学与生硬夜半球阴影；
-   * 2. 外圈增加淡淡的光芒效果 (Soft Atmospheric Glow)，更加接近真实观测星体；
-   * 3. 干净高级的主题本色球体，轻量现代。
+   * 模拟天文望远镜观测真实行星效果，四周呈现清晰饱满、向深空自然柔和漫射的外圈星体光芒
    */
   function drawPlanet(ctx, node, isFocus, isHover, isRelated, isDimmed = false) {
     const r = node.screenRadius;
     const pColor = node.color || '#38bdf8';
     const pCore = node.core || '#bae6fd';
 
-    // 1. 外圈淡淡的光芒效果 (Soft Atmospheric Outer Glow - 模拟真实星体外圈大气辉光)
-    const glowRadius = r * (isFocus ? 1.6 : (isHover ? 1.45 : 1.35));
-    const glowGrad = ctx.createRadialGradient(0, 0, r * 0.85, 0, 0, glowRadius);
-
+    // 1. 最外层广域柔和漫射光晕 (Outer Atmospheric Halo)
+    // 模拟真实发光星体向四周深空散发的宏观辐射场，清晰可见
+    const outerHaloR = r * (isFocus ? 2.6 : (isHover ? 2.35 : 2.1));
+    const outerGrad = ctx.createRadialGradient(0, 0, r * 0.8, 0, 0, outerHaloR);
     if (isDimmed) {
-      glowGrad.addColorStop(0, 'rgba(71, 85, 105, 0.08)');
-      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      outerGrad.addColorStop(0, 'rgba(71, 85, 105, 0.20)');
+      outerGrad.addColorStop(0.5, 'rgba(51, 65, 85, 0.08)');
+      outerGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     } else {
-      const innerAlpha = isFocus ? '40' : (isHover ? '30' : '20');
-      const outerAlpha = isFocus ? '12' : '06';
-      glowGrad.addColorStop(0, pColor + innerAlpha);
-      glowGrad.addColorStop(0.6, pColor + outerAlpha);
-      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      const a1 = isFocus ? 0.45 : (isHover ? 0.38 : 0.30);
+      const a2 = isFocus ? 0.22 : (isHover ? 0.16 : 0.12);
+      const a3 = isFocus ? 0.08 : (isHover ? 0.05 : 0.03);
+      outerGrad.addColorStop(0, hexToRgba(pColor, a1));
+      outerGrad.addColorStop(0.4, hexToRgba(pColor, a2));
+      outerGrad.addColorStop(0.75, hexToRgba(pColor, a3));
+      outerGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     }
-
     ctx.beginPath();
-    ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
-    ctx.fillStyle = glowGrad;
+    ctx.arc(0, 0, outerHaloR, 0, Math.PI * 2);
+    ctx.fillStyle = outerGrad;
     ctx.fill();
 
-    // 2. 焦点/悬停状态下的高亮微光外环
+    // 2. 近核致密大气发光层 (Dense Atmospheric Limb Radiance)
+    // 紧贴行星表面边缘，散发浓郁饱满的行星本色大气层高光辉光，还原望远镜观测真实星体质感
+    const rimHaloR = r * (isFocus ? 1.55 : (isHover ? 1.45 : 1.38));
+    const rimGrad = ctx.createRadialGradient(0, 0, r * 0.65, 0, 0, rimHaloR);
+    if (isDimmed) {
+      rimGrad.addColorStop(0, 'rgba(148, 163, 184, 0.35)');
+      rimGrad.addColorStop(0.6, 'rgba(71, 85, 105, 0.15)');
+      rimGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    } else {
+      const rA1 = isFocus ? 0.85 : (isHover ? 0.72 : 0.60);
+      const rA2 = isFocus ? 0.50 : (isHover ? 0.40 : 0.30);
+      const rA3 = isFocus ? 0.18 : (isHover ? 0.12 : 0.08);
+      rimGrad.addColorStop(0, hexToRgba(pCore, rA1));
+      rimGrad.addColorStop(0.45, hexToRgba(pColor, rA2));
+      rimGrad.addColorStop(0.8, hexToRgba(pColor, rA3));
+      rimGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    }
+    ctx.beginPath();
+    ctx.arc(0, 0, rimHaloR, 0, Math.PI * 2);
+    ctx.fillStyle = rimGrad;
+    ctx.fill();
+
+    // 3. 焦点/悬停状态下的高亮微光外环
     if (isFocus || isHover) {
       ctx.beginPath();
       ctx.arc(0, 0, r + 3.5, 0, Math.PI * 2);
-      ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.75)' : 'rgba(56, 189, 248, 0.5)';
-      ctx.lineWidth = isFocus ? 1.2 : 0.8;
+      ctx.strokeStyle = isFocus ? 'rgba(255, 255, 255, 0.85)' : hexToRgba(pColor, 0.7);
+      ctx.lineWidth = isFocus ? 1.5 : 1.0;
       ctx.stroke();
     }
 
-    // 3. 行星球体自然本色渐变 (消除复杂的晨昏线与夜半球死黑阴影，呈现干净高级的星体质感)
+    // 4. 行星球体自然本色渐变 (干净高级的星体质感)
     const sphereGrad = ctx.createRadialGradient(-r * 0.25, -r * 0.25, r * 0.1, 0, 0, r);
     if (isDimmed) {
       sphereGrad.addColorStop(0, '#64748b');
@@ -213,16 +258,16 @@ window.QM.planet = (function() {
     ctx.fillStyle = sphereGrad;
     ctx.fill();
 
-    // 4. 边缘纤细柔和微轮廓
+    // 5. 边缘纤细柔和微轮廓 (Limb Rim Specular)
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.strokeStyle = isFocus 
-      ? 'rgba(255, 255, 255, 0.6)' 
-      : (isDimmed ? 'rgba(51, 65, 85, 0.25)' : (pColor + '40'));
-    ctx.lineWidth = isFocus ? 1.0 : 0.6;
+      ? 'rgba(255, 255, 255, 0.75)' 
+      : (isDimmed ? 'rgba(51, 65, 85, 0.3)' : hexToRgba(pCore, 0.55));
+    ctx.lineWidth = isFocus ? 1.2 : 0.8;
     ctx.stroke();
 
-    // 5. 行星名称与切片计数文字
+    // 6. 行星名称与切片计数文字
     ctx.save();
     ctx.font = '600 11.5px sans-serif';
     ctx.textAlign = 'center';

@@ -977,7 +977,7 @@ window.QM.topology = (function() {
 
     const visibleNodes = nodes.filter(n => {
       if (!bounds) return true;
-      const extraMargin = n.type === 'core' ? 180 : (n.type === 'domain' ? 60 : 30);
+      const extraMargin = n.type === 'core' ? 180 : (n.type === 'domain' ? 90 : 35);
       const r = (n.screenRadius || n.radius || 15) + extraMargin;
       return (
         n.screenX + r >= bounds.minX &&
