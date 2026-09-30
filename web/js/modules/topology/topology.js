@@ -775,7 +775,7 @@ window.QM.topology = (function() {
       });
     }
 
-    // 摄像机镜头平滑运镜中枢 (支持节点对齐与坐标点平滑飞跃)
+    // 摄像机镜头平滑运镜中枢 (基于世界坐标解耦插值，消除屏幕矩阵滞后引起的弧形滑动)
     if (isAutoCameraActive && container) {
       const panLerp = 0.12;
       const drawerEl = document.getElementById('editor-drawer');
@@ -794,20 +794,25 @@ window.QM.topology = (function() {
         targetY = cameraTargetPos.y;
       }
 
-      transform.scale += (cameraTargetScale - transform.scale) * panLerp;
-      const desiredTransformX = targetCenterX - targetX * transform.scale;
-      const desiredTransformY = targetCenterY - targetY * transform.scale;
+      // 从当前变换矩阵反解相机当前对准的世界坐标焦点，在世界坐标系下做绝对直线平滑逼近
+      const curScale = transform.scale || 1.0;
+      let curCamX = (targetCenterX - transform.x) / curScale;
+      let curCamY = (targetCenterY - transform.y) / curScale;
 
-      transform.x += (desiredTransformX - transform.x) * panLerp;
-      transform.y += (desiredTransformY - transform.y) * panLerp;
+      curCamX += (targetX - curCamX) * panLerp;
+      curCamY += (targetY - curCamY) * panLerp;
+      transform.scale += (cameraTargetScale - curScale) * panLerp;
+
+      transform.x = targetCenterX - curCamX * transform.scale;
+      transform.y = targetCenterY - curCamY * transform.scale;
 
       const scaleDist = Math.abs(cameraTargetScale - transform.scale);
-      const panDist = Math.hypot(desiredTransformX - transform.x, desiredTransformY - transform.y);
+      const worldDist = Math.hypot(targetX - curCamX, targetY - curCamY);
 
-      if (scaleDist < 0.003 && panDist < 0.8) {
+      if (scaleDist < 0.003 && worldDist < 0.8) {
         transform.scale = cameraTargetScale;
-        transform.x = desiredTransformX;
-        transform.y = desiredTransformY;
+        transform.x = targetCenterX - targetX * cameraTargetScale;
+        transform.y = targetCenterY - targetY * cameraTargetScale;
         isAutoCameraActive = false;
         cameraTargetNode = null;
         cameraTargetPos = null;
