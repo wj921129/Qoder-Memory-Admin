@@ -248,6 +248,15 @@
   gap: 3px;
   z-index: 100;
 }
+/** 衔接触发按钮与下拉菜单的悬停桥接区，防止鼠标移向选项过程意外中断 hover */
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+}
 /** 下拉展开入场显现 */
 .dropdown-menu.show {
   display: flex;
