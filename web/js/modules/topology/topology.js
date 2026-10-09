@@ -373,14 +373,14 @@ window.QM.topology = (function() {
       const numDomains = catList.length;
       const domainNodeMap = new Map();
 
-      // 根据星系规模自适应行星轨道开普勒跨度 (需求 2：恒星与行星最近范围缩小，更显紧凑充盈)
+      // 根据星系规模自适应行星轨道开普勒跨度 (恒星与行星最近范围缩小，更显紧凑充盈)
       const R_MIN = totalCards > 30 ? 150 : (totalCards > 10 ? 120 : 95);
-      const domainTiers = numDomains > 10 ? 4 : (numDomains > 5 ? 3 : (numDomains > 2 ? 2 : 1));
+      const domainTiers = numDomains > 8 ? 4 : (numDomains > 4 ? 3 : (numDomains > 1 ? 2 : 1));
       const domainSpread = Math.min(150, Math.log2(Math.max(1, numDomains)) * 42);
       const cardSpread = Math.min(130, Math.sqrt(Math.max(0, totalCards)) * 10);
       const R_MAX = Math.min(580, Math.max(R_MIN + 120, R_MIN + domainSpread * 1.0 + cardSpread * 1.0));
       const tierBandWidth = (R_MAX - R_MIN) / Math.max(domainTiers, 1);
-      // 需求 2：每个星系分配随机基准朝向相位，彻底避免每次刷新全部朝向单一方向
+      // 每个星系分配随机基准朝向相位，彻底避免每次刷新全部朝向单一方向
       const galaxyBasePhase = Math.random() * Math.PI * 2;
 
       // 记录星系引力场边界半径 (用于宏观宇宙星云渲染)
@@ -397,23 +397,29 @@ window.QM.topology = (function() {
         colorTheme: gColor
       });
 
+      // 核心优化：按卫星数量升序排列，让卫星少的行星排在内圈轨道（近恒星），卫星多的排在外圈轨道（远恒星）
+      catList.sort((a, b) => {
+        const countA = catCountMap.get(a) || 0;
+        const countB = catCountMap.get(b) || 0;
+        return countA !== countB ? countA - countB : a.localeCompare(b);
+      });
+
       const tierBuckets = Array.from({ length: domainTiers }, () => []);
       catList.forEach((cat, idx) => {
-        const dTier = idx % domainTiers;
-        tierBuckets[dTier].push({ cat, idx });
+        const dTier = Math.min(domainTiers - 1, Math.floor((idx / numDomains) * domainTiers));
+        tierBuckets[dTier].push(cat);
       });
 
       tierBuckets.forEach((bucket, dTier) => {
         const tierCount = bucket.length;
-        bucket.forEach(({ cat, idx }, idxInTier) => {
+        bucket.forEach((cat, idxInTier) => {
           const catCfg = CATEGORY_MAP[cat] || { name: cat, color: "#64748b", border: "#475569", core: "#94a3b8" };
           const cardCount = catCountMap.get(cat) || 0;
-          const isStrongAffinity = (cat === 'project_introduction' || cat === 'project_tech_stack' || (cardCount / Math.max(totalCards, 1)) >= 0.22);
 
           const storeKey = `domain-${g.id}-${cat}`;
           let pStore = celestialStore.get(storeKey);
           if (!pStore) {
-            pStore = planet.initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN, galaxyBasePhase);
+            pStore = planet.initPlanetCelestial(cat, idxInTier, tierCount, dTier, domainTiers, tierBandWidth, R_MIN, galaxyBasePhase);
             celestialStore.set(storeKey, pStore);
           }
 

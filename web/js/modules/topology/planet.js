@@ -20,16 +20,23 @@ window.QM.planet = (function() {
 
   /**
    * 初始化或生成主题认知域行星的开普勒轨道初始参数 (俯视水平视角，支持随机方位与最近间距)
+   * 规律：卫星少的行星更靠近恒星，卫星多的行星更远离恒星
    */
-  function initPlanetCelestial(cat, idxInTier, tierCount, isStrongAffinity, dTier, domainTiers, tierBandWidth, R_MIN, basePhase) {
-    const tierBaseR = R_MIN + dTier * tierBandWidth;
-    let semiMajor;
-    if (isStrongAffinity && dTier === 0) {
-      semiMajor = tierBaseR + (Math.random() * 0.15) * tierBandWidth;
-    } else {
-      const intraTierOffset = (idxInTier % 2 === 0 ? 1 : -1) * (tierBandWidth * 0.12);
-      semiMajor = tierBaseR + tierBandWidth * 0.35 + intraTierOffset + (Math.random() * 4 - 2);
+  function initPlanetCelestial(cat, idxInTier, tierCount, dTier, domainTiers, tierBandWidth, R_MIN, basePhase) {
+    // 兼容可能传入旧 9 参数签名 (cat, idxInTier, tierCount, isStrongAffinity, dTier, ...)
+    if (typeof dTier === 'number' && typeof arguments[8] === 'number') {
+      dTier = arguments[4];
+      domainTiers = arguments[5];
+      tierBandWidth = arguments[6];
+      R_MIN = arguments[7];
+      basePhase = arguments[8];
     }
+
+    const tierBaseR = R_MIN + dTier * tierBandWidth;
+    // 层内微阶梯：同层内卫星少者更靠内、多者更靠外，避免同轨重叠并保持轨道半径随卫星数单调递增
+    const intraTierRatio = tierCount > 1 ? (idxInTier / (tierCount - 1)) : 0.5;
+    const intraTierOffset = (intraTierRatio - 0.5) * (tierBandWidth * 0.36);
+    const semiMajor = tierBaseR + tierBandWidth * 0.45 + intraTierOffset + (Math.random() * 2 - 1);
 
     const eccentricity = 0.015 + Math.random() * 0.015;
     const semiMinor = semiMajor * Math.sqrt(1 - eccentricity * eccentricity);
@@ -49,8 +56,7 @@ window.QM.planet = (function() {
       eccentricity,
       omega: baseOmega,
       inclination,
-      theta: initialTheta,
-      isContracted: isStrongAffinity
+      theta: initialTheta
     };
   }
 
