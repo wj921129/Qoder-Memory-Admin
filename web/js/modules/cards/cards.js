@@ -5,6 +5,44 @@
 window.QM = window.QM || {};
 
 window.QM.cards = (function() {
+  let isAllCollapsed = true; // 默认折叠记忆
+  const expandedSet = new Set(); // 记录单独点开/折叠的个性化集合
+
+  function toggleCardCollapse(id) {
+    const cardEl = document.getElementById(`card-${id}`);
+    if (!cardEl) return;
+    const isNowCollapsed = cardEl.classList.toggle('collapsed');
+    const icon = cardEl.querySelector('.card-expand-btn .expand-icon');
+    if (icon) icon.textContent = isNowCollapsed ? '▾' : '▴';
+    if (isNowCollapsed) {
+      expandedSet.delete(id);
+    } else {
+      expandedSet.add(id);
+    }
+  }
+
+  function toggleAllCards() {
+    isAllCollapsed = !isAllCollapsed;
+    expandedSet.clear();
+    const gridEl = document.getElementById('cards-grid');
+    if (gridEl) {
+      const cards = gridEl.querySelectorAll('.memory-card');
+      cards.forEach(card => {
+        card.classList.toggle('collapsed', isAllCollapsed);
+        const icon = card.querySelector('.card-expand-btn .expand-icon');
+        if (icon) icon.textContent = isAllCollapsed ? '▾' : '▴';
+      });
+    }
+    updateToggleAllBtn();
+  }
+
+  function updateToggleAllBtn() {
+    const textEl = document.getElementById('toggle-all-cards-text');
+    if (textEl) {
+      textEl.textContent = isAllCollapsed ? '↕️ 全部展开' : '↕️ 全部折叠';
+    }
+  }
+
   function getFilteredMemories() {
     const { memories, officialCategory, activeCategory, activeTag, searchQuery, sortBy } = window.QM.state.state;
     const { mapToOfficialGroup } = window.QM.constants;
@@ -103,6 +141,7 @@ window.QM.cards = (function() {
     const hasMore = filtered.length > renderList.length;
 
     let html = renderList.map(m => {
+      const isCollapsed = isAllCollapsed ? !expandedSet.has(m.id) : expandedSet.has(m.id);
       const catLabel = (CATEGORY_MAP[m.category] && CATEGORY_MAP[m.category].name) || m.category;
       const kwHtml = (m.keywords || []).map(k => `<span class="keyword-pill">${escapeHtml(k)}</span>`).join('');
       const chainHtml = (m.chains && m.chains.length > 0)
@@ -121,8 +160,13 @@ window.QM.cards = (function() {
       const projBadge = m.projectName ? `<span class="badge-tag" style="background:#1e293b; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🪐 ${escapeHtml(m.projectName)}</span>` : '';
 
       return `
-        <div class="memory-card" id="card-${escapeHtml(m.id)}">
-          <div class="card-title" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
+        <div class="memory-card${isCollapsed ? ' collapsed' : ''}" id="card-${escapeHtml(m.id)}">
+          <div class="card-header-row">
+            <div class="card-title" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
+            <button type="button" class="card-expand-btn" onclick="event.stopPropagation(); window.QM.cards.toggleCardCollapse('${escapeHtml(m.id)}')" title="展开/收起此篇内容">
+              <span class="expand-icon">${isCollapsed ? '▾' : '▴'}</span>
+            </button>
+          </div>
           <div class="card-badges">
             ${projBadge}
             ${officialHtml}
@@ -172,7 +216,7 @@ window.QM.cards = (function() {
   }
 
   function renderUI() {
-    const { memories, currentDirName, viewMode } = window.QM.state.state;
+    const { memories, currentDirName, viewMode, sortBy } = window.QM.state.state;
     const filtered = getFilteredMemories();
 
     const viewStatsEl = document.getElementById('view-stats');
@@ -180,6 +224,12 @@ window.QM.cards = (function() {
 
     // 刷新官方四大分类选项卡计数与高亮
     updateOfficialTabs();
+
+    // 同步卡片流排序统一下拉框
+    window.QM.utils?.syncNavDropdown?.('sort-dd', sortBy || 'name');
+
+    // 同步统一折叠/展开按钮状态文本
+    updateToggleAllBtn();
 
     // 渲染侧边栏
     window.QM.sidebar?.render();
@@ -192,7 +242,7 @@ window.QM.cards = (function() {
     window.QM.topology?.buildGalaxyGraph();
   }
 
-  // 挂载官方四大分类选项卡点击事件
+  // 挂载分类过滤与统一折叠按钮点击事件
   document.addEventListener('DOMContentLoaded', () => {
     const tabsBar = document.getElementById('official-tabs-bar');
     if (tabsBar) {
@@ -203,6 +253,11 @@ window.QM.cards = (function() {
           window.QM.sidebar?.selectOfficialCategory(group);
         }
       });
+    }
+
+    const btnToggleAll = document.getElementById('btn-toggle-all-cards');
+    if (btnToggleAll) {
+      btnToggleAll.addEventListener('click', toggleAllCards);
     }
   });
 
@@ -222,7 +277,9 @@ window.QM.cards = (function() {
     renderCardsGrid,
     resetVisibleLimit,
     loadMore,
-    loadAll
+    loadAll,
+    toggleCardCollapse,
+    toggleAllCards
   };
 })();
 

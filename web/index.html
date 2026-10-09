@@ -76,15 +76,9 @@
 
     <!-- 视图切换与渲染特效微型控件组 -->
     <div class="view-control-group">
-      <div class="nav-dd view-dd" id="view-dd" title="切换视图：🧠 语义引力拓扑 / 🗂️ 知识卡片流">
-        <button type="button" class="nav-dd-btn">
-          <span class="nav-dd-label" id="view-dd-label">🧠 拓扑</span>
-          <span class="nav-dd-arrow">▾</span>
-        </button>
-        <div class="nav-dd-menu">
-          <button type="button" class="nav-dd-item" data-value="galaxy" data-label="🧠 拓扑">🧠 拓扑</button>
-          <button type="button" class="nav-dd-item" data-value="cards" data-label="🗂️ 卡片">🗂️ 卡片</button>
-        </div>
+      <div class="view-toggle-switch" id="view-toggle-switch" role="group" aria-label="视图模式切换">
+        <button type="button" class="view-switch-btn active" data-view="galaxy" id="btn-view-galaxy" title="🧠 语义引力拓扑视图">🧠 拓扑</button>
+        <button type="button" class="view-switch-btn" data-view="cards" id="btn-view-cards" title="🗂️ 知识卡片流视图">🗂️ 卡片</button>
       </div>
       <button class="btn-effects-toggle active" id="btn-effects-toggle" title="动态渲染特效：开启 60fps 轨道物理 / 点击切换至静止节能模式">
         <span id="effects-icon">✨</span>
@@ -237,12 +231,21 @@
         <div class="view-control-bar">
           <div class="view-stats" id="view-stats">显示 0 条记忆</div>
           <div class="view-actions">
-            <label class="sort-label">排序：</label>
-            <select id="sort-select" class="sort-select">
-              <option value="name">按标题字母 (A-Z)</option>
-              <option value="category">按分类分组</option>
-              <option value="source">按来源类型</option>
-            </select>
+            <button type="button" class="btn btn-subtle btn-sm btn-collapse-toggle-all" id="btn-toggle-all-cards" title="统一折叠/展开所有记忆卡片">
+              <span id="toggle-all-cards-text">↕️ 全部展开</span>
+            </button>
+            <span class="sort-label">排序：</span>
+            <div class="nav-dd sort-dd" id="sort-dd" title="切换卡片排序规则">
+              <button type="button" class="nav-dd-btn">
+                <span class="nav-dd-label" id="sort-dd-label">按标题字母 (A-Z)</span>
+                <span class="nav-dd-arrow">▾</span>
+              </button>
+              <div class="nav-dd-menu">
+                <button type="button" class="nav-dd-item active" data-value="name" data-label="按标题字母 (A-Z)">按标题字母 (A-Z)</button>
+                <button type="button" class="nav-dd-item" data-value="category" data-label="按分类分组">按分类分组</button>
+                <button type="button" class="nav-dd-item" data-value="source" data-label="按来源类型">按来源类型</button>
+              </div>
+            </div>
           </div>
         </div>
         <div class="cards-scroll-wrap">

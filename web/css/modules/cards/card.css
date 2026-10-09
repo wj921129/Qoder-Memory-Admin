@@ -32,6 +32,26 @@
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 28px rgba(56, 189, 248, 0.32), 0 0 45px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.28);
   transform: translateY(-3px);
 }
+/** 卡片默认折叠状态：隐藏正文预览、关键词与卡片页脚，仅保留标题与适用场景/召回条件 */
+.memory-card.collapsed .card-content-preview,
+.memory-card.collapsed .card-keywords,
+.memory-card.collapsed .card-footer {
+  display: none !important;
+}
+.memory-card.collapsed {
+  padding-bottom: 14px;
+}
+.memory-card.collapsed .card-desc {
+  margin-bottom: 0;
+}
+/** 卡片标题行与折叠按钮对齐容器 */
+.card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
 /** 卡片标题文字 */
 .card-title {
   font-size: 14.5px;
@@ -39,8 +59,27 @@
   color: var(--text-bright);
   line-height: 1.4;
   cursor: pointer;
-  margin-bottom: 8px;
+  flex: 1;
   transition: var(--transition-smooth);
+}
+/** 单卡展开/折叠微型切换按钮 */
+.card-expand-btn {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  color: var(--text-muted);
+  border-radius: var(--rounded-sm);
+  padding: 1px 7px;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1.4;
+  transition: var(--transition-smooth);
+  outline: none;
+}
+.card-expand-btn:hover {
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.15);
 }
 /** 卡片标题悬停高亮 */
 .card-title:hover {

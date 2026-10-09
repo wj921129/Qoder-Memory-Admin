@@ -125,38 +125,60 @@ window.QM.utils = (function() {
   }
 
   /**
+   * 互斥关闭其他所有悬浮下拉菜单，杜绝多菜单重叠与迟缓残影
+   */
+  function closeOtherNavDropdowns(activeDd) {
+    document.querySelectorAll('.nav-dd').forEach(other => {
+      if (other !== activeDd) {
+        const otherMenu = other.querySelector('.nav-dd-menu');
+        if (otherMenu) {
+          otherMenu.classList.add('nav-dd-closed-fast');
+        }
+        if (other.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+      }
+    });
+    const moreMenu = document.getElementById('more-menu');
+    if (moreMenu) moreMenu.classList.remove('show');
+  }
+
+  /**
    * 绑定头部悬浮下拉：点击选项后先同步当前值展示，再回调业务切换逻辑
-   * (展开/收起由 CSS :hover 驱动，鼠标移出时立即强制消失)
+   * (展开/收起由 CSS :hover 与 JS 互斥控制联动，杜绝迟缓延迟)
    */
   function setupNavDropdown(id, onSelect) {
     const dd = document.getElementById(id);
     if (!dd) return;
     const menu = dd.querySelector('.nav-dd-menu');
     if (!menu) return;
+
     menu.addEventListener('click', e => {
       const item = e.target.closest('.nav-dd-item');
       if (!item || !menu.contains(item)) return;
       syncNavDropdown(id, item.dataset.value);
       if (onSelect) onSelect(item.dataset.value);
-      // 点击后主动释放焦点，防止浏览器保留 focus 导致菜单滞留
+      // 点击后立刻瞬时收起并释放焦点
+      menu.classList.add('nav-dd-closed-fast');
+      setTimeout(() => menu.classList.remove('nav-dd-closed-fast'), 100);
       if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
       }
     });
 
-    // 鼠标移出容器时，延迟 500ms 清理内部焦点，配合 CSS 0.5s 缓冲平滑关闭
-    let leaveTimer = null;
-    dd.addEventListener('mouseleave', () => {
-      leaveTimer = setTimeout(() => {
-        if (dd.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
-          document.activeElement.blur();
-        }
-      }, 500);
-    });
+    // 鼠标移入时瞬间关闭其他所有已存在的下拉框，彻底杜绝多框并存与 0.5s 滞留
     dd.addEventListener('mouseenter', () => {
-      if (leaveTimer) {
-        clearTimeout(leaveTimer);
-        leaveTimer = null;
+      menu.classList.remove('nav-dd-closed-fast');
+      closeOtherNavDropdowns(dd);
+    });
+
+    // 鼠标移出容器时立即恢复其他下拉框并快速失焦
+    dd.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.nav-dd-menu.nav-dd-closed-fast').forEach(m => {
+        m.classList.remove('nav-dd-closed-fast');
+      });
+      if (dd.contains(document.activeElement) && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
       }
     });
   }

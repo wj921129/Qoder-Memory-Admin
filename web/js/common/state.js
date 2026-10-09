@@ -119,8 +119,11 @@ window.QM.state = (function() {
     state.viewMode = mode;
     document.body.classList.toggle('view-cards', mode === 'cards');
 
-    // 同步顶部视图悬浮下拉的当前值展示
-    window.QM.utils?.syncNavDropdown?.('view-dd', mode);
+    // 同步顶部视图开关按钮的高亮状态
+    const switchBtns = document.querySelectorAll('#view-toggle-switch .view-switch-btn');
+    switchBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === mode);
+    });
 
     const galBox = document.getElementById('galaxy-container');
     const cardBox = document.getElementById('cards-container');

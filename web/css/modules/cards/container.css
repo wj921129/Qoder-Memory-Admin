@@ -93,41 +93,38 @@
   background: rgba(11, 18, 36, 0.32);
   backdrop-filter: var(--glass-blur-sm);
   -webkit-backdrop-filter: var(--glass-blur-sm);
+  position: relative;
+  z-index: 20;
 }
 /** 记忆数量统计展示 */
 .view-stats {
   font-size: 12px;
   color: var(--text-muted);
 }
-/** 排序操作操作区 */
+/** 排序与折叠控制操作区 */
 .view-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  position: relative;
+}
+/** 统一折叠/展开按钮 */
+.btn-collapse-toggle-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 9px;
+  white-space: nowrap;
 }
 /** 排序提示文本标签 */
 .sort-label {
   font-size: 11px;
   color: var(--text-muted);
 }
-/** 排序方式毛玻璃下拉框 */
-.sort-select {
-  background: rgba(148, 163, 184, 0.1);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  color: var(--text-main);
-  padding: 4px 10px;
-  border-radius: var(--rounded-sm);
-  font-size: 11px;
-  outline: none;
-  cursor: pointer;
-  transition: var(--transition-smooth);
-}
-/** 排序下拉框悬停高亮 */
-.sort-select:hover {
-  border-color: rgba(125, 211, 252, 0.6);
-  color: #fff;
-  background: rgba(148, 163, 184, 0.16);
-  box-shadow: 0 0 12px -3px rgba(56, 189, 248, 0.5);
+/** 卡片流排序统一下拉框微调 */
+.sort-dd .nav-dd-btn {
+  min-width: 125px;
 }
 
 /* ========== 卡片内容滚动区 ========== */

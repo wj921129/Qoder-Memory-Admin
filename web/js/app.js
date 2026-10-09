@@ -365,11 +365,19 @@ window.QM.app = (function() {
       }
     });
 
-    // 2. 视图切换 (🧠 拓扑 / 🗂️ 卡片)
-    utils.setupNavDropdown('view-dd', newMode => {
-      stateCenter.setViewMode(newMode);
-      if (newMode === 'galaxy' && topology?.resizeCanvas) topology.resizeCanvas();
-    });
+    // 2. 视图切换开关 (🧠 拓扑 / 🗂️ 卡片)
+    const viewSwitch = document.getElementById('view-toggle-switch');
+    if (viewSwitch) {
+      viewSwitch.addEventListener('click', e => {
+        const btn = e.target.closest('.view-switch-btn');
+        if (!btn) return;
+        const targetMode = btn.dataset.view;
+        if (targetMode && targetMode !== stateCenter.state.viewMode) {
+          stateCenter.setViewMode(targetMode);
+          if (targetMode === 'galaxy' && topology?.resizeCanvas) topology.resizeCanvas();
+        }
+      });
+    }
 
     // 2.1 动态特效与静止节能切换
     const btnEffects = document.getElementById('btn-effects-toggle');
@@ -428,14 +436,11 @@ window.QM.app = (function() {
       });
     }
 
-    // 5. 排序选择
-    const sortSelect = document.getElementById('sort-select');
-    if (sortSelect) {
-      sortSelect.addEventListener('change', e => {
-        stateCenter.state.sortBy = e.target.value;
-        if (cards?.renderUI) cards.renderUI();
-      });
-    }
+    // 5. 排序选择 (使用全局统一下拉框)
+    utils.setupNavDropdown('sort-dd', newSort => {
+      stateCenter.state.sortBy = newSort;
+      if (cards?.renderUI) cards.renderUI();
+    });
 
     // 6. 新建与保存
     const newCardBtn = document.getElementById('new-card-btn');
@@ -477,23 +482,24 @@ window.QM.app = (function() {
     if (moreMenuBtn && moreMenu) {
       moreMenuBtn.addEventListener('click', e => {
         e.stopPropagation();
+        const willShow = !moreMenu.classList.contains('show');
+        if (willShow) {
+          // 打开更多菜单时，瞬间关闭所有 nav-dd
+          document.querySelectorAll('.nav-dd-menu').forEach(m => m.classList.add('nav-dd-closed-fast'));
+        }
         moreMenu.classList.toggle('show');
       });
       window.addEventListener('click', e => {
         if (!e.target.closest('#more-dropdown')) moreMenu.classList.remove('show');
       });
-      let moreHideTimer = null;
       if (moreDropdown) {
         moreDropdown.addEventListener('mouseleave', () => {
-          moreHideTimer = setTimeout(() => {
-            moreMenu.classList.remove('show');
-          }, 500);
+          // 快速收起，不再滞留 500ms
+          moreMenu.classList.remove('show');
         });
         moreDropdown.addEventListener('mouseenter', () => {
-          if (moreHideTimer) {
-            clearTimeout(moreHideTimer);
-            moreHideTimer = null;
-          }
+          // 进入时立刻关闭其他下拉框
+          document.querySelectorAll('.nav-dd-menu').forEach(m => m.classList.add('nav-dd-closed-fast'));
         });
       }
     }
