@@ -9,16 +9,16 @@
   bottom: 18px;
   right: 18px;
   min-width: 250px;
-  background: linear-gradient(135deg, rgba(8, 16, 36, 0.22) 0%, rgba(20, 10, 42, 0.14) 100%);
+  background: var(--glass-bg-panel);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
   border-radius: var(--rounded-md);
   padding: 8px 14px;
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--text-main);
   z-index: 25;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.2), 0 0 35px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   pointer-events: none;
   user-select: none;
   display: flex;
@@ -39,8 +39,8 @@
   left: -2px;
   width: 6px;
   height: 6px;
-  border-top: 2px solid var(--color-neon-cyan);
-  border-left: 2px solid var(--color-neon-cyan);
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
 }
 .satellite-spacing-controller::after {
   content: '';
@@ -49,19 +49,18 @@
   right: -2px;
   width: 6px;
   height: 6px;
-  border-bottom: 2px solid var(--color-neon-cyan);
-  border-right: 2px solid var(--color-neon-cyan);
+  border-bottom: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
 }
 /** 抽屉打开时右下角面板自适应左移避免遮挡 */
 body.has-drawer-open .satellite-spacing-controller,
 main:has(#editor-drawer.open) .satellite-spacing-controller {
   right: 598px;
 }
-/** 间距控制器悬停流光与自适应展开 */
+/** 间距控制器悬停自适应展开（仅提升描边与内边距，不变底色）*/
 .satellite-spacing-controller:hover {
-  background: linear-gradient(135deg, rgba(10, 20, 44, 0.65) 0%, rgba(26, 12, 52, 0.55) 100%);
-  border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 25px rgba(56, 189, 248, 0.32), 0 0 50px rgba(168, 85, 247, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.28);
+  border-color: rgba(var(--accent-rgb), 0.42);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   padding: 11px 15px;
 }
 /** 间距控制器选中天体后出现：默认呈现紧凑折叠状态 */
@@ -71,8 +70,8 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   pointer-events: auto;
   transform: translateY(0) scale(1);
   transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s, right 0.28s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s, border-color 0.25s, box-shadow 0.25s;
-  border-color: var(--color-neon-cyan);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.88), 0 0 22px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* ========== 控制面板头部 ========== */
@@ -88,7 +87,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 悬停展开时显现底边分隔线 */
 .satellite-spacing-controller:hover .spacing-header {
-  border-bottom-color: rgba(56, 189, 248, 0.15);
+  border-bottom-color: var(--hairline);
   padding-bottom: 6px;
 }
 /** 间距控制微型折叠指示角标 */
@@ -101,12 +100,12 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 .satellite-spacing-controller:hover .spacing-header::after {
   transform: rotate(180deg);
-  color: var(--color-neon-cyan);
+  color: var(--accent-hi);
 }
 /** 控制器标题 */
 .spacing-title {
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--text-bright);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -114,7 +113,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 /** 当前受控目标行星名称展示 */
 .spacing-target {
   font-size: 10.5px;
-  color: var(--color-neon-cyan);
+  color: var(--accent-hi);
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -155,9 +154,9 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 增减步进微调按钮 */
 .spacing-btn {
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.15) 0%, rgba(148, 163, 184, 0.07) 100%);
-  border: 1px solid rgba(148, 163, 184, 0.22);
-  color: #f8fafc;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--text-main);
   width: 24px;
   height: 24px;
   border-radius: var(--rounded-sm);
@@ -173,10 +172,9 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 步进按钮悬停高亮 */
 .spacing-btn:hover:not(:disabled) {
-  background: rgba(14, 165, 233, 0.25);
-  border-color: rgba(125, 211, 252, 0.65);
-  color: #7dd3fc;
-  box-shadow: 0 0 10px -2px rgba(56, 189, 248, 0.5);
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  color: var(--accent-hi);
 }
 /** 步进按钮禁用态 */
 .spacing-btn:disabled {
@@ -189,7 +187,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  background: #334155;
+  background: rgba(var(--neutral-rgb), 0.22);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -197,7 +195,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 滑块轨道悬停高亮 */
 .spacing-slider:hover:not(:disabled) {
-  background: #475569;
+  background: rgba(var(--neutral-rgb), 0.34);
 }
 /** 滑块微晶圆形拖拽钮 */
 .spacing-slider::-webkit-slider-thumb {
@@ -206,8 +204,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--color-neon-cyan);
-  box-shadow: 0 0 8px var(--color-neon-cyan);
+  background: var(--accent-hi);
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -222,7 +219,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 禁用滑块圆钮灰色展示 */
 .spacing-slider:disabled::-webkit-slider-thumb {
-  background: #64748b;
+  background: var(--text-dim);
   box-shadow: none;
 }
 /** 当前间距倍率数值展示 */
@@ -230,7 +227,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
   font-family: 'JetBrains Mono', Consolas, Menlo, Monaco, monospace;
   font-size: 11px;
   font-weight: 600;
-  color: var(--color-neon-cyan);
+  color: var(--accent-hi);
   min-width: 32px;
   text-align: right;
 }
@@ -247,7 +244,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 间距重置按钮悬停 */
 .spacing-reset-btn:hover:not(:disabled) {
-  color: var(--color-neon-cyan);
+  color: var(--accent-hi);
 }
 /** 间距重置按钮禁用 */
 .spacing-reset-btn:disabled {
@@ -256,7 +253,7 @@ main:has(#editor-drawer.open) .satellite-spacing-controller {
 }
 /** 间距控制器底部操作指引小字 */
 .spacing-tip {
-  font-size: 9.5px;
+  font-size: 10.5px;
   color: var(--text-muted);
-  line-height: 1.35;
+  line-height: 1.4;
 }

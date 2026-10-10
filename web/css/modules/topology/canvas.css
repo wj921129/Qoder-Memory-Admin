@@ -7,7 +7,7 @@
 #galaxy-container {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, #0d1830 0%, #060b17 50%, #03060d 100%);
+  background: radial-gradient(ellipse at 50% 50%, #0c1322 0%, #070b14 55%, var(--bg-canvas) 100%);
   cursor: grab;
   z-index: 10;
 }

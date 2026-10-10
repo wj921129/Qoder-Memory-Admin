@@ -81,7 +81,7 @@ window.QM.sidebar = (function() {
       let catHtml = '';
       const catKeys = Object.keys(catCounts).sort();
       if (catKeys.length === 0) {
-        catHtml = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">(当前星系分类下暂无切片)</div>`;
+        catHtml = `<div class="sidebar-empty-tip">(当前星系分类下暂无切片)</div>`;
       } else {
         catKeys.forEach(cat => {
           const label = (CATEGORY_MAP[cat] && CATEGORY_MAP[cat].name) || cat;
@@ -126,13 +126,13 @@ window.QM.sidebar = (function() {
       const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
       if (sortedTags.length === 0) {
         const emptyTip = isFocused ? '(当前关联星体暂无标签)' : '(当前星系暂无高频标签)';
-        tagCloudEl.innerHTML = `<div style="padding:8px 12px; font-size:11px; color:#64748b;">${emptyTip}</div>`;
+        tagCloudEl.innerHTML = `<div class="sidebar-empty-tip">${emptyTip}</div>`;
       } else {
         let tagHtml = '';
         sortedTags.slice(0, 30).forEach(tag => {
           tagHtml += `
             <span class="tag-pill ${activeTag === tag ? 'active' : ''}" title="${escapeHtml(tag)} (${tagCounts[tag]})" onclick="window.QM.sidebar.toggleTag('${escapeHtml(tag)}')">
-              ${escapeHtml(tag)} <small style="opacity:0.7;">(${tagCounts[tag]})</small>
+              ${escapeHtml(tag)} <small class="tag-count-num">(${tagCounts[tag]})</small>
             </span>
           `;
         });
@@ -229,8 +229,9 @@ window.QM.sidebar = (function() {
       const matchedUnits = state.memories.filter(m => (m.keywords || []).includes(state.activeTag));
       if (hudText) hudText.innerText = `⚡ 关键词共振激活：【${state.activeTag}】 · 聚焦 ${matchedUnits.length} 个记忆切片`;
       if (hudIndicator) {
-        hudIndicator.style.background = "#c084fc";
-        hudIndicator.style.boxShadow = "0 0 10px #c084fc";
+        // 关键词共振聚焦记忆切片，沿用画布卡片数据色 --viz-unit
+        hudIndicator.style.background = "var(--viz-unit)";
+        hudIndicator.style.boxShadow = "0 0 8px var(--viz-unit)";
       }
       window.QM.utils?.showToast(`⚡ 已激活「${state.activeTag}」语义共振场（${matchedUnits.length} 条切片聚焦）`);
     } else {

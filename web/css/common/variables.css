@@ -1,51 +1,97 @@
 /* ========================================================
    Qoder Memory Visualizer - 全局设计变量系统 (Design Tokens)
+   --------------------------------------------------------
+   配色策略「深空观测台 (Observatory Ink)」：
+   1. 全站唯一 UI 强调色 = 蔚蓝 --accent，严禁再引入第二 UI 色相；
+   2. 中性石板灰承担全部层级差，色彩只用于「语义」与「数据可视化」；
+   3. --viz-* 为拓扑画布数据编码色，必须与 topology JS 保持一致，
+      禁止挪作 UI 装饰色使用。
    ======================================================== */
 
 :root {
-  /* ========== 基础暗夜色深 (Deep Cosmic Space) ========== */
-  --bg-main: #050811;
-  --bg-canvas: #04060c;
+  /* ========== 基础暗夜色 (Deep Ink，非纯黑以保留层次) ========== */
+  --bg-main: #070a11;
+  --bg-canvas: #05070d;
 
-  /* ========== 精密光学毛玻璃系统 (Precision Optical Glass - 激进高透光) ========== */
+  /* ========== 中性石板基色 (Slate Neutral) ========== */
+  --neutral-rgb: 148, 163, 184;
+
+  /* ========== 唯一 UI 强调色体系 (Observatory Azure) ========== */
+  /** 全部色值均已在 #0b1120 深底上通过 WCAG AA 对比校验 */
+  --accent-rgb: 76, 154, 214;
+  --accent-hi-rgb: 140, 197, 240;
+  --accent-deep-rgb: 38, 96, 143;
+  --accent: rgb(var(--accent-rgb));             /* 描边 / 导轨 / 聚焦 */
+  --accent-hi: rgb(var(--accent-hi-rgb));       /* 强调文字与受光态 */
+  /** 实心按键填充：白字对比度 ≥ 4.5:1，严禁提亮至 --accent */
+  --accent-solid: #2a6d9c;
+  --accent-solid-deep: #1b4667;
+
+  /* ========== 语义色 (降饱和，深底 AA 达标) ========== */
+  --success: #3fb68b;
+  --success-rgb: 63, 182, 139;
+  --warning: #d99a2b;
+  --warning-rgb: 217, 154, 43;
+  --danger: #e2685f;
+  --danger-rgb: 226, 104, 95;
+  /** 危险实心按键填充：白字对比度 ≥ 4.5:1 */
+  --danger-solid: #c2453d;
+  --danger-solid-deep: #97322c;
+
+  /* ========== 数据可视化专用色 (须与拓扑画布 JS 一致，禁止混用于 UI) ========== */
+  --viz-hub: #f59e0b;      /* 全局意图枢纽恒星 */
+  --viz-domain: #38bdf8;   /* 主题认知域行星 */
+  --viz-unit: #c084fc;     /* 记忆知识节点卫星 */
+  --viz-flow: #34d399;     /* 链式激活流连线 */
+
+  /* ========== 官方四大分类身份色 (仅用于卡片分类芯片文字，底衬统一中性) ========== */
+  --grp-spec: #6cb4e8;        /* 开发规范 */
+  --grp-project: #9aa8f0;     /* 项目信息 */
+  --grp-experience: #e88a8a;  /* 经验教训 */
+  --grp-task: #7fc79a;        /* 任务总结 */
+
+  /* ========== 文本阶层 ========== */
+  --text-bright: #f2f6fa;
+  --text-main: #d5dce6;
+  --text-muted: #9aa7b8;
+  --text-dim: #7c8a9c;     /* 文件名等次要元信息，替代原先对比度不达标的浅灰 */
+
+  /* ========== 精密光学毛玻璃系统 (Precision Optical Glass - 高透光) ========== */
   /** 统一面板毛玻璃封装：顶部导航 / 左侧边栏 / 主内容抽屉共用高透光玻璃基面 */
-  --glass-bg-panel: linear-gradient(180deg, rgba(7, 13, 30, 0.24) 0%, rgba(18, 8, 34, 0.16) 100%);
-  --glass-bg-card: linear-gradient(135deg, rgba(10, 18, 38, 0.16) 0%, rgba(20, 10, 42, 0.08) 100%);
-  --glass-bg-dropdown: linear-gradient(160deg, rgba(14, 22, 44, 0.68) 0%, rgba(8, 12, 26, 0.72) 100%);
-  --glass-bg-modal: linear-gradient(165deg, rgba(14, 22, 44, 0.48) 0%, rgba(8, 12, 26, 0.58) 100%);
-  --glass-blur-xs: blur(12px) saturate(200%) contrast(106%);
-  --glass-blur-sm: blur(20px) saturate(220%) contrast(108%);
-  --glass-blur-md: blur(32px) saturate(240%) contrast(110%);
-  --glass-blur-lg: blur(48px) saturate(260%) contrast(112%);
-  --glass-blur-xl: blur(64px) saturate(280%) contrast(115%);
+  --glass-bg-panel: linear-gradient(180deg, rgba(9, 14, 27, 0.26) 0%, rgba(12, 17, 32, 0.18) 100%);
+  /** 卡片玻璃：卡片流下方为静态渐变底，提高不透明度以保障 12px 正文可读性 */
+  --glass-bg-card: linear-gradient(165deg, rgba(18, 25, 43, 0.72) 0%, rgba(11, 16, 29, 0.62) 100%);
+  --glass-bg-card-hover: linear-gradient(165deg, rgba(23, 32, 54, 0.80) 0%, rgba(14, 20, 36, 0.70) 100%);
+  --glass-bg-dropdown: linear-gradient(160deg, rgba(15, 22, 39, 0.86) 0%, rgba(9, 13, 25, 0.90) 100%);
+  --glass-bg-modal: linear-gradient(165deg, rgba(15, 22, 39, 0.80) 0%, rgba(9, 13, 25, 0.88) 100%);
+  /** 模糊等级：saturate 由 200%~280% 降至 140%~170%，杜绝霓虹过饱和溢色 */
+  --glass-blur-xs: blur(12px) saturate(140%);
+  --glass-blur-sm: blur(18px) saturate(148%);
+  --glass-blur-md: blur(26px) saturate(156%);
+  --glass-blur-lg: blur(36px) saturate(162%);
+  --glass-blur-xl: blur(48px) saturate(170%);
 
   /* ========== 全局通用不透光实体表面体系 (Universal Opaque Surface) ========== */
   /** 全局复用不透光底衬：彻底遮蔽底层画布/星系透光，提供稳定高清晰度的视觉对比度 */
-  --surface-opaque: #090e1c;
-  --surface-opaque-elevated: #121c35;
-  --surface-opaque-border: rgba(56, 189, 248, 0.22);
+  --surface-opaque: #0b1120;
+  --surface-opaque-elevated: #141c2e;
+  --surface-opaque-border: rgba(var(--accent-rgb), 0.16);
 
   /* ========== 全局通用微透光/少透光光学表面体系 (Universal Translucent Surface) ========== */
   /** 全局少透光毛玻璃基面变量：与官方分类、标签云、弹窗文本框等对齐，保留深空星系通透质感 */
-  --surface-translucent: linear-gradient(135deg, rgba(14, 22, 44, 0.26) 0%, rgba(26, 12, 48, 0.16) 100%);
-  --surface-translucent-hover: linear-gradient(135deg, rgba(26, 38, 70, 0.65) 0%, rgba(42, 18, 72, 0.50) 100%);
-  --surface-translucent-border: rgba(56, 189, 248, 0.18);
-  --surface-translucent-border-hover: rgba(56, 189, 248, 0.50);
+  --surface-translucent: linear-gradient(160deg, rgba(19, 27, 46, 0.34) 0%, rgba(13, 19, 34, 0.24) 100%);
+  --surface-translucent-hover: linear-gradient(160deg, rgba(29, 41, 66, 0.62) 0%, rgba(19, 27, 47, 0.50) 100%);
+  --surface-translucent-border: rgba(var(--neutral-rgb), 0.18);
+  --surface-translucent-border-hover: rgba(var(--accent-rgb), 0.42);
+
+  /* ========== 芯片与发丝线 (徽章 / 关键词 / 分隔线统一底衬) ========== */
+  /** 全站唯一芯片形态：底衬中性无色，色相只允许出现在文字上 */
+  --chip-bg: rgba(var(--neutral-rgb), 0.10);
+  --chip-border: rgba(var(--neutral-rgb), 0.18);
+  --hairline: rgba(var(--neutral-rgb), 0.14);
 
   /* ========== 聚焦导轨体系 ========== */
-  --border-focus: #38bdf8;
-
-  /* ========== 文本色彩体系 ========== */
-  --text-main: #e2e8f0;
-  --text-muted: #94a3b8;
-  --text-bright: #f8fafc;
-
-  /* ========== 科技霓虹色彩 ========== */
-  --color-neon-cyan: #38bdf8;
-  --color-neon-purple: #a855f7;
-  --color-neon-emerald: #10b981;
-  --warning: #f59e0b;
-  --success: #10b981;
+  --border-focus: var(--accent);
 
   /* ========== 圆角与过渡规范 ========== */
   --rounded-sm: 4px;

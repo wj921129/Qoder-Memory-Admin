@@ -3,31 +3,28 @@
    ======================================================== */
 
 /* ========== 卡片视图外层视界 ========== */
-/** 知识卡片流全屏容器 */
+/** 知识卡片流全屏容器：静态渐变底，已完全遮蔽底层画布 */
 #cards-container {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(ellipse at top, #0c1427 0%, #05070e 100%);
+  background: radial-gradient(ellipse 120% 80% at 50% 0%, #0d1424 0%, var(--bg-canvas) 72%);
   overflow: hidden;
   z-index: 10;
 }
 
 /* ========== 官方四大分类快捷过滤条 ========== */
-/** 官方快捷分类毛玻璃横幅控制条 */
+/** 官方快捷分类横幅控制条（底为静态渐变，无需 backdrop-filter）*/
 .official-tabs-bar {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
-  background: linear-gradient(180deg, rgba(8, 16, 36, 0.22) 0%, rgba(18, 9, 36, 0.14) 100%);
-  backdrop-filter: var(--glass-blur-lg);
-  -webkit-backdrop-filter: var(--glass-blur-lg);
-  border-bottom: 1px solid rgba(56, 189, 248, 0.22);
+  background: rgba(var(--neutral-rgb), 0.04);
+  border-bottom: 1px solid var(--hairline);
   overflow-x: auto;
   flex-shrink: 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.08), inset 0 -1px 0 rgba(255, 255, 255, 0.12);
 }
 /** 分类切换胶囊按钮 (Filter Pill) */
 .official-tab {
@@ -36,39 +33,30 @@
   gap: 7px;
   padding: 6px 15px;
   border-radius: var(--rounded-full);
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.13) 0%, rgba(148, 163, 184, 0.06) 100%);
-  backdrop-filter: var(--glass-blur-xs);
-  -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
   transition: var(--transition-smooth);
   white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 /** 分类胶囊悬停 */
 .official-tab:hover {
-  background: linear-gradient(180deg, rgba(148, 163, 184, 0.22) 0%, rgba(148, 163, 184, 0.11) 100%);
-  color: #fff;
-  border-color: rgba(125, 211, 252, 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 0 16px -5px rgba(56, 189, 248, 0.5);
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--text-bright);
+  border-color: rgba(var(--accent-rgb), 0.42);
   transform: translateY(-1px);
 }
 .official-tab:active {
   transform: translateY(0) scale(0.97);
 }
-/** 分类胶囊激活态：蓝宝石受光 */
+/** 分类胶囊激活态：强调色浅底 + 高对比文字 */
 .official-tab.active {
-  background: linear-gradient(180deg, rgba(14, 165, 233, 0.42) 0%, rgba(3, 105, 161, 0.38) 100%);
-  color: #e0f2fe;
-  border-color: rgba(125, 211, 252, 0.65);
+  background: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent-hi);
+  border-color: rgba(var(--accent-rgb), 0.55);
   font-weight: 600;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 0 18px -6px rgba(56, 189, 248, 0.6);
 }
 /** 分类胶囊数量统计小徽章 */
 .official-tab .tab-badge {
@@ -76,8 +64,8 @@
   font-weight: 600;
   padding: 2px 7px;
   border-radius: var(--rounded-full);
-  background: rgba(10, 16, 32, 0.48);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--chip-border);
   color: inherit;
 }
 
@@ -89,10 +77,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.14);
-  background: rgba(11, 18, 36, 0.32);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(var(--neutral-rgb), 0.025);
   position: relative;
   z-index: 20;
 }
@@ -133,4 +119,35 @@
   flex: 1;
   overflow-y: auto;
   padding: 20px;
+}
+/** 空结果提示（取代原内联样式）*/
+.cards-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 0;
+  color: var(--text-muted);
+}
+.cards-empty p:first-child {
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: var(--text-main);
+}
+.cards-empty p:last-child {
+  font-size: 12px;
+}
+/** 分页载入更多控制条（取代原内联样式）*/
+.cards-more {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 0;
+  background: rgba(var(--neutral-rgb), 0.04);
+  border: 1px dashed var(--chip-border);
+  border-radius: var(--rounded-lg);
+}
+.cards-more-hint {
+  color: var(--text-muted);
+  font-size: 12.5px;
 }

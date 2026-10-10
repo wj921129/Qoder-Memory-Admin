@@ -1,5 +1,10 @@
 /* ========================================================
    Qoder Memory Visualizer - 知识卡片网格与卡片组件样式
+   --------------------------------------------------------
+   卡片内容区分层（自上而下）：
+   标题行 → 元信息芯片 → 适用场景 → 正文摘要 → 关键词 → 页脚
+   色彩纪律：芯片底衬统一中性，色相只允许出现在文字上；
+   每张卡片最多两处色相（官方分类身份色 + 记忆源轨道语义色）。
    ======================================================== */
 
 /* ========== 卡片网格布局 ========== */
@@ -7,30 +12,32 @@
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
-/* ========== 记忆卡片晶体主体 (Cybernetic Crystal Slate) ========== */
-/** 单个记忆切片毛玻璃卡片 */
+/* ========== 记忆卡片主体 ========== */
+/**
+ * 单个记忆切片卡片：卡片流底衬为静态不透明渐变，
+ * 因此不再叠加 backdrop-filter（纯 GPU 浪费），改用高不透明度玻璃底保障正文可读性。
+ */
 .memory-card {
   background: var(--glass-bg-card);
-  backdrop-filter: var(--glass-blur-lg);
-  -webkit-backdrop-filter: var(--glass-blur-lg);
-  border: 1px solid rgba(56, 189, 248, 0.24);
+  border: 1px solid var(--hairline);
   border-radius: var(--rounded-lg);
-  padding: 18px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   transition: var(--transition-smooth);
   user-select: text;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.16);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   position: relative;
 }
-/** 记忆卡片悬停流光浮动 */
+/** 记忆卡片悬停：仅提升底色与描边，不做霓虹外泛光 */
 .memory-card:hover {
-  border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.75), 0 0 28px rgba(56, 189, 248, 0.32), 0 0 45px rgba(168, 85, 247, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.28);
-  transform: translateY(-3px);
+  background: var(--glass-bg-card-hover);
+  border-color: rgba(var(--accent-rgb), 0.38);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 /** 卡片默认折叠状态：隐藏正文预览、关键词与卡片页脚，仅保留标题与适用场景/召回条件 */
 .memory-card.collapsed .card-content-preview,
@@ -50,151 +57,139 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 /** 卡片标题文字 */
 .card-title {
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-bright);
-  line-height: 1.4;
+  line-height: 1.45;
   cursor: pointer;
   flex: 1;
-  transition: var(--transition-smooth);
+  transition: color 0.18s ease;
+}
+/** 卡片标题悬停高亮 */
+.card-title:hover {
+  color: var(--accent-hi);
 }
 /** 单卡展开/折叠微型切换按钮 */
 .card-expand-btn {
-  background: rgba(148, 163, 184, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   color: var(--text-muted);
   border-radius: var(--rounded-sm);
   padding: 1px 7px;
   font-size: 11px;
   cursor: pointer;
   flex-shrink: 0;
-  line-height: 1.4;
+  line-height: 1.5;
   transition: var(--transition-smooth);
   outline: none;
 }
 .card-expand-btn:hover {
-  color: #fff;
-  border-color: rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.15);
-}
-/** 卡片标题悬停高亮 */
-.card-title:hover {
-  color: var(--color-neon-cyan);
-  text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  color: var(--accent-hi);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.14);
 }
 
-/* ========== 卡片微晶徽章体系 ========== */
-/** 徽章横向流动容器 */
+/* ========== 卡片元信息芯片体系 ========== */
+/** 芯片横向流动容器 */
 .card-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
   margin-bottom: 12px;
 }
-/** 标签徽章基类 */
+/** 芯片基类：全站唯一形态，中性底衬 + 中性文字 */
 .badge-tag {
-  font-size: 10px;
+  font-size: 10.5px;
+  line-height: 1.5;
   padding: 2px 7px;
   border-radius: var(--rounded-sm);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--text-muted);
   font-weight: 500;
+  white-space: nowrap;
 }
-/** 分类专属青蓝徽章 */
-.badge-cat {
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--color-neon-cyan);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+/** 工程归属芯片：文本略提亮以区分层级 */
+.badge-proj {
+  color: var(--text-main);
 }
-/** 来源类型专属紫晶徽章 */
-.badge-source {
-  background: rgba(139, 92, 246, 0.12);
-  color: #a78bfa;
-  border: 1px solid rgba(139, 92, 246, 0.3);
+/** 官方四大分类身份色：卡片上唯一携带分类色相的芯片 */
+.grp-spec {
+  color: var(--grp-spec);
+  border-color: rgba(var(--accent-rgb), 0.32);
 }
-/** 显式链式关联绿色徽章 */
+.grp-project {
+  color: var(--grp-project);
+}
+.grp-experience {
+  color: var(--grp-experience);
+}
+.grp-task {
+  color: var(--grp-task);
+}
+/** 记忆源轨道芯片：IDE 官方记忆走强调色，Agent 自治记忆走警示色 */
+.track-ide {
+  color: var(--accent-hi);
+}
+.track-agent {
+  color: var(--warning);
+}
+/** 显式链式关联芯片：语义成功色 */
 .badge-chain {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-/** 官方四大类型微标通用规范 */
-.badge-type {
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-/** 工程架构规约徽章 */
-.badge-type.type-project {
-  background: rgba(14, 165, 233, 0.15);
-  color: #7dd3fc;
-  border-color: rgba(14, 165, 233, 0.4);
-}
-/** 踩坑反馈修正徽章 */
-.badge-type.type-feedback {
-  background: rgba(244, 63, 94, 0.15);
-  color: #fda4af;
-  border-color: rgba(244, 63, 94, 0.4);
-}
-/** 用户习惯偏好徽章 */
-.badge-type.type-user {
-  background: rgba(236, 72, 153, 0.15);
-  color: #f472b6;
-  border-color: rgba(236, 72, 153, 0.4);
-}
-/** 外部规范参考徽章 */
-.badge-type.type-reference {
-  background: rgba(139, 92, 246, 0.15);
-  color: #c4b5fd;
-  border-color: rgba(139, 92, 246, 0.4);
+  color: var(--success);
 }
 
-/* ========== 描述与正文预览 ========== */
+/* ========== 适用场景与正文摘要 ========== */
 /** 适用场景与触发条件文本框 */
 .card-desc {
   font-size: 12px;
-  color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.30);
-  backdrop-filter: blur(12px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border-left: 3px solid var(--color-neon-cyan);
+  color: var(--text-main);
+  background: rgba(var(--neutral-rgb), 0.06);
+  border-left: 2px solid var(--accent);
   padding: 8px 11px;
   border-radius: 0 var(--rounded-md) var(--rounded-md) 0;
   margin-bottom: 12px;
-  line-height: 1.55;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  line-height: 1.6;
 }
 /** 触发场景标签小字 */
 .card-desc-label {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--text-dim);
   font-weight: 600;
   text-transform: uppercase;
-  margin-bottom: 3px;
-  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  letter-spacing: 0.6px;
 }
-/** 正文摘要预览区 */
+/**
+ * 正文摘要预览区：排版继承全局 .md-body，此处仅做卡片尺度压缩。
+ * 底部改用 mask 渐隐（跟随内容而非假设底色，彻底消除色带断层）。
+ */
 .card-content-preview {
   font-size: 12px;
-  color: var(--text-muted);
-  line-height: 1.6;
-  max-height: 130px;
+  max-height: 132px;
   overflow: hidden;
-  position: relative;
   margin-bottom: 12px;
-  word-break: break-word;
+  -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 66%, transparent 100%);
 }
-/** 正文预览底部淡出渐变遮罩 */
-.card-content-preview::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
-  background: linear-gradient(to bottom, transparent, rgba(8, 14, 30, 0.85));
-  pointer-events: none;
+.card-content-preview p {
+  margin: 0 0 5px;
+}
+.card-content-preview h3,
+.card-content-preview h4,
+.card-content-preview h5,
+.card-content-preview h6 {
+  font-size: 12px;
+  margin: 8px 0 4px;
+}
+.card-content-preview pre {
+  max-height: 88px;
+  overflow: hidden;
+  margin: 6px 0;
 }
 
 /* ========== 关键词与卡片页脚 ========== */
@@ -206,33 +201,40 @@
   margin-top: auto;
   margin-bottom: 12px;
 }
-/** 单个关键词药丸 */
+/** 单个关键词药丸：与元信息芯片同形态 */
 .keyword-pill {
-  font-size: 10px;
+  font-size: 10.5px;
+  line-height: 1.5;
   padding: 2px 7px;
-  background: rgba(30, 41, 59, 0.32);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(51, 65, 85, 0.45);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   border-radius: var(--rounded-sm);
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 /** 卡片页脚信息区 */
 .card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-top: 1px solid rgba(56, 189, 248, 0.12);
+  gap: 10px;
+  border-top: 1px solid var(--hairline);
   padding-top: 10px;
   margin-top: auto;
 }
 /** 物理文件名小字 */
 .card-file {
+  flex: 1;
+  min-width: 0;
   font-size: 11px;
-  color: #64748b;
+  color: var(--text-dim);
   font-family: 'JetBrains Mono', Consolas, Menlo, Monaco, monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 170px;
+}
+/** 页脚操作按钮组 */
+.card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }

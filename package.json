@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "node server/server.mjs",
-    "dev": "node --watch server/server.mjs"
+    "dev": "node --watch server/server.mjs",
+    "check": "node test/utils.check.mjs"
   },
   "keywords": [
     "qoder",

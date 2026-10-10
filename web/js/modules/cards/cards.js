@@ -129,9 +129,9 @@ window.QM.cards = (function() {
 
     if (filtered.length === 0) {
       gridEl.innerHTML = `
-        <div style="grid-column: 1/-1; text-align:center; padding: 60px 0; color:#64748b;">
-          <p style="font-size:16px; margin-bottom:8px;">未找到匹配的记忆条目</p>
-          <p style="font-size:12px;">您可以清除搜索或点击右上角「新建记忆」</p>
+        <div class="cards-empty">
+          <p>未找到匹配的记忆条目</p>
+          <p>您可以清除搜索或点击右上角「新建记忆」</p>
         </div>
       `;
       return;
@@ -148,16 +148,17 @@ window.QM.cards = (function() {
         ? `<span class="badge-tag badge-chain">🔗 链向: ${escapeHtml(m.chains.join(', '))}</span>`
         : '';
 
-      const typeInfo = (TYPE_MAP && TYPE_MAP[m.type]) || { name: m.type || 'project', icon: '🏛️', badgeClass: 'type-project' };
-      const typeHtml = `<span class="badge-tag badge-type ${typeInfo.badgeClass}" title="Qoder 官方规范类型: ${escapeHtml(typeInfo.name)}">${typeInfo.icon} ${escapeHtml(m.type || 'project')}</span>`;
+      const typeInfo = (TYPE_MAP && TYPE_MAP[m.type]) || { name: m.type || 'project', icon: '🏛️' };
+      const typeHtml = `<span class="badge-tag" title="Qoder 官方规范类型: ${escapeHtml(typeInfo.name)}">${typeInfo.icon} ${escapeHtml(m.type || 'project')}</span>`;
 
+      // 官方四大分类身份色统一交由 CSS .grp-* 接管，严禁在 JS 内联硬编码色值
       const officialGrp = m.officialGroup || window.QM.constants.mapToOfficialGroup(m.category);
-      const officialHtml = `<span class="badge-tag" style="border-color:${officialGrp.color || '#38bdf8'}; color:${officialGrp.color || '#38bdf8'}; background:rgba(30,41,59,0.5);">${officialGrp.icon} ${escapeHtml(officialGrp.name)}</span>`;
+      const officialHtml = `<span class="badge-tag grp-${escapeHtml(officialGrp.id)}">${officialGrp.icon} ${escapeHtml(officialGrp.name)}</span>`;
       const trackBadge = m.storeType === 'agent'
-        ? `<span class="badge-tag" style="background:#3730a3; color:#c7d2fe; border-color:#4f46e5;">🤖 Agent</span>`
-        : `<span class="badge-tag" style="background:#065f46; color:#a7f3d0; border-color:#059669;">🌟 IDE</span>`;
+        ? `<span class="badge-tag track-agent">🤖 Agent</span>`
+        : `<span class="badge-tag track-ide">🌟 IDE</span>`;
 
-      const projBadge = m.projectName ? `<span class="badge-tag" style="background:#1e293b; color:#38bdf8; border-color:rgba(56,189,248,0.4);">🪐 ${escapeHtml(m.projectName)}</span>` : '';
+      const projBadge = m.projectName ? `<span class="badge-tag badge-proj">🪐 ${escapeHtml(m.projectName)}</span>` : '';
 
       return `
         <div class="memory-card${isCollapsed ? ' collapsed' : ''}" id="card-${escapeHtml(m.id)}">
@@ -168,12 +169,12 @@ window.QM.cards = (function() {
             </button>
           </div>
           <div class="card-badges">
-            ${projBadge}
             ${officialHtml}
+            <span class="badge-tag">${escapeHtml(catLabel)}</span>
             ${trackBadge}
             ${typeHtml}
-            <span class="badge-tag badge-cat">${escapeHtml(catLabel)}</span>
-            <span class="badge-tag badge-source">${escapeHtml(m.source || 'auto')}</span>
+            <span class="badge-tag">${escapeHtml(m.source || 'auto')}</span>
+            ${projBadge}
             ${chainHtml}
           </div>
           ${m.description ? `
@@ -182,8 +183,8 @@ window.QM.cards = (function() {
               ${escapeHtml(m.description)}
             </div>
           ` : ''}
-          <div class="card-content-preview">
-            ${renderMarkdown(m.body)}
+          <div class="card-content-preview md-body">
+            ${renderMarkdown(m.body, 600)}
           </div>
           <div class="card-keywords">${kwHtml}</div>
           <div class="card-footer">
@@ -204,10 +205,10 @@ window.QM.cards = (function() {
     if (hasMore) {
       const remainCount = filtered.length - renderList.length;
       html += `
-        <div style="grid-column: 1/-1; display:flex; justify-content:center; align-items:center; gap:14px; padding: 24px 0; background:rgba(15,23,42,0.6); border:1px dashed #334155; border-radius:8px;">
-          <span style="color:#94a3b8; font-size:13px;">已呈现前 ${renderList.length} 篇 · 还有 ${remainCount} 篇记忆</span>
+        <div class="cards-more">
+          <span class="cards-more-hint">已呈现前 ${renderList.length} 篇 · 还有 ${remainCount} 篇记忆</span>
           <button class="btn btn-subtle btn-sm" onclick="window.QM.cards.loadMore()">⬇️ 继续载入 ${Math.min(PAGE_SIZE, remainCount)} 篇</button>
-          <button class="btn btn-subtle btn-sm" onclick="window.QM.cards.loadAll()">⚡ 全部展开 (${filtered.length} 篇)</button>
+          <button class="btn btn-subtle btn-sm" onclick="window.QM.cards.loadAll()">⚡ 一次载入全部 (${filtered.length} 篇)</button>
         </div>
       `;
     }

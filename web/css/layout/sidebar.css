@@ -9,8 +9,8 @@
   background: var(--glass-bg-panel);
   backdrop-filter: var(--glass-blur-xl);
   -webkit-backdrop-filter: var(--glass-blur-xl);
-  border-right: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 6px 0 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(56, 189, 248, 0.12), 0 0 45px rgba(168, 85, 247, 0.08);
+  border-right: 1px solid rgba(var(--accent-rgb), 0.16);
+  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -19,7 +19,7 @@
   z-index: 20;
   position: relative;
 }
-/** 侧边栏右侧垂直全息渐变流光轴 */
+/** 侧边栏右侧垂直单色相渐变分隔轴 */
 #sidebar-filter::after {
   content: '';
   position: absolute;
@@ -27,19 +27,17 @@
   bottom: 0;
   right: 0;
   width: 1px;
-  background: linear-gradient(180deg, 
-    rgba(56, 189, 248, 0.6) 0%, 
-    rgba(168, 85, 247, 0.45) 40%, 
-    rgba(56, 189, 248, 0.45) 80%,
+  background: linear-gradient(180deg,
+    rgba(var(--accent-rgb), 0.34) 0%,
+    rgba(var(--accent-rgb), 0.16) 45%,
     transparent 100%
   );
   pointer-events: none;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4), 0 0 20px rgba(168, 85, 247, 0.25);
 }
 /** 侧边栏独立业务分区 */
 .sidebar-section {
   padding: 15px;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.14);
+  border-bottom: 1px solid var(--hairline);
 }
 /** 关键词云标签自适应撑满 */
 .sidebar-section-tags {
@@ -58,7 +56,7 @@
   position: relative;
   padding-left: 9px;
 }
-/** 分区标题左侧科技装饰指示条 */
+/** 分区标题左侧装饰指示条 */
 .sidebar-section-title::before {
   content: '';
   position: absolute;
@@ -67,19 +65,17 @@
   transform: translateY(-50%);
   width: 3px;
   height: 11px;
-  background: var(--color-neon-cyan);
+  background: var(--accent);
   border-radius: 2px;
-  box-shadow: 0 0 8px var(--color-neon-cyan);
 }
-/** 官方分类总数统计发光高亮 */
+/** 官方分类总数统计高亮 */
 .official-cat-total-badge {
-  color: var(--color-neon-cyan);
+  color: var(--accent-hi);
   font-weight: 600;
-  text-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
 }
 /** 子分类统计数字弱化展示 */
 .subcat-total-badge {
-  color: #64748b;
+  color: var(--text-dim);
   font-size: 11px;
 }
 /** 默认模式下隐藏底层物理子目录细分 */
@@ -87,8 +83,8 @@ body.mode-default .sidebar-section-subdirs {
   display: none !important;
 }
 
-/* ========== 官方四大分类体系 (晶体控制舱) ========== */
-/** 官方分类毛玻璃交互项 (Crystal Capsule Item)：少透光光学表面 */
+/* ========== 官方四大分类体系 ========== */
+/** 官方分类交互项：少透光光学表面 */
 .official-cat-item {
   display: flex;
   align-items: center;
@@ -101,38 +97,32 @@ body.mode-default .sidebar-section-subdirs {
   cursor: pointer;
   margin-bottom: 7px;
   background: var(--surface-translucent);
-  backdrop-filter: var(--glass-blur-sm);
-  -webkit-backdrop-filter: var(--glass-blur-sm);
   border: 1px solid var(--surface-translucent-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: var(--transition-smooth);
 }
-/** 官方分类项悬停流光 */
+/** 官方分类项悬停 */
 .official-cat-item:hover {
   background: var(--surface-translucent-hover) !important;
-  border-color: var(--color-neon-cyan);
-  color: #fff;
+  border-color: var(--surface-translucent-border-hover);
+  color: var(--text-bright);
   transform: translateX(4px);
-  box-shadow: 0 3px 16px rgba(56, 189, 248, 0.35), 0 0 25px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 /** 官方分类激活选中态 */
 .official-cat-item.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.38) 0%, rgba(168, 85, 247, 0.25) 100%);
-  border-color: var(--color-neon-cyan);
-  color: var(--color-neon-cyan);
+  background: rgba(var(--accent-rgb), 0.18);
+  border-color: rgba(var(--accent-rgb), 0.5);
+  color: var(--accent-hi);
   font-weight: 600;
-  box-shadow: 0 0 20px rgba(56, 189, 248, 0.45), 0 0 35px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-/** 官方分类条目数量发光微标 */
+/** 官方分类条目数量微标 */
 .official-cat-badge {
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--rounded-full);
-  background: rgba(10, 16, 34, 0.55);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: var(--color-neon-cyan);
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.22);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  color: var(--text-muted);
 }
 
 /* ========== 物理子目录与细分过滤 ========== */
@@ -142,7 +132,7 @@ body.mode-default .sidebar-section-subdirs {
   overflow-y: auto;
   overflow-x: hidden;
 }
-/** 细分子目录条目：取消不透光，与官方四大分类全面对齐少透光光学质感 */
+/** 细分子目录条目：与官方四大分类全面对齐少透光光学质感 */
 .cat-item {
   display: flex;
   align-items: center;
@@ -150,14 +140,11 @@ body.mode-default .sidebar-section-subdirs {
   padding: 8px 11px;
   border-radius: var(--rounded-md);
   font-size: 12px;
-  color: #cbd5e1;
+  color: var(--text-main);
   cursor: pointer;
   margin-bottom: 5px;
   background: var(--surface-translucent);
-  backdrop-filter: var(--glass-blur-xs);
-  -webkit-backdrop-filter: var(--glass-blur-xs);
   border: 1px solid var(--surface-translucent-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2);
   transition: var(--transition-smooth);
   max-width: 100%;
   box-sizing: border-box;
@@ -174,64 +161,67 @@ body.mode-default .sidebar-section-subdirs {
 /** 细分子目录悬停 */
 .cat-item:hover {
   background: var(--surface-translucent-hover) !important;
-  border-color: var(--color-neon-cyan);
-  color: #fff;
+  border-color: var(--surface-translucent-border-hover);
+  color: var(--text-bright);
   transform: translateX(2px);
-  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
 /** 细分子目录选中激活态 */
 .cat-item.active {
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.38) 0%, rgba(168, 85, 247, 0.25) 100%) !important;
-  color: var(--color-neon-cyan);
-  border-color: var(--color-neon-cyan);
+  background: rgba(var(--accent-rgb), 0.18) !important;
+  color: var(--accent-hi);
+  border-color: rgba(var(--accent-rgb), 0.5);
   font-weight: 600;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 /** 细分子目录统计微标 */
 .cat-count {
   font-size: 11px;
   padding: 2px 7px;
-  background: rgba(20, 30, 52, 0.50);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   border-radius: var(--rounded-full);
   color: var(--text-muted);
   flex-shrink: 0;
 }
 
 /* ========== 高频语义关键词云 ========== */
+/** 分区空数据提示（取代原 JS 内联样式）*/
+.sidebar-empty-tip {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
 /** 标签云流式布局容器 */
 .tag-cloud {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
 }
-/** 独立语义标签药丸 (Cyber Holographic Pill)：统一复用少透光光学表面 */
+/** 标签命中次数弱化数字 */
+.tag-count-num {
+  color: var(--text-dim);
+}
+/** 独立语义标签药丸：统一复用芯片底衬 */
 .tag-pill {
   font-size: 11px;
   padding: 4px 10px;
-  background: var(--surface-translucent);
-  backdrop-filter: var(--glass-blur-xs);
-  -webkit-backdrop-filter: var(--glass-blur-xs);
-  border: 1px solid var(--surface-translucent-border);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   border-radius: var(--rounded-full);
-  color: #cbd5e1;
+  color: var(--text-muted);
   cursor: pointer;
   transition: var(--transition-smooth);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 /** 语义标签悬停微亮 */
 .tag-pill:hover {
-  background: linear-gradient(135deg, rgba(30, 46, 80, 0.65) 0%, rgba(55, 24, 90, 0.50) 100%);
-  border-color: var(--color-neon-cyan);
-  color: #fff;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.35), 0 0 20px rgba(168, 85, 247, 0.2);
+  background: rgba(var(--accent-rgb), 0.14);
+  border-color: rgba(var(--accent-rgb), 0.42);
+  color: var(--text-bright);
   transform: translateY(-1px);
 }
-/** 激活语义标签脉冲霓虹辉光 */
+/** 激活语义标签：实心强调色填充（白字 ≥ 4.5:1）*/
 .tag-pill.active {
-  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
-  border-color: #c084fc;
+  background: var(--accent-solid);
+  border-color: rgba(var(--accent-hi-rgb), 0.4);
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
 }

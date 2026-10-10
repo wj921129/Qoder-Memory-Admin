@@ -603,8 +603,9 @@ window.QM.topology = (function() {
     if (!focusTarget) {
       if (hudText) hudText.innerText = "🌌 宏观全宇宙引力网络就绪 · 俯瞰多星系拓扑";
       if (hudIndicator) {
-        hudIndicator.style.background = "#10b981";
-        hudIndicator.style.boxShadow = "0 0 8px #10b981";
+        // 就绪态回退到 CSS 默认语义色（--success），不在 JS 硬编码色值
+        hudIndicator.style.background = "";
+        hudIndicator.style.boxShadow = "";
       }
       window.QM.sidebar?.renderTagCloud?.();
       return;
@@ -692,8 +693,8 @@ window.QM.topology = (function() {
     }
 
     if (hudIndicator) {
-      hudIndicator.style.background = "#38bdf8";
-      hudIndicator.style.boxShadow = "0 0 10px #38bdf8";
+      hudIndicator.style.background = "var(--accent)";
+      hudIndicator.style.boxShadow = "0 0 8px rgba(var(--accent-rgb), 0.7)";
     }
 
     window.QM.sidebar?.renderTagCloud?.();
@@ -1522,8 +1523,8 @@ window.QM.topology = (function() {
         hudText.innerText = `🌌 官方领域聚焦：${grp.icon} 【${grp.name}】 · 高亮 ${matchedPlanets.length} 个主题认知行星`;
       }
       if (hudIndicator) {
-        hudIndicator.style.background = grp.color || '#38bdf8';
-        hudIndicator.style.boxShadow = `0 0 10px ${grp.color || '#38bdf8'}`;
+        hudIndicator.style.background = grp.color || 'var(--accent)';
+        hudIndicator.style.boxShadow = `0 0 8px ${grp.color || 'var(--accent)'}`;
       }
 
       window.QM.utils?.showToast(`已聚焦官方领域：${grp.icon} ${grp.name}（${matchedPlanets.length} 个认知行星高亮）`);
@@ -1532,8 +1533,8 @@ window.QM.topology = (function() {
         hudText.innerText = '🌌 认知引力网络待命 · 全局拓扑就绪';
       }
       if (hudIndicator) {
-        hudIndicator.style.background = '#10b981';
-        hudIndicator.style.boxShadow = '0 0 10px #10b981';
+        hudIndicator.style.background = '';
+        hudIndicator.style.boxShadow = '';
       }
       window.QM.utils?.showToast('已恢复全宇宙宏观全貌');
     }

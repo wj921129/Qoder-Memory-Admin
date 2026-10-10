@@ -26,10 +26,10 @@ window.QM.constants = (function() {
 
   // Qoder 官方四大元数据类型 (user / feedback / project / reference)
   const TYPE_MAP = {
-    project: { name: "工程架构与规约 (project)", color: "#0ea5e9", icon: "🏛️", badgeClass: "type-project" },
-    feedback: { name: "踩坑反馈与修正 (feedback)", color: "#f43f5e", icon: "⚠️", badgeClass: "type-feedback" },
-    user: { name: "用户习惯与偏好 (user)", color: "#ec4899", icon: "👤", badgeClass: "type-user" },
-    reference: { name: "外部规范与参考 (reference)", color: "#8b5cf6", icon: "📖", badgeClass: "type-reference" }
+    project: { name: "工程架构与规约 (project)", icon: "🏛️" },
+    feedback: { name: "踩坑反馈与修正 (feedback)", icon: "⚠️" },
+    user: { name: "用户习惯与偏好 (user)", icon: "👤" },
+    reference: { name: "外部规范与参考 (reference)", icon: "📖" }
   };
 
   // Qoder 官方四大分类体系 (国际版与国内版统一 SSOT)

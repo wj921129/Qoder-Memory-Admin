@@ -8,20 +8,20 @@
   position: absolute;
   top: 18px;
   right: 18px;
-  background: linear-gradient(135deg, rgba(8, 16, 36, 0.20) 0%, rgba(20, 10, 42, 0.12) 100%);
+  background: var(--glass-bg-panel);
   backdrop-filter: var(--glass-blur-lg);
   -webkit-backdrop-filter: var(--glass-blur-lg);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
   border-radius: var(--rounded-md);
   padding: 8px 16px;
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--text-main);
   pointer-events: none;
   z-index: 25;
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.22), 0 0 35px rgba(168, 85, 247, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: var(--transition-smooth);
 }
 /** HUD 战术瞄准角标装饰 (Top-Left & Bottom-Right) */
@@ -32,8 +32,8 @@
   left: -2px;
   width: 6px;
   height: 6px;
-  border-top: 2px solid var(--color-neon-cyan);
-  border-left: 2px solid var(--color-neon-cyan);
+  border-top: 2px solid var(--accent);
+  border-left: 2px solid var(--accent);
 }
 .galaxy-hud::after {
   content: '';
@@ -42,18 +42,18 @@
   right: -2px;
   width: 6px;
   height: 6px;
-  border-bottom: 2px solid var(--color-neon-cyan);
-  border-right: 2px solid var(--color-neon-cyan);
+  border-bottom: 2px solid var(--accent);
+  border-right: 2px solid var(--accent);
 }
 
 /* ========== HUD 状态指示与微标 ========== */
-/** HUD 拓扑网络连通脉冲指示灯 */
+/** HUD 拓扑网络连通脉冲指示灯（语义状态色，非 UI 强调色）*/
 .hud-focus-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-neon-emerald);
-  box-shadow: 0 0 10px var(--color-neon-emerald);
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(var(--success-rgb), 0.7);
   animation: hudPulse 1.8s infinite ease-in-out;
 }
 @keyframes hudPulse {
@@ -72,20 +72,17 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--rounded-sm);
-  background: rgba(18, 28, 54, 0.45);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: var(--chip-bg);
   color: var(--text-muted);
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid var(--chip-border);
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-/** HUD 专业/编辑模式专属发光金色胶囊 */
+/** HUD 专业/编辑模式专属琥珀警示胶囊 */
 .hud-mode-pill.edit,
 .hud-mode-pill.pro {
-  background: rgba(217, 119, 6, 0.28);
-  color: #fde68a;
-  border-color: rgba(245, 158, 11, 0.65);
-  box-shadow: 0 0 12px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  background: rgba(var(--warning-rgb), 0.16);
+  color: var(--warning);
+  border-color: rgba(var(--warning-rgb), 0.45);
 }

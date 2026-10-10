@@ -23,16 +23,13 @@ main {
 }
 
 /* ========== 深空全景微光装饰层 ========== */
-/** 深空宇宙环境光斑与全息科技微网格背景层 */
+/** 深空宇宙环境光晕：单一冷调，不叠加装饰网格以免干扰卡片正文阅读 */
 .cosmic-glow-bg {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  background-image: 
-    radial-gradient(ellipse 70% 50% at 20% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 65%),
-    radial-gradient(ellipse 60% 60% at 85% 85%, rgba(168, 85, 247, 0.07) 0%, transparent 70%),
-    linear-gradient(rgba(56, 189, 248, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(56, 189, 248, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+  background-image:
+    radial-gradient(ellipse 70% 50% at 22% 12%, rgba(var(--accent-rgb), 0.06) 0%, transparent 68%),
+    radial-gradient(ellipse 60% 60% at 86% 88%, rgba(var(--accent-deep-rgb), 0.08) 0%, transparent 72%);
 }

@@ -16,16 +16,57 @@ window.QM.utils = (function() {
   }
 
   /**
-   * 极简 Markdown 转换器 (粗体、行内代码、链式关系与换行)
+   * 极简 Markdown 转换器：标题 / 有序无序列表 / 代码块 / 引用 / 段落 + 粗体、行内代码、链式关系
+   * @param {string} md 原始 Markdown
+   * @param {number} [maxChars] 可选：仅渲染前 N 字符（卡片摘要用），按行边界截断
    */
-  function renderMarkdown(md) {
+  function renderMarkdown(md, maxChars) {
     if (!md) return '';
-    let html = escapeHtml(md);
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\`([^`]+)\`/g, '<code>$1</code>');
-    html = html.replace(/\[\[([^\]]+)\]\]/g, '<span style="color:#34d399; font-weight:600;">🔗 [[$1]]</span>');
-    html = html.replace(/\n/g, '<br>');
-    return html;
+    let src = String(md).replace(/\r\n/g, '\n');
+    if (maxChars && src.length > maxChars) {
+      const cut = src.lastIndexOf('\n', maxChars);
+      src = src.slice(0, cut > 0 ? cut : maxChars) + '\n…';
+    }
+    // 行内语法：先转义再生成标签，杜绝原始 HTML 注入
+    const inline = (s) => escapeHtml(s)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\`([^`]+)\`/g, '<code>$1</code>')
+      .replace(/\[\[([^\]]+)\]\]/g, '<span class="md-chain">🔗 [[$1]]</span>');
+    const out = [];
+    let listTag = null;
+    let inCode = false;
+    const closeList = () => { if (listTag) { out.push(`</${listTag}>`); listTag = null; } };
+    src.split('\n').forEach(line => {
+      if (/^\s*```/.test(line)) {
+        closeList();
+        out.push(inCode ? '</code></pre>' : '<pre><code>');
+        inCode = !inCode;
+        return;
+      }
+      if (inCode) { out.push(escapeHtml(line)); return; }
+      const head = line.match(/^(#{1,6})\s+(.*)$/);
+      if (head) {
+        closeList();
+        const lv = Math.min(head[1].length + 2, 6);
+        out.push(`<h${lv}>${inline(head[2])}</h${lv}>`);
+        return;
+      }
+      const item = line.match(/^\s*(?:[-*+]|\d+[.)])\s+(.*)$/);
+      if (item) {
+        const tag = /^\s*\d/.test(line) ? 'ol' : 'ul';
+        if (listTag !== tag) { closeList(); out.push(`<${tag}>`); listTag = tag; }
+        out.push(`<li>${inline(item[1])}</li>`);
+        return;
+      }
+      const quote = line.match(/^>\s?(.*)$/);
+      if (quote) { closeList(); out.push(`<blockquote>${inline(quote[1])}</blockquote>`); return; }
+      closeList();
+      if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+    });
+    // 截断可能停在未闭合代码块/列表内，必须自动收口，否则会吞掉卡片后续 DOM
+    if (inCode) out.push('</code></pre>');
+    closeList();
+    return out.join('');
   }
 
   /**
