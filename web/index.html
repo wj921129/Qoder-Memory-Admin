@@ -229,7 +229,16 @@
 
         <!-- 统计与排序控制条 -->
         <div class="view-control-bar">
-          <div class="view-stats" id="view-stats">显示 0 条记忆</div>
+          <div class="view-stats-group">
+            <label class="cards-select-all-label" title="全选/取消全选当前列表中的记忆卡片">
+              <input type="checkbox" id="cards-select-all-cb">
+              <span>全选</span>
+            </label>
+            <div class="view-stats" id="view-stats">显示 0 条记忆</div>
+            <button type="button" class="btn btn-danger btn-sm hidden" id="btn-batch-delete-cards" title="彻底删除已勾选的记忆切片">
+              🗑️ 批量删除 (<span id="batch-delete-count">0</span>)
+            </button>
+          </div>
           <div class="view-actions">
             <button type="button" class="btn btn-subtle btn-sm btn-collapse-toggle-all" id="btn-toggle-all-cards" title="统一折叠/展开所有记忆卡片">
               <span id="toggle-all-cards-text">↕️ 全部展开</span>

@@ -154,6 +154,7 @@ window.QM.app = (function() {
         utils.showToast('提示：当前为离线模式，双击 start.bat 可启动本地服务实现免软链接物理直读直写', 'warn');
       }
       if (cards?.renderUI) cards.renderUI();
+      if (topology?.buildGalaxyGraph) topology.buildGalaxyGraph();
       if (topology?.fitGalaxyView) topology.fitGalaxyView();
     }
   }
@@ -162,7 +163,7 @@ window.QM.app = (function() {
    * 一次性加载全宇宙所有星系数据 (需求 3 核心)
    */
   async function loadUniverseData(preferredFocus = 'all') {
-    const { api, state: stateCenter, cards, topology, utils, sidebar } = window.QM;
+    const { api, state: stateCenter, cards, topology, drawer, utils, sidebar } = window.QM;
     const s = stateCenter.state;
 
     if (!s.isServerMode) return;
@@ -207,6 +208,9 @@ window.QM.app = (function() {
         }
 
         // 刷新卡片列表与侧边栏统计
+        if (drawer?.closeDrawer) drawer.closeDrawer();
+        if (cards?.clearSelection) cards.clearSelection();
+        if (cards?.resetVisibleLimit) cards.resetVisibleLimit();
         if (stateCenter?.setDirty) stateCenter.setDirty(false);
         if (cards?.renderUI) cards.renderUI();
         if (sidebar?.renderUI) sidebar.renderUI();
@@ -235,14 +239,21 @@ window.QM.app = (function() {
    * 顶部星系导航器切换：支持全景俯瞰或平滑运镜飞入具体星系
    */
   function switchGalaxy(targetKey) {
-    const { state: stateCenter, topology, utils } = window.QM;
+    const { state: stateCenter, topology, sidebar, cards, drawer, utils } = window.QM;
     const s = stateCenter.state;
+
+    // 切换星系时重置局部子目录/标签过滤与分页多选状态，并关闭已打开的详情抽屉
+    s.activeCategory = 'all';
+    s.activeTag = null;
+    if (drawer?.closeDrawer) drawer.closeDrawer();
+    if (cards?.clearSelection) cards.clearSelection();
+    if (cards?.resetVisibleLimit) cards.resetVisibleLimit();
 
     if (targetKey === 'all') {
       s.activeGalaxyId = null;
       s.currentProject = 'all';
       updateScopeBadge('all', 'all');
-      if (topology?.fitGalaxyView) topology.fitGalaxyView();
+      if (topology?.focusOnGalaxy) topology.focusOnGalaxy('all');
       if (sidebar?.render) sidebar.render();
       if (cards?.renderUI) cards.renderUI();
       if (utils?.showToast) {
@@ -530,11 +541,17 @@ window.QM.app = (function() {
     });
   }
 
+  function refreshGalaxyDropdown() {
+    const s = window.QM.state.state;
+    populateGalaxySelect(s.galaxies, s.activeGalaxyId || 'all');
+  }
+
   return {
     initApp,
     loadUniverseData,
     switchGalaxy,
-    saveAllToDisk
+    saveAllToDisk,
+    refreshGalaxyDropdown
   };
 })();
 

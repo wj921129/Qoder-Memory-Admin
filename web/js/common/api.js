@@ -107,6 +107,17 @@ window.QM.api = (function() {
     }
   }
 
+  async function deleteMemories(items) {
+    const res = await fetch('/api/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    if (res.ok) return await res.json();
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+
   async function rescanProjects() {
     try {
       const res = await fetch('/api/rescan', { cache: 'no-store' });
@@ -144,6 +155,7 @@ window.QM.api = (function() {
     getMemories,
     saveMemories,
     deleteMemory,
+    deleteMemories,
     rescanProjects,
     openFolder
   };

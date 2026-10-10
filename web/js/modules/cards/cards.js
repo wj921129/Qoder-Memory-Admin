@@ -7,6 +7,16 @@ window.QM = window.QM || {};
 window.QM.cards = (function() {
   let isAllCollapsed = true; // 默认折叠记忆
   const expandedSet = new Set(); // 记录单独点开/折叠的个性化集合
+  const selectedIds = new Set(); // 记录批量勾选的记忆卡片 ID 集合
+
+  function getGalaxyScopedMemories() {
+    if (window.QM.sidebar?.getCurrentGalaxyMemories) {
+      return window.QM.sidebar.getCurrentGalaxyMemories();
+    }
+    const { memories, activeGalaxyId } = window.QM.state.state;
+    if (!activeGalaxyId || activeGalaxyId === 'all') return memories || [];
+    return (memories || []).filter(m => m.projectId === activeGalaxyId || m.galaxyId === activeGalaxyId);
+  }
 
   function toggleCardCollapse(id) {
     const cardEl = document.getElementById(`card-${id}`);
@@ -44,10 +54,11 @@ window.QM.cards = (function() {
   }
 
   function getFilteredMemories() {
-    const { memories, officialCategory, activeCategory, activeTag, searchQuery, sortBy } = window.QM.state.state;
+    const baseMemories = getGalaxyScopedMemories();
+    const { officialCategory, activeCategory, activeTag, searchQuery, sortBy } = window.QM.state.state;
     const { mapToOfficialGroup } = window.QM.constants;
 
-    let filtered = memories.filter(m => {
+    let filtered = baseMemories.filter(m => {
       // 1. 官方 4 大分类过滤 (对齐 Qoder 原生)
       if (officialCategory && officialCategory !== 'all') {
         const gid = (m.officialGroup && m.officialGroup.id) || mapToOfficialGroup(m.category).id;
@@ -79,11 +90,80 @@ window.QM.cards = (function() {
     return filtered;
   }
 
+  function syncBatchSelectUI(filteredList) {
+    const allIds = new Set((window.QM.state.state.memories || []).map(m => m.id));
+    for (const id of Array.from(selectedIds)) {
+      if (!allIds.has(id)) selectedIds.delete(id);
+    }
+
+    const list = filteredList || getFilteredMemories();
+    const countEl = document.getElementById('batch-delete-count');
+    const batchBtn = document.getElementById('btn-batch-delete-cards');
+    const selectAllCb = document.getElementById('cards-select-all-cb');
+
+    if (countEl) countEl.innerText = selectedIds.size;
+    if (batchBtn) batchBtn.classList.toggle('hidden', selectedIds.size === 0);
+
+    if (selectAllCb) {
+      const selectedInList = list.filter(m => selectedIds.has(m.id)).length;
+      selectAllCb.disabled = list.length === 0;
+      selectAllCb.checked = list.length > 0 && selectedInList === list.length;
+      selectAllCb.indeterminate = selectedInList > 0 && selectedInList < list.length;
+    }
+  }
+
+  function toggleCardSelect(id, checked) {
+    if (checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+
+    const cardEl = document.getElementById(`card-${id}`);
+    if (cardEl) {
+      cardEl.classList.toggle('is-selected', !!checked);
+      const cb = cardEl.querySelector('.card-select-cb');
+      if (cb && cb.checked !== !!checked) cb.checked = !!checked;
+    }
+    syncBatchSelectUI();
+  }
+
+  function toggleSelectAll(checked) {
+    const list = getFilteredMemories();
+    list.forEach(m => {
+      if (checked) selectedIds.add(m.id);
+      else selectedIds.delete(m.id);
+    });
+
+    const gridEl = document.getElementById('cards-grid');
+    if (gridEl) {
+      gridEl.querySelectorAll('.card-select-cb').forEach(cb => {
+        const isSel = selectedIds.has(cb.dataset.id);
+        cb.checked = isSel;
+        cb.closest('.memory-card')?.classList.toggle('is-selected', isSel);
+      });
+    }
+    syncBatchSelectUI(list);
+  }
+
+  function clearSelection() {
+    selectedIds.clear();
+    const gridEl = document.getElementById('cards-grid');
+    if (gridEl) {
+      gridEl.querySelectorAll('.memory-card.is-selected').forEach(el => el.classList.remove('is-selected'));
+      gridEl.querySelectorAll('.card-select-cb').forEach(cb => { cb.checked = false; });
+    }
+    syncBatchSelectUI();
+  }
+
+  function batchDeleteSelected() {
+    if (selectedIds.size === 0) return;
+    window.QM.drawer?.batchDeleteCards?.(Array.from(selectedIds));
+  }
+
   function updateOfficialTabs() {
-    const { memories, officialCategory } = window.QM.state.state;
+    const baseMemories = getGalaxyScopedMemories();
+    const { officialCategory } = window.QM.state.state;
     const { mapToOfficialGroup } = window.QM.constants;
-    const counts = { all: memories.length, spec: 0, project: 0, experience: 0, task: 0 };
-    memories.forEach(m => {
+    const counts = { all: baseMemories.length, spec: 0, project: 0, experience: 0, task: 0 };
+    baseMemories.forEach(m => {
       const gid = (m.officialGroup && m.officialGroup.id) || mapToOfficialGroup(m.category).id;
       counts[gid] = (counts[gid] || 0) + 1;
     });
@@ -124,6 +204,8 @@ window.QM.cards = (function() {
     const { CATEGORY_MAP, TYPE_MAP } = window.QM.constants;
     const { escapeHtml, renderMarkdown } = window.QM.utils;
 
+    syncBatchSelectUI(filtered);
+
     const gridEl = document.getElementById('cards-grid');
     if (!gridEl) return;
 
@@ -142,6 +224,7 @@ window.QM.cards = (function() {
 
     let html = renderList.map(m => {
       const isCollapsed = isAllCollapsed ? !expandedSet.has(m.id) : expandedSet.has(m.id);
+      const isSelected = selectedIds.has(m.id);
       const catLabel = (CATEGORY_MAP[m.category] && CATEGORY_MAP[m.category].name) || m.category;
       const kwHtml = (m.keywords || []).map(k => `<span class="keyword-pill">${escapeHtml(k)}</span>`).join('');
       const chainHtml = (m.chains && m.chains.length > 0)
@@ -161,8 +244,9 @@ window.QM.cards = (function() {
       const projBadge = m.projectName ? `<span class="badge-tag badge-proj">🪐 ${escapeHtml(m.projectName)}</span>` : '';
 
       return `
-        <div class="memory-card${isCollapsed ? ' collapsed' : ''}" id="card-${escapeHtml(m.id)}">
+        <div class="memory-card${isCollapsed ? ' collapsed' : ''}${isSelected ? ' is-selected' : ''}" id="card-${escapeHtml(m.id)}">
           <div class="card-header-row">
+            <input type="checkbox" class="card-select-cb" data-id="${escapeHtml(m.id)}" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); window.QM.cards.toggleCardSelect('${escapeHtml(m.id)}', this.checked)" title="勾选此记忆卡片">
             <div class="card-title" onclick="window.QM.drawer.openDrawer('${escapeHtml(m.id)}')">${escapeHtml(m.name)}</div>
             <button type="button" class="card-expand-btn" onclick="event.stopPropagation(); window.QM.cards.toggleCardCollapse('${escapeHtml(m.id)}')" title="展开/收起此篇内容">
               <span class="expand-icon">${isCollapsed ? '▾' : '▴'}</span>
@@ -217,11 +301,12 @@ window.QM.cards = (function() {
   }
 
   function renderUI() {
-    const { memories, currentDirName, viewMode, sortBy } = window.QM.state.state;
+    const { viewMode, sortBy } = window.QM.state.state;
+    const baseMemories = getGalaxyScopedMemories();
     const filtered = getFilteredMemories();
 
     const viewStatsEl = document.getElementById('view-stats');
-    if (viewStatsEl) viewStatsEl.innerText = `显示 ${filtered.length} / ${memories.length} 条记忆`;
+    if (viewStatsEl) viewStatsEl.innerText = `显示 ${filtered.length} / ${baseMemories.length} 条记忆`;
 
     // 刷新官方四大分类选项卡计数与高亮
     updateOfficialTabs();
@@ -235,15 +320,15 @@ window.QM.cards = (function() {
     // 渲染侧边栏
     window.QM.sidebar?.render();
 
-    // 性能优化：在卡片模式下按需渲染卡片
+    // 性能优化：在卡片模式下按需渲染卡片，否则仅同步全选状态
     if (viewMode === 'cards') {
       renderCardsGrid(filtered);
+    } else {
+      syncBatchSelectUI(filtered);
     }
-
-    window.QM.topology?.buildGalaxyGraph();
   }
 
-  // 挂载分类过滤与统一折叠按钮点击事件
+  // 挂载分类过滤、统一折叠、批量选择与空白处关闭详情点击事件
   document.addEventListener('DOMContentLoaded', () => {
     const tabsBar = document.getElementById('official-tabs-bar');
     if (tabsBar) {
@@ -259,6 +344,26 @@ window.QM.cards = (function() {
     const btnToggleAll = document.getElementById('btn-toggle-all-cards');
     if (btnToggleAll) {
       btnToggleAll.addEventListener('click', toggleAllCards);
+    }
+
+    const selectAllCb = document.getElementById('cards-select-all-cb');
+    if (selectAllCb) {
+      selectAllCb.addEventListener('change', (e) => toggleSelectAll(e.target.checked));
+    }
+
+    const btnBatchDelete = document.getElementById('btn-batch-delete-cards');
+    if (btnBatchDelete) {
+      btnBatchDelete.addEventListener('click', batchDeleteSelected);
+    }
+
+    // 卡片模式下点击空白处关闭右侧详情抽屉
+    const cardsContainer = document.getElementById('cards-container');
+    if (cardsContainer) {
+      cardsContainer.addEventListener('click', (e) => {
+        if (window.getSelection?.()?.toString()) return;
+        if (e.target.closest('.memory-card, .official-tab, .cards-select-all-label, button, .nav-dd, input, select, textarea, a, label')) return;
+        window.QM.drawer?.closeDrawer();
+      });
     }
   });
 
@@ -280,7 +385,11 @@ window.QM.cards = (function() {
     loadMore,
     loadAll,
     toggleCardCollapse,
-    toggleAllCards
+    toggleAllCards,
+    toggleCardSelect,
+    toggleSelectAll,
+    clearSelection,
+    batchDeleteSelected
   };
 })();
 

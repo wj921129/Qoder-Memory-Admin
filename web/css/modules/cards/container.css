@@ -82,6 +82,25 @@
   position: relative;
   z-index: 20;
 }
+/** 左侧全选、统计与批量操作组 */
+.view-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cards-select-all-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-main);
+  cursor: pointer;
+  user-select: none;
+}
+.cards-select-all-label input {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
 /** 记忆数量统计展示 */
 .view-stats {
   font-size: 12px;

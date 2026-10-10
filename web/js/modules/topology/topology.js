@@ -249,6 +249,9 @@ window.QM.topology = (function() {
       window.QM.state.state.activeGalaxyId = null;
       window.QM.state.state.currentProject = 'all';
       window.QM.utils?.syncNavDropdown?.('galaxy-dd', 'all');
+      window.QM.drawer?.closeDrawer();
+      hideCelestialCard();
+      resetSpacingControllerUI();
       window.QM.sidebar?.render();
       fitGalaxyView();
       return;
@@ -264,9 +267,13 @@ window.QM.topology = (function() {
       hasDomainExpanding = true;
       startGalaxyLoop();
       showCelestialCard(starNode);
-      // 默认选中该星系恒星：激活星系间距控制并弹出对应详情抽屉
       updateSpacingControllerUI(starNode);
-      window.QM.drawer?.openCoreDrawer(starNode);
+      // 仅在拓扑模式下默认打开恒星详情抽屉；卡片模式下保持抽屉关闭
+      if (window.QM.state.state.viewMode === 'cards') {
+        window.QM.drawer?.closeDrawer();
+      } else {
+        window.QM.drawer?.openCoreDrawer(starNode);
+      }
       // 深度联动左侧3栏显示该星系对应内容
       window.QM.state.state.activeGalaxyId = galaxyId;
       window.QM.state.state.currentProject = galaxyId;

@@ -1378,74 +1378,88 @@ export function createServer() {
         return;
       }
 
-      // 5. 真实删除单条切片并刷新索引
+      // 5. 真实删除单条或批量切片并刷新索引
       if (pathname === '/api/delete' && req.method === 'POST') {
-        const { project, id, filename } = await readRequestBody(req);
-        if (!project || (!id && !filename)) {
+        const body = await readRequestBody(req);
+        const isBatch = Array.isArray(body.items);
+        const rawList = isBatch
+          ? body.items
+          : (body.project && (body.id || body.filename) ? [body] : []);
+        if (rawList.length === 0) {
           sendJson(res, 400, { error: '缺少 project 或 id/filename' });
           return;
         }
 
-        const targetProj = await getTargetProject(project);
-        if (!targetProj) {
-          sendJson(res, 404, { error: `未定位到项目物理路径 [${project}]` });
-          return;
-        }
+        let deletedCount = 0;
+        let lastTargetFile = '';
+        const touchedProjects = new Map();
 
-        let pureId = id || '';
-        if (pureId.includes('__')) pureId = pureId.split('__').slice(1).join('__');
-        else if (pureId.includes('::')) pureId = pureId.split('::').pop();
-        const targetFile = path.basename(filename || (pureId.endsWith('.md') ? pureId : `${pureId}.md`));
-        const candidatePaths = [path.join(targetProj.realPath, targetFile)];
+        for (const entry of rawList) {
+          const { project, id, filename, diskPath } = entry || {};
+          if (!project || (!id && !filename)) continue;
 
-        if (targetProj.ideMemoryDirs) {
-          for (const ideDir of targetProj.ideMemoryDirs) {
-            if (fsSync.existsSync(ideDir)) {
+          const targetProj = await getTargetProject(project);
+          if (!targetProj) {
+            if (!isBatch) {
+              sendJson(res, 404, { error: `未定位到项目物理路径 [${project}]` });
+              return;
+            }
+            continue;
+          }
+
+          let pureId = id || '';
+          if (pureId.includes('__')) pureId = pureId.split('__').slice(1).join('__');
+          else if (pureId.includes('::')) pureId = pureId.split('::').pop();
+          const targetFile = path.basename(filename || (pureId.endsWith('.md') ? pureId : `${pureId}.md`));
+          if (!targetFile || targetFile === 'MEMORY.md') continue;
+          lastTargetFile = targetFile;
+
+          const candidatePaths = new Set();
+          if (diskPath && withinAllowedRoots(targetProj, diskPath) && normEndsWithMd(diskPath)) {
+            candidatePaths.add(path.resolve(diskPath));
+          }
+          if (targetProj.realPath) candidatePaths.add(path.join(targetProj.realPath, targetFile));
+          if (targetProj.agentPath) candidatePaths.add(path.join(targetProj.agentPath, targetFile));
+
+          for (const baseDir of [targetProj.idePath, targetProj.realPath, ...(targetProj.ideMemoryDirs || [])].filter(Boolean)) {
+            if (fsSync.existsSync(baseDir)) {
               try {
-                const subs = await fs.readdir(ideDir, { withFileTypes: true });
+                const subs = await fs.readdir(baseDir, { withFileTypes: true });
                 for (const s of subs) {
                   if (s.isDirectory()) {
-                    candidatePaths.push(path.join(ideDir, s.name, targetFile));
+                    candidatePaths.add(path.join(baseDir, s.name, targetFile));
                   }
                 }
               } catch (e) {}
             }
           }
-        }
 
-        // 探测工程目录下一级子分类目录
-        if (targetProj.realPath && fsSync.existsSync(targetProj.realPath)) {
-          try {
-            const subs = await fs.readdir(targetProj.realPath, { withFileTypes: true });
-            for (const s of subs) {
-              if (s.isDirectory()) {
-                candidatePaths.push(path.join(targetProj.realPath, s.name, targetFile));
+          for (const p of candidatePaths) {
+            if (fsSync.existsSync(p)) {
+              try {
+                await fs.unlink(p);
+                deletedCount++;
+                touchedProjects.set(targetProj.id, targetProj);
+              } catch (e) {
+                console.warn('[Delete Error]', e.message);
               }
-            }
-          } catch (e) {}
-        }
-
-        let deletedCount = 0;
-        for (const p of candidatePaths) {
-          if (fsSync.existsSync(p)) {
-            try {
-              await fs.unlink(p);
-              deletedCount++;
-            } catch (e) {
-              console.warn('[Delete Error]', e.message);
             }
           }
         }
 
-        // 重新统计并更新 MEMORY.md (如果有)
-        if (!targetProj.isIdeStore && fsSync.existsSync(path.join(targetProj.realPath, 'MEMORY.md'))) {
-          await rebuildMemoryIndex(targetProj.realPath);
+        // 按涉及的项目重新统计并更新各自的 MEMORY.md (如果有)
+        for (const targetProj of touchedProjects.values()) {
+          for (const dir of new Set([targetProj.realPath, targetProj.agentPath].filter(Boolean))) {
+            if (!targetProj.isIdeStore && fsSync.existsSync(path.join(dir, 'MEMORY.md'))) {
+              await rebuildMemoryIndex(dir);
+            }
+          }
         }
 
         // 刷新内存中的项目列表与计数
         await scanAllProjects();
 
-        sendJson(res, 200, { ok: true, deletedFile: targetFile, deletedCount });
+        sendJson(res, 200, { ok: true, deletedFile: lastTargetFile, deletedCount });
         return;
       }
 

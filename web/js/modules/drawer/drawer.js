@@ -489,7 +489,7 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
       const targetProjId = state.activeGalaxyId || (state.galaxies && state.galaxies[0] ? state.galaxies[0].id : state.currentProject);
       const targetGalaxy = (state.galaxies || []).find(g => g.id === targetProjId);
       const newId = `${targetProjId}__mem-` + Date.now();
-      state.memories.unshift({
+      const newItem = {
         id: newId,
         projectId: targetProjId,
         projectName: targetGalaxy ? (targetGalaxy.rawName || targetGalaxy.name) : targetProjId,
@@ -504,13 +504,42 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
         chains: selectedChain ? [selectedChain] : [],
         body,
         dirty: true
-      });
+      };
+      state.memories.unshift(newItem);
+      if (targetGalaxy && Array.isArray(targetGalaxy.memories)) {
+        targetGalaxy.memories.unshift(newItem);
+        targetGalaxy.count = targetGalaxy.memories.length;
+      }
       window.QM.utils?.showToast('记忆切片已成功创建！', 'success');
     }
 
     closeDrawer();
     window.QM.state.setDirty(true);
     window.QM.cards?.renderUI();
+    window.QM.topology?.buildGalaxyGraph?.();
+  }
+
+  function applyLocalDeletions(deletedIdSet) {
+    const state = window.QM.state.state;
+    state.memories = (state.memories || []).filter(m => !deletedIdSet.has(m.id));
+    (state.galaxies || []).forEach(g => {
+      if (Array.isArray(g.memories)) {
+        g.memories = g.memories.filter(m => !deletedIdSet.has(m.id));
+        g.count = g.memories.length;
+        g.name = `${g.rawName || g.id} [${g.count}篇]`;
+      }
+    });
+    if (window.QM.app?.refreshGalaxyDropdown) {
+      window.QM.app.refreshGalaxyDropdown();
+    }
+    closeDrawer();
+    if (window.QM.topology?.hideCelestialCard) {
+      window.QM.topology.hideCelestialCard();
+    }
+    window.QM.cards?.renderUI();
+    if (window.QM.topology?.buildGalaxyGraph) {
+      window.QM.topology.buildGalaxyGraph();
+    }
   }
 
   async function deleteCard(id) {
@@ -527,23 +556,14 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     });
     if (!confirmed) return;
 
+    const deletedSet = new Set([id]);
+
     if (isServerMode && window.QM.api) {
       try {
         const targetProj = item.projectId || currentProject;
         await window.QM.api.deleteMemory(targetProj, id, item.filename);
-        window.QM.state.state.memories = memories.filter(m => m.id !== id);
         window.QM.state.setDirty(false);
-        closeDrawer();
-
-        // 若当前天体常驻卡片正在展示该项，隐藏之
-        if (window.QM.topology?.hideCelestialCard) {
-          window.QM.topology.hideCelestialCard();
-        }
-
-        window.QM.cards?.renderUI();
-        if (window.QM.topology?.buildGalaxyGraph) {
-          window.QM.topology.buildGalaxyGraph();
-        }
+        applyLocalDeletions(deletedSet);
         window.QM.utils?.showToast(`🗑️ 已从磁盘彻底删除 ${item.filename} 并刷新索引！`, 'success');
         return;
       } catch (err) {
@@ -554,17 +574,56 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     }
 
     // 离线模式降级处理
-    window.QM.state.state.memories = memories.filter(m => m.id !== id);
     window.QM.state.setDirty(true);
-    closeDrawer();
-    if (window.QM.topology?.hideCelestialCard) {
-      window.QM.topology.hideCelestialCard();
-    }
-    window.QM.cards?.renderUI();
-    if (window.QM.topology?.buildGalaxyGraph) {
-      window.QM.topology.buildGalaxyGraph();
-    }
+    applyLocalDeletions(deletedSet);
     window.QM.utils?.showToast(`已删除记忆条目 (离线态)`, 'success');
+  }
+
+  async function batchDeleteCards(ids = []) {
+    const { isServerMode, currentProject, memories } = window.QM.state.state;
+    const idSet = new Set(ids);
+    const targets = (memories || []).filter(m => idSet.has(m.id));
+    if (targets.length === 0) return;
+
+    const previewNames = targets.slice(0, 5).map((m, i) => `${i + 1}. ${m.name} (${m.filename})`).join('\n');
+    const moreHint = targets.length > 5 ? `\n... 等共 ${targets.length} 篇记忆切片` : '';
+
+    const confirmed = await window.QM.utils.confirmDialog({
+      title: `批量删除记忆切片 (${targets.length} 篇)`,
+      message: `确定彻底删除以下 ${targets.length} 篇记忆切片吗？\n\n${previewNames}${moreHint}\n\n此操作将从物理磁盘中彻底删除对应 Markdown 文件并自动更新 MEMORY.md 索引，不可撤回！`,
+      icon: '🗑️',
+      confirmText: `彻底删除 (${targets.length} 篇)`
+    });
+    if (!confirmed) return;
+
+    const targetIdSet = new Set(targets.map(m => m.id));
+
+    if (isServerMode && window.QM.api?.deleteMemories) {
+      try {
+        const payload = targets.map(m => ({
+          project: m.projectId || currentProject,
+          id: m.id,
+          filename: m.filename,
+          diskPath: m.diskPath
+        }));
+        await window.QM.api.deleteMemories(payload);
+        window.QM.state.setDirty(false);
+        window.QM.cards?.clearSelection?.();
+        applyLocalDeletions(targetIdSet);
+        window.QM.utils?.showToast(`🗑️ 已批量删除 ${targets.length} 篇记忆切片并刷新索引！`, 'success');
+        return;
+      } catch (err) {
+        console.error('[Batch Delete] 服务端批量删除失败:', err.message);
+        window.QM.utils?.showToast(`批量删除失败: ${err.message}`, 'error');
+        return;
+      }
+    }
+
+    // 离线模式降级处理
+    window.QM.state.setDirty(true);
+    window.QM.cards?.clearSelection?.();
+    applyLocalDeletions(targetIdSet);
+    window.QM.utils?.showToast(`已批量删除 ${targets.length} 条记忆条目 (离线态)`, 'success');
   }
 
   return {
@@ -574,7 +633,8 @@ ${catMemories.map((m, i) => `${i + 1}. **${m.name}** (\`${m.filename}\`)\n   - �
     closeDrawer,
     openNewCardDrawer,
     saveCurrentDrawer,
-    deleteCard
+    deleteCard,
+    batchDeleteCards
   };
 })();
 

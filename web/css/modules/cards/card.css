@@ -39,6 +39,10 @@
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
   transform: translateY(-2px);
 }
+.memory-card.is-selected {
+  border-color: rgba(var(--accent-rgb), 0.65);
+  background: rgba(var(--accent-rgb), 0.08);
+}
 /** 卡片默认折叠状态：隐藏正文预览、关键词与卡片页脚，仅保留标题与适用场景/召回条件 */
 .memory-card.collapsed .card-content-preview,
 .memory-card.collapsed .card-keywords,
@@ -58,6 +62,13 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
+}
+/** 单卡勾选复选框 */
+.card-select-cb {
+  margin-top: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: var(--accent);
 }
 /** 卡片标题文字 */
 .card-title {

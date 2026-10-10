@@ -165,10 +165,11 @@ window.QM.sidebar = (function() {
     }
 
     if (window.QM.cards) {
+      const galaxyMemories = getCurrentGalaxyMemories();
       const filtered = window.QM.cards.getFilteredMemories();
       const viewStatsEl = document.getElementById('view-stats');
       if (viewStatsEl) {
-        viewStatsEl.innerText = `显示 ${filtered.length} / ${state.memories.length} 条记忆`;
+        viewStatsEl.innerText = `显示 ${filtered.length} / ${galaxyMemories.length} 条记忆`;
       }
 
       if (state.viewMode === 'cards') {
@@ -241,6 +242,7 @@ window.QM.sidebar = (function() {
   }
 
   return {
+    getCurrentGalaxyMemories,
     render,
     renderUI: render,
     renderTagCloud,
