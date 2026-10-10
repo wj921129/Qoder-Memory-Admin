@@ -183,28 +183,15 @@ window.QM.sidebar = (function() {
     state.officialCategory = groupKey || 'all';
     state.activeCategory = 'all'; // 选中官方大类时重置细分子类
 
-    // 重新渲染侧边栏（官方分类高亮 + 子目录过滤联动）
-    render();
-
-    // 同步卡片流顶部 tabs 高亮
-    const tabsBar = document.getElementById('official-tabs-bar');
-    if (tabsBar) {
-      tabsBar.querySelectorAll('.official-tab').forEach(tab => {
-        tab.classList.toggle('active', tab.getAttribute('data-group') === state.officialCategory);
-      });
-    }
-
-    // 刷新卡片列表
     if (window.QM.cards) {
       window.QM.cards.renderUI();
+    } else {
+      render();
     }
 
-    // 关键联动：在全宇宙拓扑视图下高亮该大类行星群并运镜聚焦！
     if (window.QM.topology?.onOfficialCategoryChanged) {
       window.QM.topology.onOfficialCategoryChanged(state.officialCategory);
     }
-
-    window.QM.state.emit('official-category-changed', state.officialCategory);
   }
 
   function selectCategory(cat = 'all') {

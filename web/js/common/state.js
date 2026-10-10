@@ -190,11 +190,6 @@ window.QM.state = (function() {
     emit('track-changed', trk);
   }
 
-  function setOfficialCategory(cat) {
-    state.officialCategory = cat || 'all';
-    emit('official-category-changed', state.officialCategory);
-  }
-
   function setGroupCounts(counts) {
     state.groupCounts = counts || { spec: 0, project: 0, experience: 0, task: 0 };
     emit('group-counts-changed', state.groupCounts);
@@ -239,7 +234,6 @@ window.QM.state = (function() {
     setEdition,
     setAccount,
     setTrack,
-    setOfficialCategory,
     setGroupCounts,
     setSelectedPlanet,
     setPlanetSpacing,

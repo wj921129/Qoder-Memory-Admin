@@ -130,29 +130,6 @@ window.QM.topology = (function() {
       }
     });
 
-    window.QM.state.on('official-category-changed', (groupKey) => {
-      if (groupKey === 'all') {
-        deselectFocus();
-      } else {
-        const { OFFICIAL_CATEGORIES } = window.QM.constants;
-        const grp = OFFICIAL_CATEGORIES[groupKey];
-        if (grp) {
-          focusTarget = null;
-          focusRelatedIds.clear();
-          const targetDomains = nodes.filter(n => n.type === 'domain' && grp.subs.includes(n.categoryKey));
-          targetDomains.forEach(d => {
-            focusRelatedIds.add(d.id);
-            nodes.filter(u => u.type === 'unit' && u.parentId === d.id).forEach(u => focusRelatedIds.add(u.id));
-            if (d.parentStarId) focusRelatedIds.add(d.parentStarId);
-          });
-
-          const hudText = document.getElementById('hud-text');
-          if (hudText) hudText.innerText = `${grp.icon} 聚焦官方大类：【${grp.name}】 · 匹配 ${targetDomains.length} 个主题星体`;
-          requestRender();
-        }
-      }
-    });
-
     // 监听行星卫星间距变化
     window.QM.state.on('planet-spacing-changed', ({ planetId, scale }) => {
       const pNode = nodeMap.get(planetId);
@@ -766,6 +743,11 @@ window.QM.topology = (function() {
       return true;
     }
 
+    const { activeGalaxyId, officialCategory } = window.QM.state.state;
+    if (activeGalaxyId && activeGalaxyId !== 'all' && node.galaxyId && node.galaxyId !== activeGalaxyId) {
+      return true;
+    }
+
     // 4. 分类过滤模式
     if (activeCategory && activeCategory !== 'all') {
       if (node.type === 'core') return false;
@@ -774,7 +756,6 @@ window.QM.topology = (function() {
     }
 
     // 5. 官方四大分类体系过滤 (spec / project / experience / task)
-    const { officialCategory } = window.QM.state.state;
     if (officialCategory && officialCategory !== 'all') {
       const { OFFICIAL_CATEGORIES } = window.QM.constants || {};
       const targetGroup = OFFICIAL_CATEGORIES?.[officialCategory];
@@ -1475,14 +1456,18 @@ window.QM.topology = (function() {
   }
 
   function focusOnCategory(catKey) {
-    if (!catKey || catKey === 'all') {
-      deselectFocus(false);
-      return;
-    }
+    const activeGalaxyId = window.QM.state?.state?.activeGalaxyId;
+    const isGalaxyScoped = !!(activeGalaxyId && activeGalaxyId !== 'all');
+    const domainNode = (catKey && catKey !== 'all')
+      ? nodes.find(n => n.type === 'domain' && n.categoryKey === catKey && (!isGalaxyScoped || n.galaxyId === activeGalaxyId))
+      : null;
 
-    const domainNode = nodes.find(n => n.type === 'domain' && n.categoryKey === catKey);
     if (!domainNode) {
-      deselectFocus(false);
+      if (isGalaxyScoped) {
+        onOfficialCategoryChanged(window.QM.state?.state?.officialCategory || 'all');
+      } else {
+        deselectFocus(false);
+      }
       return;
     }
 
@@ -1506,25 +1491,29 @@ window.QM.topology = (function() {
   }
 
   function onOfficialCategoryChanged(groupKey = 'all') {
-    // 仅清理焦点天体与关联集，镜头保持当前位置不发生任何偏移
-    focusTarget = null;
+    const activeGalaxyId = window.QM.state?.state?.activeGalaxyId;
+    const isGalaxyScoped = !!(activeGalaxyId && activeGalaxyId !== 'all');
+    const starNode = isGalaxyScoped ? nodeMap.get(`star-${activeGalaxyId}`) : null;
+
+    // 仅清理/切换焦点天体与关联集，镜头保持当前位置不发生任何偏移
     isAutoCameraActive = false;
     cameraTargetNode = null;
     cameraTargetPos = null;
-    updateFocusRelatedSet();
-
     window.QM.drawer?.closeDrawer();
-    hideCelestialCard();
-    resetSpacingControllerUI();
 
     const hudText = document.getElementById('hud-text');
     const hudIndicator = document.getElementById('hud-indicator');
     const { OFFICIAL_CATEGORIES } = window.QM.constants || {};
 
     if (groupKey && groupKey !== 'all' && OFFICIAL_CATEGORIES?.[groupKey]) {
+      focusTarget = null;
+      updateFocusRelatedSet();
+      hideCelestialCard();
+      resetSpacingControllerUI();
+
       const grp = OFFICIAL_CATEGORIES[groupKey];
       const allowedSubs = new Set(grp.subs || []);
-      const matchedPlanets = nodes.filter(n => n.type === 'domain' && allowedSubs.has(n.categoryKey));
+      const matchedPlanets = nodes.filter(n => n.type === 'domain' && allowedSubs.has(n.categoryKey) && (!isGalaxyScoped || n.galaxyId === activeGalaxyId));
 
       if (hudText) {
         hudText.innerText = `🌌 官方领域聚焦：${grp.icon} 【${grp.name}】 · 高亮 ${matchedPlanets.length} 个主题认知行星`;
@@ -1535,7 +1524,17 @@ window.QM.topology = (function() {
       }
 
       window.QM.utils?.showToast(`已聚焦官方领域：${grp.icon} ${grp.name}（${matchedPlanets.length} 个认知行星高亮）`);
+    } else if (starNode) {
+      focusTarget = starNode;
+      updateFocusRelatedSet();
+      showCelestialCard(starNode);
+      updateSpacingControllerUI(starNode);
+      window.QM.utils?.showToast(`已恢复【${starNode.name}】星系全部记忆`);
     } else {
+      focusTarget = null;
+      updateFocusRelatedSet();
+      hideCelestialCard();
+      resetSpacingControllerUI();
       if (hudText) {
         hudText.innerText = '🌌 认知引力网络待命 · 全局拓扑就绪';
       }
